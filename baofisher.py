@@ -851,7 +851,7 @@ def Cnoise(q, y, cosmo, expt):
         n_u[np.where(u < u_fov)] = 1. / INF_NOISE
         n_u[np.where(u > u_max)] = 1. / INF_NOISE
         """
-        noise *= expt['fov']**2. / n_u # FIXME: Factor of 4/9?
+        noise *= 4./9. * expt['fov'] / n_u
     else:
         # Account for multiple dishes/beams for non-interferometers
         noise *= 1. / (expt['Ndish'] * expt['Nbeam'])
