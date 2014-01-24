@@ -462,7 +462,7 @@ def deriv_transfer(cosmo, fname):
     
     return iscalefn, idscalefn_dk, idscalefn_dMnu
 
-def deriv_logpk_mnu(mnu, cosmo, dmnu=0.01, kmax=10.):
+def deriv_logpk_mnu(mnu, cosmo, dmnu=0.01, kmax=130.):
     """
     Return numerical derivative dlog[P(k)] / d(Sum m_nu) using CAMB.
     Assumes a single massive neutrino species.
@@ -814,6 +814,77 @@ def Cbeam(q, y, cosmo, expt):
     return invbeam2
 
 
+def interferometer_response(q, y, cosmo, expt):
+    """
+    Dish multiplicity and beam factors (I * B_perp * B_par) for the noise 
+    covariance of an interferometer.
+    """
+    c = cosmo
+    kperp = q / (c['aperp']*c['r'])
+    kpar = y / (c['apar']*c['rnu'])
+    
+    # Mario's interferometer noise calculation
+    u = kperp * c['r'] / (2. * np.pi) # UV plane: |u| = d / lambda
+    nu = expt['nu_line'] / (1. + c['z'])
+    
+    # Calculate interferometer baseline density, n(u)
+    if "n(x)" in expt.keys():
+        # Rescale n(x) with freq.-dependence
+        print "\tUsing user-specified baseline density, n(u)"
+        x = u / nu  # x = u / (freq [MHz])
+        n_u = expt['n(x)'](x) / nu**2. # n(x) = n(u) * nu^2
+        n_u[np.where(n_u == 0.)] = 1. / INF_NOISE
+    else:
+        # Approximate expression for n(u), assuming uniform density in UV plane
+        print "\tUsing uniform baseline density, n(u) ~ const."
+        l = 3e8 / (nu * 1e6) # Wavelength (m)
+        u_min = expt['Dmin'] / l
+        u_max = expt['Dmax'] / l
+        n_u = (l*expt['Ndish']/expt['Dmax'])**2. / (2.*np.pi) * np.ones(u.shape)
+        n_u[np.where(u < u_min)] = 1. / INF_NOISE
+        n_u[np.where(u > u_max)] = 1. / INF_NOISE
+    
+    # Interferometer multiplicity factor, /I/
+    I = 4./9. * expt['fov'] / n_u
+    
+    # FIXME: Overflows here for large q, y.
+    # Gaussian in parallel direction. Perp. direction already accounted for by 
+    # n(u) factor in multiplicity (I)
+    sigma_kpar = np.sqrt(16.*np.log(2)) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
+    invbeam2 = np.exp((y/(c['rnu']*sigma_kpar))**2.)
+    
+    return I * invbeam2
+
+
+def dish_response(q, y, cosmo, expt):
+    """
+    Dish multiplicity and beam factors (I * B_perp * B_par) for the noise 
+    covariance of a single-dish mode instrument.
+    """
+    c = cosmo
+    kperp = q / (c['aperp']*c['r'])
+    kpar = y / (c['apar']*c['rnu'])
+    
+    # Dish-mode multiplicity factor, /I/
+    I = 1. / (expt['Ndish'] * expt['Nbeam'])
+    
+    # Define parallel/perp. beam scales
+    D0 = 0.5 * 1.22 * 300. / np.sqrt(2.*np.log(2.)) # Dish FWHM prefactor [metres]
+    sigma_kpar = np.sqrt(16.*np.log(2)) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
+    sigma_kperp =  np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
+                 / (c['r'] * D0 * (1.+c['z'])) * KPERP_FACTOR
+    
+    # Sanity check: Require that Sarea > Nbeam * (beam)^2
+    if (expt['Sarea'] < expt['Nbeam'] / (sigma_kperp * c['r'])**2.):
+        raise ValueError("Sarea is less than (Nbeam * beam^2)")
+    
+    # FIXME: Overflows here for large q, y.
+    # Single-dish experiment has Gaussian beams in perp. and par. directions
+    invbeam2 =  np.exp((q/(c['r']*sigma_kperp))**2.) \
+              * np.exp((y/(c['rnu']*sigma_kpar))**2.)
+    return I * invbeam2
+
+
 def Cnoise(q, y, cosmo, expt):
     """
     Noise covariance matrix, from last equality in Eq. 25 of Pedro's notes.
@@ -830,76 +901,35 @@ def Cnoise(q, y, cosmo, expt):
     Tsys = expt['Tinst'] + Tsky
     noise = Tsys**2. * Vsurvey / (expt['ttot'] * expt['dnutot'])
     
-    # Multiply noise by interferometer factor
-    if expt['interferometer']:
-        # Mario's interferometer noise calculation
-        u = kperp * c['r'] / (2. * np.pi) # UV plane: |u| = d / lambda
-        nu = expt['nu_line'] / (1. + c['z'])
-        x = u / nu  # x = u / (freq [MHz])
-        
-        # Rescale n(x) with freq.-dependence
-        n_u = expt['n(x)'](x) / nu**2. # n(x) = n(u) * nu^2
-        n_u[np.where(n_u == 0.)] = 1. / INF_NOISE
-        """
-        # Approximate expression for n(u), assuming uniform density in UV plane
-        print "WARNING: Using constant n(u) approximation"
-        Dmax = 60. # fit to SKA n(u), in m
-        l = 3e8 / (nu * 1e6) # Wavelength (m)
-        u_fov = 1. / np.sqrt(expt['fov']) # 0.
-        u_max = Dmax / l
-        n_u = (l * expt['Ndish'] / Dmax)**2. / (2. * np.pi) * np.ones(u.shape)
-        n_u[np.where(u < u_fov)] = 1. / INF_NOISE
-        n_u[np.where(u > u_max)] = 1. / INF_NOISE
-        """
-        noise *= 4./9. * expt['fov'] / n_u
+    # Apply multiplicity/beam response for 
+    if 'int' in expt['mode']:
+        # Interferometer mode
+        print "\tInterferometer mode."
+        noise *= interferometer_response(q, y, cosmo, expt)
+    elif 'dish' in expt['mode']:
+        # Dish (autocorrelation) mode
+        print "\tSingle-dish mode."
+        noise *= dish_response(q, y, cosmo, expt)
+    elif 'comb' in expt['mode']:
+        print "\tCombined interferometer + single-dish mode"
+        # Combined dish + interferom. mode
+        # N.B. For each voxel, this takes the response which has the lowest 
+        # noise (*either* interferom. of single dish), rather than adding the 
+        # inverse noise terms together. This is correct in the CV-limited 
+        # regime, since it prevents double counting of photons, but is 
+        # pessimistic in the noise-dominated regime, since it throwws information away
+        r_int = interferometer_response(q, y, cosmo, expt)
+        r_dish = dish_response(q, y, cosmo, expt)
+        noise *= np.minimum(r_int, r_dish)
     else:
-        # Account for multiple dishes/beams for non-interferometers
-        noise *= 1. / (expt['Ndish'] * expt['Nbeam'])
-    
-    # Foreground-removal scale
-    #kfg = KFG_FACTOR * 2.*np.pi * expt['nu_line'] / (expt['dnutot'] * c['rnu'])
-    kfg = 2.*np.pi * expt['nu_line'] / (0.5 * expt['survey_dnutot'] * c['rnu'])
-    
-    # Define noise-term beams
-    D0 = 0.5 * 1.22 * 300. / np.sqrt(2.*np.log(2.)) # Dish FWHM prefactor [metres]
-    sigma_kpar = np.sqrt(16.*np.log(2)) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
-    sigma_kperp =  np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
-                 / (c['r'] * D0 * (1.+c['z'])) * KPERP_FACTOR
-    #sigma_kpar = (2.*np.pi) * expt['nu_line'] / (expt['dnu'] * c['rnu']) * KPAR_FACTOR
-    #sigma_kperp = 1. / (expt['beam_fwhm'] * c['r']) * KPERP_FACTOR
-    
-    # Sanity check: Require that Sarea > Nbeam * (beam)^2
-    if (expt['Sarea'] < expt['Nbeam'] / (sigma_kperp * c['r'])**2.):
-        raise ValueError("Sarea is less than (Nbeam * beam^2)")
-    
-    # Exponential beam
-    # FIXME: Overflows here for large q, y.
-    if expt['interferometer']:
-        # Interferometer has Gaussian in par., step fn. in perp. direction
-        #stepfn = np.ones(q.shape); stepfn[np.where(q > qmax)] = INF_NOISE
-        invbeam2 = np.exp((y/(c['rnu']*sigma_kpar))**2.) #* stepfn
-    else:
-        # Single-dish experiment has Gaussian beams in perp. and par. directions
-        invbeam2 =  np.exp((q/(c['r']*sigma_kperp))**2.) \
-                  * np.exp((y/(c['rnu']*sigma_kpar))**2.)
-    
-    # Only perp or parallel beam
-    #invbeam2 = np.exp((q/(c['r']*sigma_kperp))**2.)
-    #invbeam2 = np.exp((y/(c['rnu']*sigma_kpar))**2.)
-    # (N.B. To ~reproduce Mario's result, use only perp. beam and set KPERP_FACTOR=4)
+        # Mode not recognised (safest just to raise an error)
+        raise ValueError("Experiment mode not recognised. Choose 'interferom', 'dish', or 'combined'.")
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
     # FIXME: Leave this cut-off in? It does have a small effect
+    #kfg = 2.*np.pi * expt['nu_line'] / (0.5 * expt['survey_dnutot'] * c['rnu'])
     #invbeam2[np.where(kpar < kfg)] = INF_NOISE
-    
-    """
-    # Save noise term as fn. of kper, kpar
-    if expt['interferometer']:
-        np.save("CN_interferom", noise * invbeam2)
-    else:
-        np.save("CN_singledish", noise * invbeam2)
-    """
-    return noise * invbeam2
+    return noise
 
 
 def Csignal(q, y, cosmo, expt):
@@ -916,14 +946,14 @@ def Csignal(q, y, cosmo, expt):
     k = np.sqrt(kpar**2. + kperp**2.)
     u2 = (kpar / k)**2.
     
-    # RSD function
+    # RSD function (bias 'btot' already includes scale-dep. bias/non-Gaussianity)
     if RSD_FUNCTION == 'kaiser':
         # Pedro's notes, Eq. 7
         Frsd = (c['btot'] + c['f']*u2)**2. * np.exp(-u2*(k*c['sigma_nl'])**2.)
     else:
         # arXiv:0812.0419, Eq. 5
         sigma_nl2_eff = (c['D'] * c['sigma_nl'])**2. * (1. - u2 + u2*(1.+c['f'])**2.)
-        Frsd = (c['btot'] + c['f']*u2)**2.* np.exp(-0.5 * k**2. * sigma_nl2_eff)
+        Frsd = (c['btot'] + c['f']*u2)**2. * np.exp(-0.5 * k**2. * sigma_nl2_eff)
     
     # Construct signal covariance and return
     cs = Frsd * (1. + c['A'] * c['fbao'](k)) * c['D']**2. * c['pk_nobao'](k)
@@ -1052,8 +1082,10 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     u2 = y**2. / ( y**2. + (q * rnu/r * aperp/apar)**2. )
     
     # Calculate bias (incl. non-Gaussianity, if requested)
-    b = c['btot'] = c['bHI']
-    if transfer_fn is not None:
+    s_k = 1. + c['beta_1'] * k + c['beta_2'] * k**2.
+    if transfer_fn is None:
+        b = c['btot'] = c['bHI'] * s_k
+    else:
         # Get values/derivatives of matter transfer function term, 1/(T(k) k^2)
         _Tfn, _dTfn_dk, _dTfn_dmnu = transfer_fn
         Tfn = _Tfn(k); dTfn_dk = _dTfn_dk(k)
@@ -1062,8 +1094,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         fNL = c['fNL']
         delta_c = 1.686 / c['D'] # LCDM critical overdensity (e.g. Eke et al. 1996)
         alpha = (100.*c['h'])**2. * c['omega_M_0'] * delta_c * Tfn / (C**2. * c['D'])
-        c['btot'] = b + 3.*(b - 1.) * alpha * fNL
-        b = c['btot']
+        b = c['btot'] = c['bHI'] * s_k + 3.*(c['bHI'] - 1.) * alpha * fNL
     
     # Calculate Csignal, Cnoise, Cfg
     if not cv_limited:
@@ -1078,7 +1109,31 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         cs = np.ones(q.shape)
         ctot = Cbeam(q, y, cosmo, expt)
     
+    """
+    #########################################
+    # FIXME
+    # Output V_eff = cs/cn / (1 + cs/cn)
+    kperp = np.logspace(-5., 3., 600)
+    kpar = np.logspace(-5., 1., 500)
+    Kperp, Kpar = np.meshgrid(kperp, kpar)
+    qq = c['r'] * Kperp
+    yy = c['rnu'] * Kpar
+    _cn = Cnoise(qq, yy, cosmo, expt)
+    _cs = Csignal(qq, yy, cosmo, expt)
+    snr = _cs / _cn
+    Veff = snr / (1. + snr)
+    mode = "int" #"int" #"sd"
+    np.save("snr-Veff-"+mode, Veff)
+    np.save("snr-kperp-"+mode, kperp)
+    np.save("snr-kpar-"+mode, kpar)
+    np.save("snr-cn-"+mode, _cn)
+    np.save("snr-cs-"+mode, _cs)
+    exit()
+    #########################################
+    """
+    
     # Calculate derivatives of the RSD function we are using
+    # (Ignores scale-dep. of bias in drsd_sk; that's included later)
     if RSD_FUNCTION == 'kaiser':
         drsd_df = 2. * u2 / (b + c['f']*u2)
         drsd_dsig2 = -k**2. * u2
@@ -1099,7 +1154,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         
         # Derivatives of b_NG
         dbng_fNL = 3.*(b - 1.) * alpha
-        dbng_bHI = 1. + 3.*alpha*fNL # Used in deriv_bHI
+        dbng_bHI = s_k + 3.*alpha*fNL # Used in deriv_bHI
         dbng_k = -3.*(b - 1.) * alpha * fNL * dTfn_dk #(2./k + dTk_k/Tk)
         dbng_f = -6.*(b - 1.) * alpha * fNL * np.log(a)
         
@@ -1117,15 +1172,16 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
             dbng_dmnu_term = dbng_mnu * fac # Used in deriv_mnu
         
         # Derivatives of C_S
-        dbias_k = dbng_k * fac # Used in deriv_aperp,par
+        dbias_k = 2. * c['bHI'] * (c['beta_1'] + 2.*k*c['beta_2']) / (b + c['f']*u2) \
+                 + dbng_k * fac
         dbng_df_term = dbng_f * fac # Used in deriv_f
         
         deriv_fNL = dbng_fNL * fac * cs / ctot
         deriv_omegak_ng = dbng_omegak * fac * cs / ctot
         deriv_omegaDE_ng = dbng_omegaDE * fac * cs / ctot
     else:
-        dbng_bHI = 1.
-        dbias_k = 0.
+        dbng_bHI = s_k
+        dbias_k = 2. * c['bHI'] * (c['beta_1'] + 2.*k*c['beta_2']) / (b + c['f']*u2)
         dbng_df_term = 0.
         dbng_dmnu_term = 0.
         deriv_omegak_ng = 0.
@@ -1133,12 +1189,16 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     
     # Get analytic log-derivatives for parameters
     deriv_A   = c['fbao'](k) / (1. + c['A']*c['fbao'](k)) * cs / ctot
-    deriv_bHI = dbng_bHI * 2. / (b + c['f']*u2) * cs / ctot
+    deriv_bHI = 2. * dbng_bHI / (b + c['f']*u2) * cs / ctot
     deriv_f   = ( use['f_rsd'] * drsd_df \
                 + use['f_growthfactor'] * 2.*np.log(a) \
                 + dbng_df_term ) * cs / ctot
     deriv_sig2 = drsd_dsig2 * cs / ctot
     deriv_pk = cs / ctot
+    
+    # Analytic log-derivatives for scale-dependent bias parameters
+    deriv_beta1 = 2. * k * c['bHI'] / (b + c['f']*u2) * cs / ctot
+    deriv_beta2 = 2. * k**2. * c['bHI'] / (b + c['f']*u2) * cs / ctot
     
     # Get analytic log-derivatives for new parameters (FIXME)
     deriv_sigma8 = (2. / c['sigma_8']) * cs / ctot
@@ -1193,6 +1253,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # Make list of (non-optional) derivatives
     deriv_list = [ deriv_A, deriv_bHI, deriv_Tb, deriv_sig2, deriv_sigma8, 
                    deriv_ns, deriv_f, deriv_aperp, deriv_apar ]
+    # FIXME: Add d_beta1, d_beta2
     
     # Evaluate derivatives for massive neutrinos and add to list
     if massive_nu_fn is not None:
@@ -1590,13 +1651,10 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns=None, return_pk=False,
     expt['dnutot'] = numax - numin
     z = 0.5 * (zmax + zmin)
     
-    # For interferometers, calculate FOV and enforce Sarea == fov
-    if expt['interferometer']:
-        # Calculate FOV (in radians), with C = 3e8 m/s, freq = (nu [MHz])*1e6 Hz
-        nu = expt['nu_line'] / (1. + z)
-        expt['fov'] = (1.02 / (nu * expt['Ddish']) * (3e8 / 1e6))**2.
-        #expt['Sarea'] = expt['fov']
-        #print "WARNING: Interferometer mode currently enforces Sarea = fov"
+    # Calculate FOV (only used for interferom. mode)
+    # FOV in radians, with C = 3e8 m/s, freq = (nu [MHz])*1e6 Hz
+    nu = expt['nu_line'] / (1. + z)
+    expt['fov'] = (1.02 / (nu * expt['Ddish']) * (3e8 / 1e6))**2.
     
     # Pack values and functions into the dictionaries cosmo, expt
     cosmo['omega_HI'] = omega_HI(z, cosmo)
@@ -1612,7 +1670,7 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns=None, return_pk=False,
     
     # Set-up integration sample points in (k, u)-space
     kmax = 130. #2. * 12.16 * 0.7 # Attentuated by beam (FIXME: Proper scale to use?)
-    kmin = 1e-4 #2.*np.pi / Vphys**(1./3.) # FIXME
+    kmin = 1e-5 #2.*np.pi / Vphys**(1./3.) # FIXME
     
     # FIXME: kmin is larger than min. interferom. kperp!
     # Should probably set kmin to be very low -- perhaps min(kperp_min, kpar_min)
@@ -1654,25 +1712,6 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns=None, return_pk=False,
         raise ValueError(
           "Input P(k) only goes up to %3.2f Mpc^-1, but kmax is %3.2f Mpc^-1." \
           % (cosmo['k_in_max'], kmax) )
-    
-    """
-    # TESTING: Output alpha derivative terms
-    u = 1.
-    k = np.logspace(-4., 2., 1000)
-    names = ['dvol_daperp', 'drsd_daperp', 'dkfn_daperp', 'dvol_dapar', 'drsd_dapar', 'dkfn_dapar']
-    deriv_terms = alpha_derivs(k, u, c, expt)
-    
-    P.subplot(111)
-    for i in range(len(deriv_terms)):
-        P.plot(k, np.abs(deriv_terms[i]), label=names[i])
-    print c['z']
-    P.legend(loc='upper right', prop={'size':'x-small'})
-    P.xscale('log')
-    P.yscale('log')
-    P.ylim((1e-4, 1e3))
-    P.show()
-    exit()
-    """
     
     # Get derivative terms for Fisher matrix integrands, then perform the 
     # integrals and populate the matrix

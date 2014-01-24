@@ -24,8 +24,8 @@ size = comm.Get_size()
 # Load cosmology and experimental settings
 e = experiments
 cosmo = experiments.cosmo
-expts = [e.GBT, e.BINGO, e.WSRT, e.APERTIF, e.JVLA, e.ASKAP, e.KAT7, e.MeerKAT, e.SKA1, e.SKAMID, e.SKAMID, e.SKAMID_COMP, e.SKAMID_COMP_BIGZ, e.SKAMID_BIGZ, e.SKA_CORE]
-names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1", "SKAMID", "iSKAMID", "iSKAMID_COMP", "iSKAMID_COMP_BIGZ", "iSKAMID_BIGZ", "iSKA_CORE"]
+expts = [e.GBT, e.BINGO, e.WSRT, e.APERTIF, e.JVLA, e.ASKAP, e.KAT7, e.MeerKAT, e.SKA1, e.SKAMID, e.SKAMID, e.exptS, e.exptM, e.exptL, e.exptL]
+names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1", "SKAMID", "iSKAMID", "exptS", "iexptM", "exptL", "cexptL"]
 
 #"SKA1_CV", "SKAMID_5kdeg", "SKAMID_mnu01", "iSKAMID_mnu01", "SKAMID_COMP_BIGZ", "iSKAMID_COMP_BIGZ", "iSKAMID_BIGZ"]
 
@@ -60,7 +60,8 @@ else:
 cv_limited = False
 #if k == 13: cv_limited = True
 #if k == 14: expts[k]['Sarea'] = 39e3*(D2RAD)**2.
-if names[k][0] == "i": expts[k]['interferometer'] = True
+if names[k][0] == "i": expts[k]['mode'] = "interferom."
+if names[k][0] == "c": expts[k]['mode'] = "combined"
 
 expt = expts[k]
 survey_name = names[k]
@@ -80,7 +81,7 @@ H, r, D, f = cosmo_fns
 
 # Massive neutrinos
 cosmo['mnu'] = 0.15
-massive_nu_fn = baofisher.deriv_logpk_mnu(cosmo['mnu'], cosmo, dmnu=0.01, kmax=20.)
+massive_nu_fn = baofisher.deriv_logpk_mnu(cosmo['mnu'], cosmo, dmnu=0.01, kmax=130.)
 
 # Non-gaussianity
 transfer_fn = None #baofisher.deriv_transfer(cosmo, "camb/baofisher_transfer_out.dat")
@@ -121,6 +122,7 @@ for i in range(zs.size-1):
     
     print ">>>", myid, "working on redshift bin", i, " -- z =", zc[i]
     
+    """
     ##################################
     # FIXME: Special test to bump dish numbers in SKA+MK overlap bands
     zmin_mk = (1420. / 1015.) - 1.
@@ -132,6 +134,7 @@ for i in range(zs.size-1):
         expt['Ndish'] = 190.
         print "\tDISHES: 190"
     ##################################
+    """
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
