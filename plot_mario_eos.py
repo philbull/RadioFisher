@@ -17,7 +17,9 @@ import euclid
 cosmo = experiments.cosmo
 
 #names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1", "SKAMID", "SKAMID_COMP", "iSKAMID", "iSKAMID_COMP", "SKA1_CV"]
-names = ["xSKA", "xSKA_extended"]  #"SKA1"] # "SKA1"] # , "iSKAMID_COMP"]
+#names = ["xSKA", "xSKA_extended"]  #"SKA1"] # "SKA1"] # , "iSKAMID_COMP"]
+#names = ['SKAMID', 'iSKAMID']
+names = ["exptL", "cexptL"] #["exptS", "iexptM", 
 
 cols = ['r', 'g', 'c']
 colours = ['#22AD1A', '#3399FF', '#ED7624']
@@ -39,7 +41,7 @@ for k in range(len(names)):
     zs, Hs, dAs, Ds, fs = np.genfromtxt(root+"-cosmofns-smooth.dat").T
     kc = np.genfromtxt(root+"-fisher-kc.dat").T
     
-    print "z-range:", np.min(zs), np.max(zs), zc.size, np.min(zc), np.max(zc)
+    print "z-range:", zc.size, np.min(zc), np.max(zc)
     
     # Load Fisher matrices as fn. of z
     Nbins = zc.size
@@ -48,11 +50,11 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
     pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'fNL']
+             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'Mnu']
     pnames += ["pk%d" % i for i in range(kc.size)]
     
     zfns = []
-    excl = [2,4,5, 6,7,8,  9, 14, 15] #15 # FLAT
+    excl = [2,4,5, 6,7,8,  9, 14,] #15 # FLAT
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
     F, lbls = baofisher.combined_fisher_matrix( F_list,
@@ -64,19 +66,25 @@ for k in range(len(names)):
     else:
         l = Nbins - 1
     Fpl = F.copy()
+    lbls_pl = ['omega_k', 'omega_DE', 'w0', 'wa']
     for i in range(1,4):
       for j in range(1,4):
         Fpl[l+2+i,l+2+j] += euclid.planck_prior[i,j]
-        print lbls[l+2+i], lbls[l+2+j]
+        #print lbls[l+2+i], lbls_pl[i], lbls[l+2+j], lbls_pl[j]
     
-    print "cov:", 1. / np.sqrt(np.diag(F))
+    print "-"*50
+    print names[k]
+    print "-"*50
+    
+    
+    cov = np.linalg.inv(F)
+    cov_pl = np.linalg.inv(Fpl)
+    for j in range(len(lbls)):
+        print "%10s    %3.4f  %3.4f  %3.4f" % (lbls[j], np.sqrt(cov[j,j]), np.sqrt(cov_pl[j,j]), 1./np.sqrt(np.diag(F))[j])
     
     # Invert matrices
     cov = np.linalg.inv(F)
     cov_pl = np.linalg.inv(Fpl)
-    
-    if k == 1:
-        baofisher.plot_corrmat(F, lbls)
     
     # Indices of fns. of z
     pw0 = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
@@ -131,7 +139,7 @@ ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w,
 for e in ellipses: ax.add_patch(e)
 
 
-labels = ["SKAMID + Planck", "SKAMID + low-z + Planck", "Euclid"]
+labels = ["Behemoth (SD) + Planck", "Behemoth (SD+int) + Planck", "Euclid"]
 lines = []
 lines.append( matplotlib.lines.Line2D([0.,], [0.,], lw=2.5, color=colours[0]) )
 lines.append( matplotlib.lines.Line2D([0.,], [0.,], lw=2.5, color=colours[1]) )
