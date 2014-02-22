@@ -2,7 +2,6 @@
 """
 Euclid covariance matrices, taken from arXiv:1206.1225
 """
-
 import numpy as np
 
 def covmat_for_fom(sig_x, sig_y, fom, sgn=1.):
@@ -15,6 +14,188 @@ def covmat_for_fom(sig_x, sig_y, fom, sgn=1.):
     sig_xy = sgn * np.sqrt((sig_x*sig_y)**2. - 1./fom**2.)
     cov = np.array( [[sig_x**2., sig_xy], [sig_xy, sig_y**2.]] )
     return cov
+
+def add_planck_prior(F, lbls, info=False):
+    """
+    Add Planck prior to a given Fisher matrix.
+    """
+    print "WARNING: add_planck_prior() is obsolete."
+    #lbls_planck = ['omegak', 'omegaDE', 'w0', 'wa']
+    lbls_planck = ['w0', 'wa', 'omegaDE', 'omegak', 'w_m', 'w_b', 'n_s']
+    
+    Fpl = F.copy()
+    for ii in range(len(lbls_planck)):
+      if lbls_planck[ii] in lbls:
+        for jj in range(len(lbls_planck)):
+          if lbls_planck[jj] in lbls:
+            _i = lbls.index(lbls_planck[ii])
+            _j = lbls.index(lbls_planck[jj])
+            Fpl[_i,_j] += planck_prior_full[ii,jj]
+            if info: print lbls[_i], lbls_planck[ii], "//", lbls[_j], lbls_planck[jj]
+      if lbls_planck[ii] not in lbls:
+        if info: print "Planck prior:", lbls_planck[ii], "not found in Fisher matrix."
+    return Fpl
+
+def add_detf_planck_prior(F, lbls, info=False):
+    """
+    Add Planck prior from DETF. See process_detf_planck_fisher.py for details 
+    of its construction.
+    """
+    F_planck = np.genfromtxt("fisher_detf_planck.dat")
+    lbls_planck = ['n_s', 'omegaM', 'omegab', 'omegak', 'omegaDE', 
+                   'h', 'w0', 'wa', 'logA_S']
+    
+    # FIXME: Should add nuisance parameters to Fisher matrix.
+    print "FIXME: add_detf_planck_prior() should add nuisance parameters too."
+    
+    # Add prior
+    Fpl = F.copy()
+    for ii in range(len(lbls_planck)):
+      if lbls_planck[ii] in lbls:
+        for jj in range(len(lbls_planck)):
+          if lbls_planck[jj] in lbls:
+            _i = lbls.index(lbls_planck[ii])
+            _j = lbls.index(lbls_planck[jj])
+            Fpl[_i,_j] += F_planck[ii,jj]
+            if info: print lbls[_i], lbls_planck[ii], "//", lbls[_j], lbls_planck[jj]
+      if lbls_planck[ii] not in lbls:
+        if info: print "Planck prior:", lbls_planck[ii], "not found in Fisher matrix."
+    return Fpl
+
+def euclid_to_baofisher(F, cosmo):
+    """
+    Transform Planck prior from Euclid science review, Amendola (et al. 2012), 
+    Table 1.17, to our set of parameters.
+    Fisher matrix available from Mukherjee et al., arXiv:0803.1616v1.
+    
+    Euclid:    {w0, wa, omega_DE, omega_k, w_m, w_b, n_s}
+    BAOFisher: {n_s, w0, wa, omega_b, omega_k, omega_DE, h}
+    """
+    # Fiducial parameters from Mukherjee et al.
+    h = 0.73; w_m = 0.127; w_b = 0.022
+    ok = 0.; w0 = -1.; wa = 0.; n_s = 0.9602
+    h2 = h**2.
+    om = w_m / h2; ob = w_b / h2
+    ode = 1. - om - ok
+    
+    # Our fiducial values
+    _om = cosmo['omega_M_0']; _ob = cosmo['omega_b_0']
+    _ode = cosmo['omega_lambda_0']; _h = cosmo['h']; _ns = cosmo['ns']
+    _ok = 1. - _om - _ode; _w0 = -1.; _wa = 0.
+    
+    # Construct transformation matrix from derivatives
+    dw0_dp  = [0., 1., 0., 0., 0., 0., 0.]
+    dwa_dp  = [0., 0., 1., 0., 0., 0., 0.]
+    doDE_dp = [0., 0., 0., 0., 0., 1., 0.]
+    dok_dp  = [0., 0., 0., 0., 1., 0., 0.]
+    dwm_dp  = [0., 0., 0., 0., -h2, -h2, 2.*h*om]
+    dwb_dp  = [0., 0., 0., h2, 0., 0., 2.*h*ob]
+    dns_dp  = [1., 0., 0., 0., 0., 0., 0.]
+    M = [dw0_dp, dwa_dp, doDE_dp, dok_dp, dwm_dp, dwb_dp, dns_dp]
+    M = np.array(M).T
+    
+    # Re-scale to our fiducial values
+    M[0,:] *= n_s / _ns
+    M[1,:] *= w0 / _w0
+    M[3,:] *= ob / _ob
+    M[5,:] *= ode / _ode
+    M[6,:] *= h / _h
+    
+    # Transform into new set of parameters
+    Fnew = np.dot(M, np.dot(F, M.T))
+    return Fnew
+
+def camb_to_baofisher(F, cosmo):
+    """
+    Transform Fisher matrix in CAMB parameters to our parameters (assumes the 
+    same fiducial values)
+    
+    CAMB:      {n_s, w0, wa, w_b, omega_k, w_cdm, h}
+    BAOFisher: {n_s, w0, wa, omega_b, omega_k, omega_DE, h}
+    """
+    h = cosmo['h']; h2 = cosmo['h']**2.
+    om = cosmo['omega_M_0']; ob = cosmo['omega_b_0']
+    ode = cosmo['omega_lambda_0']
+    ok = 1. - om - ode
+    
+    # Construct transformation matrix from derivatives
+    dns_dp = [1., 0., 0., 0., 0., 0., 0.]
+    dw0_dp = [0., 1., 0., 0., 0., 0., 0.]
+    dwa_dp = [0., 0., 1., 0., 0., 0., 0.]
+    dwb_dp = [0., 0., 0., h2, 0., 0., 2.*h*ob]
+    dok_dp = [0., 0., 0., 0., 1., 0., 0.]
+    dwc_dp = [0., 0., 0., -h2, -h2, -h2, 2.*h*(1.-ok-ode-ob)]
+    dh_dp  = [0., 0., 0., 0., 0., 0., 1.]
+    M = [dns_dp, dw0_dp, dwa_dp, dwb_dp, dok_dp, dwc_dp, dh_dp]
+    M = np.array(M).T
+    
+    # Transform into new set of parameters
+    Fnew = np.dot(M, np.dot(F, M.T))
+    return Fnew
+
+def detf_to_baofisher(fname, cosmo):
+    """
+    Transform Planck prior from DETF to our set of parameters. DETF Fisher 
+    matrix can be obtained from:
+    http://c3.lbl.gov:8000/Trac.Cosmology/browser/Programs/FoMSWG/tags/original/DATA/PLANCK.dat?rev=842
+    
+    DETF:      {n_s, w_m, w_b, w_k, w_DE, deltaGamma, M, logG0, log A_S, {w_i}}
+    BAOFisher: {n_s, w0, wa, omega_b, omega_k, omega_DE, h}
+    """
+    # Load DETF Planck Fisher matrix (indexes start from 0)
+    dat = np.genfromtxt(fname).T
+    N = np.max(dat[0]) + 1
+    F = np.zeros((N,N))
+    for k in range(dat.shape[1]):
+        i = dat[0,k]
+        j = dat[1,k]
+        F[i,j] = dat[2,k]
+    
+    # DETF fiducial values (from p8 of arXiv:0901.0721)
+    n_s = 0.963; w_m = 0.1326; w_b = 0.0227; w_k = 0.; w_DE = 0.3844; h = 0.719
+    w0 = -1.; wa = 0.; h2 = h**2.
+    om = w_m / h2; ob = w_b / h2; ok = w_k / h2; ode = w_DE / h2
+    
+    # Our fiducial values
+    _om = cosmo['omega_M_0']; _ob = cosmo['omega_b_0']
+    _ode = cosmo['omega_lambda_0']; _h = cosmo['h']; _ns = cosmo['ns']
+    _ok = 1. - _om - _ode; _w0 = -1.; _wa = 0.
+    a0 = 0.1; da = 0.025 # Scale-factor binning
+
+    # Define transformation matrix (derivatives)
+    M = np.zeros((7, N))
+    
+    # d(DETF)/d(n_s)
+    M[0,0] = 1. * (n_s/_ns)
+    
+    # d(DETF)/d(w0), d(DETF)/d(wa)
+    for i in range(36):
+        aa = 1. - (float(i) + 0.5)*da # Centroid of 'a' bin (p8 of arXiv:0901.0721)
+        M[1, 9+i] = 1. * (w0/_w0) # d(w_i)/d(w0)
+        M[2, 9+i] = 1. - aa       # d(w_i)/d(wa)
+    
+    # d(DETF)/d(omega_b)
+    M[3,2] = h2 * (ob/_ob) # d(w_b)/d(omega_b)
+    
+    # d(DETF)/d(omega_k)
+    M[4,1] = -h2 # d(w_m)/d(omega_k)
+    M[4,3] = h2  # d(w_k)/d(omega_k)
+    
+    # d(DETF)/d(omega_DE)
+    M[5,1] = -h2 * (ode/_ode) # d(w_m)/d(omega_DE)
+    M[5,4] = h2 * (ode/_ode)  # d(w_DE)/d(omega_DE)
+    
+    # d(DETF)/d(h)
+    M[6,2] = 2.*h*ob * (h/_h)  # d(w_b)/d(h)
+    M[6,1] = 2.*h*om * (h/_h)  # d(w_m)/d(h)
+    M[6,3] = 2.*h*ok * (h/_h)  # d(w_k)/d(h)
+    M[6,4] = 2.*h*ode * (h/_h) # d(w_DE)/d(h)
+    
+    # Transform into new set of parameters
+    M = np.array(M)
+    Fnew = np.dot(M, np.dot(F, M.T))
+    return Fnew
+
 
 # gamma, w0 (for fixed omega_k=0, wa=0) [Tbl 1.5, Fig 1.16]
 cov_gamma_w_ref = covmat_for_fom(0.02, 0.017, 3052, sgn=-1.) # Reference

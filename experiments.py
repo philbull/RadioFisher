@@ -3,17 +3,16 @@ import scipy.interpolate
 from units import *
 
 # Define fiducial cosmology and parameters
+# Planck-only best-fit parameters, from Table 2 of Planck 2013 XVI.
 cosmo = {
-    'omega_M_0':        0.26,
-    'omega_lambda_0':   0.74,
-    'omega_b_0':        0.045,
-    'omega_HI_0':       9.4e-4,
-    'omega_n_0':        0.0,
-    'omega_k_0':        0.0,
+    'omega_M_0':        0.316,
+    'omega_lambda_0':   0.684,
+    'omega_b_0':        0.049,
+    'omega_HI_0':       6.5e-4, # 9.4e-4
     'N_nu':             0,
-    'h':                0.70,
-    'n':                0.96,
-    'sigma_8':          0.8,
+    'h':                0.67,
+    'ns':               0.962,
+    'sigma_8':          0.834,
     'gamma':            0.55,
     'w0':               -1.,
     'wa':               0.,
@@ -61,35 +60,52 @@ cosmo['foregrounds'] = foregrounds
 
 
 ################################################################################
-# Interferometer n(u) distributions
-################################################################################
-
-# Define available n(x) files (all for dec=90deg for now)
-nx_root = "array_config/"
-nx_files = [ 
-  "nx_KAT7_dec90.dat", 
-  "nx_SKAM190_dec90_smalldu.dat",      "nx_SKAM190_dec90_bigdu.dat", 
-  "nx_SKAMREF2_dec90_smalldu.dat",     "nx_SKAMREF2_dec90_bigdu.dat", 
-  "nx_MKREF2_dec90_smalldu.dat",       "nx_MKREF2_dec90_bigdu.dat", 
-  "nx_SKAMREF2COMP_dec90_smalldu.dat", "nx_SKAMREF2COMP_dec90_bigdu.dat",
-  "nx_SKAMREF2COMP_dec90_minu.dat",    "nx_SKAMREF2_dec90_minu.dat"
-]
-nx_names = ["KAT7", "SKA1", "SKA1_bigdu", "SKAMID", "SKAMID_bigdu", "MK", "MK_bigdu", "SKAMID_compact", "SKAMID_compact_bigdu", "SKAMID_compact_minu", "SKAMID_minu"]
-
-# Load n(x) interpolation functions (see rescale_baseline_density.py)
-# and pack into a dictionary
-nx = {}
-for i in range(len(nx_files)):
-    x, _nx = np.genfromtxt(nx_root + nx_files[i]).T
-    interp_nx = scipy.interpolate.interp1d( x, _nx, kind='linear', 
-                                            bounds_error=False, fill_value=0. )
-    nx[nx_names[i]] = interp_nx
-
-
-################################################################################
 # Illustrative experiments used in paper
 ################################################################################
 
+exptS = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            1,                 # No. of dishes
+    'Nbeam':            50,                # No. of beams (for multi-pixel detectors)
+    'Ddish':            30.,               # Single dish diameter [m]
+    'Tinst':            50.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1100.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    }
+exptS.update(SURVEY)
+
+exptM = {
+    'mode':             'interferom',      # Interferometer or single dish
+    'Ndish':            160, #128              # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            4.,                # Single dish diameter [m]
+    'Tinst':            35.*(1e3),   #35      # System temp. [mK]
+    'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1000., #800.,              # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Dmax':             60.,              # Max. interferom. baseline [m]
+    'Dmin':             4.                 # Min. interferom. baseline [m]
+    }
+exptM.update(SURVEY)
+
+exptL = {
+    'mode':             'combined',        # Interferometer or single dish
+    'Ndish':            250,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            20.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1100.,             # Max. freq. of survey
+    'dnu':              0.1,             # Bandwidth of single channel [MHz]
+    'Dmax':             600.,              # Max. interferom. baseline [m]
+    'Dmin':             15.                # Min. interferom. baseline [m]
+    }
+exptL.update(SURVEY)
+
+#################################
+# OLD VERSIONS
+"""
 exptS = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            1,                 # No. of dishes
@@ -125,10 +141,12 @@ exptL = {
     'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1100.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
-    'n(x)':             nx['SKAMID']       # Interferometer antenna density
+    'n(x)':             nx['SKAMREF'],     # Interferometer antenna density
+    'Dmax':             100.,              # Max. interferom. baseline [m]
+    'Dmin':             20.                # Min. interferom. baseline [m]
     }
 exptL.update(SURVEY)
-
+"""
 
 ################################################################################
 # Configurations from Mario's notes
@@ -171,7 +189,6 @@ WSRT = {
     }
 WSRT.update(SURVEY)
 
-# FIXME: Does this mean 37 beams per dish!?
 APERTIF = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            14,                # No. of dishes
@@ -184,7 +201,6 @@ APERTIF = {
     }
 APERTIF.update(SURVEY)
 
-# FIXME: Max. freq. was actually quoted as 1700 MHz!
 JVLA = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            27,                # No. of dishes
@@ -194,18 +210,20 @@ JVLA = {
     'survey_dnutot':    420.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'n(x)': "array_config/nx_VLAD_dec90.dat" # Interferometer antenna density
     }
 JVLA.update(SURVEY)
 
 ASKAP = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            36,                # No. of dishes
-    'Nbeam':            30,                # No. of beams (for multi-pixel detectors)
+    'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
     'Ddish':            12.,               # Single dish diameter [m]
     'Tinst':            50.*(1e3),         # System temp. [mK]
     'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1000.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'n(x)': "array_config/nx_ASKAP_dec30.dat" # Interferometer antenna density
     }
 ASKAP.update(SURVEY)
 
@@ -218,48 +236,105 @@ KAT7 = {
     'survey_dnutot':    220.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
-    'n(x)':             nx['KAT7']         # Interferometer antenna density
+    'n(x)': "array_config/nx_KAT7_dec30.dat" # Interferometer antenna density
     }
 KAT7.update(SURVEY)
 
 # NB: For MeerKAT Band 1 only.
+MeerKAT_band1 = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            64,                # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            13.5,              # Single dish diameter [m]
+    'Tinst':            30.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1420.,             # Max. freq. of survey
+    'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'n(x)': "array_config/nx_MKREF2_dec30.dat" # Interferometer antenna density
+    }
+MeerKAT_band1.update(SURVEY)
+
+# NB: For MeerKAT Band 2 only.
 MeerKAT = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            64,                # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            13.5,              # Single dish diameter [m]
     'Tinst':            30.*(1e3),         # System temp. [mK]
-    'survey_dnutot':    650., #435.,       # Total bandwidth of *entire* survey [MHz]
+    'survey_dnutot':    435.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1015.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
-    'n(x)':             nx['MK']           # Interferometer antenna density
+    'n(x)': "array_config/nx_MKREF2_dec30.dat" # Interferometer antenna density
     }
 MeerKAT.update(SURVEY)
 
-SKA1 = {
+SKA1MID = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            190,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            20.*(1e3),         # System temp. [mK]
-    'survey_dnutot':    800.,              # Total bandwidth of *entire* survey [MHz]
-    'survey_numax':     1150.,             # Max. freq. of survey
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1050.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
-    'n(x)':             nx['SKA1']         # Interferometer antenna density
+    'n(x)': "array_config/nx_SKAM190_dec30.dat" # Interferometer antenna density
     }
-SKA1.update(SURVEY)
+SKA1MID.update(SURVEY)
 
-SKAMID = {
+
+superSKA1MID = {
     'mode':             'dish',            # Interferometer or single dish
-    'Ndish':            254,               # No. of dishes
-    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
-    'Ddish':     (15.*190.+13.5*64.)/254., # Single dish diameter [m]
+    'Ndish':            254, #190,               # No. of dishes
+    'Nbeam':            1,  # NOTE!       # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            20.*(1e3),         # System temp. [mK]
-    'survey_dnutot':    435.,              # Total bandwidth of *entire* survey [MHz]
-    'survey_numax':     1015.,             # Max. freq. of survey
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1150., #FIXME 1050            # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
-    'n(x)':             nx['SKAMID']       # Interferometer antenna density
+    'n(x)': "array_config/nx_SKAM190_dec30.dat" # Interferometer antenna density
     }
-SKAMID.update(SURVEY)
+superSKA1MID.update(SURVEY)
 
+# For SKA1-SUR band 2 only
+SKA1SUR = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            60,                # No. of dishes
+    'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            30.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1150.,             # Max. freq. of survey
+    'dnu':              0.005              # Bandwidth of single channel [MHz]
+    }
+SKA1SUR.update(SURVEY)
 
+SKA1SUR_band1 = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            60,                # No. of dishes
+    'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            50.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     850.,              # Max. freq. of survey
+    'dnu':              0.005              # Bandwidth of single channel [MHz]
+    }
+SKA1SUR_band1.update(SURVEY)
+
+# Surveys that are fefined as overlap between two instruments
+SKAMID_PLUS = {
+    'overlap':          [SKA1MID, MeerKAT],
+    'n(x)':             "array_config/nx_SKAMREF2COMP_dec30.dat"
+    }
+
+SKAMID_PLUS_band1 = {
+    'overlap':          [SKA1MID, MeerKAT_band1],
+    'n(x)':             "array_config/nx_SKAMREF2COMP_dec30.dat"
+    }
+
+SKASUR_PLUS = {
+    'overlap':          [SKA1SUR, ASKAP]
+    }
+
+SKASUR_PLUS_band1 = {
+    'overlap':          [SKA1SUR_band1, ASKAP]
+    }

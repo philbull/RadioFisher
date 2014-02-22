@@ -60,7 +60,7 @@ def process_baseline_file(fname):
     
     # Integrate n(u) to find normalisation (should be N_dish^2)
     norm = scipy.integrate.simps(2.*np.pi*n*u, u)
-    #print "Renormalising n(u) by factor of", 0.5 * Ndish * (Ndish - 1) / norm
+    print "n(u) renorm. factor:", 0.5 * Ndish * (Ndish - 1) / norm
     #n *= 0.5 * Ndish * (Ndish - 1) / norm
     
     # Convert to freq.-independent expression, n(x) = n(u) * nu^2,
