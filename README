@@ -1,0 +1,65 @@
+================================================================================
+  RadioFisher/BAO-21cm
+         ---
+      Phil Bull
+  philbull@gmail.com
+      Jan 2014
+================================================================================
+
+Cosmology Fisher forecasting code for HI (21cm) intensity mapping experiments.
+
+Released under the Academic Free License (AFL-3.0).
+
+
+REQUIREMENTS
+------------
+
+ - Python (tested with 2.7)
+ - Recent NumPy and SciPy
+ - matplotlib
+ - mpi4py
+ - CAMB (http://camb.info/)
+
+
+INSTALLATION
+------------
+
+This is a collection of Python scripts, none of which need to be compiled or 
+installed before use. However, you should compile CAMB and change the CAMB_EXEC 
+variable in baofisher.py to point at this executable.
+
+GETTING STARTED
+---------------
+
+This code is still under heavy development, so you might need to get your hands 
+a little dirty. The bulk of the forecasting code is in baofisher.py, along with 
+a bunch of convenience functions for manipulating and plotting Fisher matrices.
+
+To get up and running quickly, run full_survey.py like so:
+
+  $ mpirun -n <num_procs> ./full_survey <survey_id>
+
+This will calculate Fisher matrices for a given pre-defined survey (see the top 
+of full_survey.py and the definitions in experiments.py for survey/experiment 
+settings and fiducial cosmological parameters), for a range of redshift bins. 
+The Fisher matrix for each z-bin is stored in the output/ subdirectory.
+
+You can then use the individual plotting scripts to combine and plot the Fisher 
+matrices in various ways, to produce various forecasts for cosmological 
+parameters. This is where you'll really have to get your hands dirty modifying 
+scripts (or using them as templates for your own scripts), depending on what 
+constraints you want to look at.
+
+CITING THIS CODE
+----------------
+
+If you use this code in a scientific work, please cite us! The relevant paper 
+is the following:
+
+Philip Bull, Pedro G. Ferreira, Prina Patel, and Mario Santos (in prep.), 2014.
+
+PROBLEMS / BUGS
+---------------
+
+Email me with bug reports, patches, requests for features and so on.
+

@@ -1,0 +1,6 @@
+
+ * Are kmin and kmax limits for CAMB OK?
+ * Make the code calculate matter power itself, so it controls kmax/kmin
+ * Get code to cache results of CAMB calculations
+ * Why doesn't using Combined mode result in better constraints on M_nu? What does the Fisher integrand look like at high k?
+ * Make it so that the user specifies the list of parameters that should be returned, rather than hard-coding them.
