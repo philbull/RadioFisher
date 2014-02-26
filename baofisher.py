@@ -102,7 +102,7 @@ def ellipse_for_fisher_params(p1, p2, F, Finv=None):
     
     return w, h, ang * 180./np.pi, alpha
 
-def plot_ellipse(F, p1, p2, fiducial, names):
+def plot_ellipse(F, p1, p2, fiducial, names, ax=None):
     """
     Show error ellipse for 2 parameters from Fisher matrix.
     """
@@ -115,12 +115,14 @@ def plot_ellipse(F, p1, p2, fiducial, names):
     # Get 1,2,3-sigma ellipses and plot
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[k]*b, 
                  height=alpha[k]*a, angle=ang, fc='none') for k in range(0, 2)]
-    ax = P.subplot(111)
+    if ax is None: ax = P.subplot(111)
     for e in ellipses: ax.add_patch(e)
-    P.plot(x, y, 'bx')
-    P.xlabel(names[0])
-    P.ylabel(names[1])
-    P.show()
+    ax.plot(x, y, 'bx')
+    
+    if ax is None:
+        ax.set_xlabel(names[0])
+        ax.set_ylabel(names[1])
+        P.show()
 
 
 def triangle_plot(fiducial, F, names, priors=None, skip=None):
@@ -352,6 +354,10 @@ def zbins_const_dnu(expt, cosmo, bins=None, dnu=None, initial_dz=None):
             zbins.append(z_nu(nu))
             nu += dnu
         zbins.append(z_nu(numin))
+        
+        # Check we haven't exactly hit the edge (to ensure no zero-width bins)
+        if np.abs(zbins[-1] - zbins[-2]) < 1e-4:
+            del zbins[-2] # Remove interstitial bin edge
         zbins = np.array(zbins)
         
     zc = [0.5*(zbins[i+1] + zbins[i]) for i in range(zbins.size - 1)]
@@ -450,7 +456,8 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None):
 # Cosmology functions
 ################################################################################
 
-def load_power_spectrum(cosmo, cachefile, kmax=CAMB_KMAX, comm=None, force=False):
+def load_power_spectrum( cosmo, cachefile, kmax=CAMB_KMAX, comm=None, 
+                         force=False, force_load=False ):
     """
     Precompute a number of quantities for Fisher analysis:
       - f_bao(k), P_smooth(k) interpolation functions (spline_pk_nobao)
@@ -489,10 +496,12 @@ def load_power_spectrum(cosmo, cachefile, kmax=CAMB_KMAX, comm=None, force=False
     # load the result from cache
     if myid == 0:
         print "\tprecompute_for_fisher(): Loading matter P(k)..."
-        dat = cached_camb_output(p, cachefile, mode='matterpower', force=force)
+        dat = cached_camb_output(p, cachefile, mode='matterpower', force=force,
+                                 force_load=force_load)
     if comm is not None: comm.barrier()
     if myid != 0:
-        dat = cached_camb_output(p, cachefile, mode='matterpower', force=force)
+        dat = cached_camb_output(p, cachefile, mode='matterpower', force=force, 
+                                 force_load=force_load)
     
     # Load P(k) and split into smooth P(k) and BAO wiggle function
     k_in, pk_in = dat
@@ -606,14 +615,18 @@ def convert_to_camb(cosmo):
     p['wa'] = cosmo['wa']
     return p
 
-def cached_camb_output(p, cachefile, cosmo=None, mode='matterpower', force=False):
+def cached_camb_output(p, cachefile, cosmo=None, mode='matterpower', 
+                       force=False, force_load=False):
     """
     Load P(k) or T(k) from cache, or else use CAMB to recompute it.
     """
     # Create hash of input cosmo parameters
     m = md5.new()
-    for key in p.keys():
-        m.update("%s:%s" % (key, p[key]))
+    keys = p.keys()
+    keys.sort()
+    for key in keys:
+        if key is not "output_root":
+            m.update("%s:%s" % (key, p[key]))
     in_hash = m.hexdigest()
     
     # Check if cached version exists; if so, make sure its hash matches
@@ -625,7 +638,7 @@ def cached_camb_output(p, cachefile, cosmo=None, mode='matterpower', force=False
         hash = header.split("#")[1].strip()
         
         # Compare with input hash; quit if hash doesn't match (unless force=True)
-        if in_hash != hash and not force:
+        if in_hash != hash and not force and not force_load:
             print "\tcached_camb_output: Hashes do not match; delete the cache file and run again to update."
             print "\t\tFile: %s" % cachefile
             print "\t\tHash in file:  %s" % hash
@@ -1070,40 +1083,6 @@ def expand_fisher_with_kbinned_parameter(F_old, pbins, pnew):
 # Noise and signal covariances
 ################################################################################
 
-def Cbeam(q, y, cosmo, expt):
-    """
-    Noise matrix beams, but without a noise contribution. (Used for cosmic 
-    variance-limited calculation only.)
-    """
-    c = cosmo
-    kperp = q / (c['aperp']*c['r'])
-    kpar = y / (c['apar']*c['rnu'])
-    
-    # Foreground-removal scale
-    kfg = 2.*np.pi * expt['nu_line'] / (0.5 * expt['survey_dnutot'] * c['rnu'])
-    
-    # Define noise-term beams
-    D0 = 0.5 * 1.22 * 300. / np.sqrt(2.*np.log(2.)) # Dish FWHM prefactor [metres]
-    sigma_kpar = np.sqrt(16.*np.log(2)) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
-    sigma_kperp =  np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
-                 / (c['r'] * D0 * (1.+c['z']))
-    
-    # Exponential beam
-    # FIXME: Overflows here for large q, y.
-    invbeam2 =  np.exp((q/(c['r']*sigma_kperp))**2.) \
-              * np.exp((y/(c['rnu']*sigma_kpar))**2.)
-    
-    # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
-    # FIXME: Seems to have a big effect for CV-limited calc.!
-    invbeam2[np.where(kpar < kfg)] = INF_NOISE
-    
-    # Scrap this and just do flat dependence for noise
-    invbeam2 = np.ones(q.shape)
-    invbeam2[np.where(kpar > sigma_kpar)] = INF_NOISE
-    invbeam2[np.where(kperp > sigma_kperp)] = INF_NOISE
-    
-    return invbeam2
-
 def interferometer_response(q, y, cosmo, expt):
     """
     Dish multiplicity and beam factors (I * B_perp * B_par) for the noise 
@@ -1199,14 +1178,14 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     """
     Noise covariance matrix, from last equality in Eq. 25 of Pedro's notes.
     A Fourier-space beam has been applied to act as a filter over the survey 
-    volume.
+    volume. Units: mK^2.
     """
     c = cosmo
     kperp = q / (c['aperp']*c['r'])
     kpar = y / (c['apar']*c['rnu'])
     
     # Calculate noise properties
-    Vsurvey = expt['Sarea'] * expt['dnutot']
+    Vsurvey = expt['Sarea'] * expt['dnutot'] / expt['nu_line']
     Tsky = 60e3 * (300.*(1.+c['z'])/expt['nu_line'])**2.55 # Foreground sky signal (mK)
     Tsys = expt['Tinst'] + Tsky
     noise = Tsys**2. * Vsurvey / (expt['ttot'] * expt['dnutot'])
@@ -1240,15 +1219,13 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     # FIXME: Leave this cut-off in? It *should* have a small effect
     # FIXME: Removed a factor of 2. Was it in here for a reason?
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
-    #noise[np.where(kpar < kfg)] = INF_NOISE
+    noise[np.where(kpar < kfg)] = INF_NOISE
     return noise
 
 
 def Csignal(q, y, cosmo, expt):
     """
-    Get (q,y)-dependent factors of the signal covariance matrix.
-    A factor of [T_b(z)]^2 nu_line / (r^2 rnu) is missing from out front (and 
-    gets put in later).
+    Get (q,y)-dependent factors of the signal covariance matrix. Units: mK^2.
     """
     c = cosmo
     
@@ -1270,7 +1247,7 @@ def Csignal(q, y, cosmo, expt):
     # Construct signal covariance and return
     cs = Frsd * (1. + c['A'] * c['fbao'](k)) * c['D']**2. * c['pk_nobao'](k)
     cs *= c['aperp']**2. * c['apar']
-    return cs * c['Tb']**2. * expt['nu_line'] / (c['r']**2. * c['rnu'])
+    return cs * c['Tb']**2. / (c['r']**2. * c['rnu'])
 
 
 def Cfg(q, y, cosmo, expt):
@@ -1295,88 +1272,42 @@ def Cfg(q, y, cosmo, expt):
         Cfg += Cx
     
     # Scale by FG subtraction residual amplitude and return
-    return expt['epsilon_fg'] * Cfg
+    return expt['epsilon_fg']**2. * Cfg
+
+
+def n_IM(kgrid, ugrid, cosmo, expt):
+    """
+    Effective "galaxy redshift survey" number density for IM survey. Unlike for 
+    a galaxy redshift survey, this is actually a (strong) function of (k, mu), 
+    so simply integrating over it to give n(z) doesn't necessarily give 
+    sensible results.
+    """
+    # Convert (k, u) into (q, y)
+    K, U = np.meshgrid(kgrid, ugrid)
+    y = cosmo['rnu'] * K * U
+    q = cosmo['r'] * K * np.sqrt(1. - U**2.)
+    dn_dk = K**2. / ( Cnoise(q, y, cosmo, expt) + Cfg(q, y, cosmo, expt) )
+    n_z = integrate_grid(dn_dk, kgrid, ugrid) / (2.*np.pi)**2.
+    n_z *= cosmo['Tb']**2. / (cosmo['r']**2. * cosmo['rnu'])
+    
+    # Calculate Vsurvey
+    _z = np.linspace(zmin, zmax, 1000)
+    Vsurvey = C * scipy.integrate.simps(rr(_z)**2. / HH(_z), _z)
+    Vsurvey *= (4.*np.pi) * expt['Sarea'] / (4.*np.pi)
+    
+    return n_z, Vsurvey
     
 
 ################################################################################
 # Fisher matrix calculation and integrands
 ################################################################################
 
-"""
-def alpha_derivs(k, u, cosmo, expt):
-    \"""
-    Return derivative terms for alpha_par, alpha_perp (to be used for plotting).
-    \"""
-    c = cosmo
-    r = c['r']; rnu = c['rnu']
-    aperp = c['aperp']; apar = c['apar']
-    a = 1. / (1. + c['z'])
-    
-    # Convert (k, u) into (q, y)
-    y = rnu * k * u
-    q = r * k * np.sqrt(1. - u**2.)
-    
-    # Calculate k, mu
-    k = np.sqrt( (aperp*q/r)**2. + (apar*y/rnu)**2. )
-    u2 = y**2. / ( y**2. + (q * rnu/r * aperp/apar)**2. )
-    
-    # Calculate bias (incl. non-Gaussianity, if requested)
-    b = c['btot'] = c['bHI']
-    
-    # Calculate derivatives of the RSD function we are using
-    drsd_df = 2. * u2 / (b + c['f']*u2)
-    drsd_dsig2 = -k**2. * u2
-    drsd_du2 = 2.*c['f'] / (b + c['f']*u2) - (k * c['sigma_nl'])**2.
-    drsd_dk = -2. * k * u2 * c['sigma_nl']**2.
-    dbng_bHI = 1.
-    dbias_k = 0.
-    
-    # Evaluate derivatives for (apar, aperp) parameters
-    dlogpk_dk = logpk_derivative(c['pk_nobao'], k) # Numerical deriv.
-    daperp_u2 = -2. * (rnu/r * q/y * aperp/apar * u2)**2. / aperp
-    dapar_u2 =   2. * (rnu/r * q/y * aperp/apar * u2)**2. / apar
-    daperp_k = (aperp*q/r)**2. / (k*aperp)
-    dapar_k  = (apar*y/rnu)**2. / (k*apar)
-    
-    # alpha_perp terms
-    dvol_daperp = 2. / aperp * np.ones(k.shape)
-    drsd_daperp = drsd_du2 * daperp_u2 + drsd_dk * daperp_k
-    dkfn_daperp = dlogpk_dk * daperp_k
-    
-    # alpha_par terms
-    dvol_dapar = 1. / apar * np.ones(k.shape)
-    drsd_dapar = drsd_du2 * dapar_u2 + drsd_dk * dapar_k
-    dkfn_dapar = dlogpk_dk * dapar_k
-    
-    deriv_sig2 = drsd_dsig2
-    deriv_apar = dvol_dapar + drsd_dapar + dkfn_dapar
-    
-    #P.plot(k, np.abs(deriv_sig2 * deriv_sig2) * k**2.)
-    #P.plot(k, np.abs(deriv_apar * deriv_apar) * k**2.)
-    #P.plot(k, np.abs(deriv_apar * deriv_sig2) * k**2.)
-    "\""
-    P.plot(k, np.abs(dvol_dapar), label="Vol.")
-    P.plot(k, np.abs(drsd_dapar), label="RSD")
-    P.plot(k, np.abs(dkfn_dapar), label="log P(k)")
-    P.plot(k, np.abs(deriv_apar), 'k-', lw=1.5)
-    P.plot(k, np.abs(deriv_sig2), 'y-', lw=1.5)
-    
-    P.legend(loc='upper left')
-    
-    P.xscale('log')
-    P.yscale('log')
-    P.show()
-    exit()
-    "\""
-    return dvol_daperp, drsd_daperp, dkfn_daperp, dvol_dapar, drsd_dapar, dkfn_dapar
-"""
-
 def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None, 
-                       transfer_fn=None, cv_limited=False ):
+                       transfer_fn=None, cv_limited=False,
+                       galaxy_survey=False, cs_galaxy=None ):
     """
     Return integrands over (k, u) for the Fisher matrix, for all parameters.
-    Order: ( A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [fNL], 
-             [omega_k_ng], [omega_DE_ng], pk )
+    Order: ( A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [fNL], pk )
     """
     c = cosmo
     use = expt['use']
@@ -1410,16 +1341,23 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         alpha = (100.*c['h'])**2. * c['omega_M_0'] * delta_c * Tfn / (C**2. * c['D'])
         b = c['btot'] = c['bHI'] * s_k + 3.*(c['bHI'] - 1.) * alpha * fNL
     
-    # Calculate Csignal, Cnoise, Cfg
-    cs = Csignal(q, y, cosmo, expt)
-    cn = Cnoise(q, y, cosmo, expt)
-    cf = Cfg(q, y, cosmo, expt)
-    if not cv_limited:
-        ctot = cs + cn + cf
+    # Choose signal/noise models depending on whether galaxy or HI survey
+    if galaxy_survey:
+        # Calculate Csignal, Cnoise for galaxy survey
+        cs = cs_galaxy(q, y, cosmo)
+        cn = 1./cosmo['ngal']
+        ctot = cs + cn
     else:
-        # Cosmic variance-limited calculation
-        print "Calculation is CV-limited."
-        ctot = cs + 1e-10 * (cn + cf) # Just shrink the foregrounds etc.
+        # Calculate Csignal, Cnoise, Cfg for HI
+        cs = Csignal(q, y, cosmo, expt)
+        cn = Cnoise(q, y, cosmo, expt)
+        cf = Cfg(q, y, cosmo, expt)
+        if not cv_limited:
+            ctot = cs + cn + cf
+        else:
+            # Cosmic variance-limited calculation
+            print "Calculation is CV-limited."
+            ctot = cs + 1e-10 * (cn + cf) # Just shrink the foregrounds etc.
     
     """
     #########################################
@@ -1483,7 +1421,6 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         if massive_nu_fn is not None:
             print "\tWARNING: (M_nu, f_NL) crossterm not currently supported. Setting to 0."
             """
-            raise NotImplementedError("Simultaneous M_nu and f_NL constraints not currently supported.")
             # TODO: Implement dTk_mnu(k) function.
             dTk_mnu = _dTk_mnu(k)
             dbng_mnu = -3.*(b - 1.) * alpha * fNL * dTk_mnu/Tk
@@ -1520,10 +1457,10 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     deriv_beta1 = 2. * k * c['bHI'] / (b + c['f']*u2) * cs / ctot
     deriv_beta2 = 2. * k**2. * c['bHI'] / (b + c['f']*u2) * cs / ctot
     
-    # Get analytic log-derivatives for new parameters (FIXME)
+    # Get analytic log-derivatives for new parameters
     deriv_sigma8 = (2. / c['sigma_8']) * cs / ctot
     deriv_ns = np.log(k) * cs / ctot
-    deriv_Tb = (2. / c['Tb']) * cs / ctot
+    deriv_Tb = (2. / c['Tb']) * cs / ctot if not galaxy_survey else 0.
     
     # Evaluate derivatives for (apar, aperp) parameters
     dlogpk_dk = logpk_derivative(c['pk_nobao'], k) # Numerical deriv.
@@ -1688,7 +1625,7 @@ def indexes_for_sampled_fns(p, Nbins, zfns):
     
     Parameters
     ----------
-    
+
     p : int
         The ID of the parameter to return the indices for (i.e. its ID in the 
         original, unexpanded matrix)
@@ -1826,6 +1763,43 @@ def combined_fisher_matrix(F_list, exclude=[], expand=[], names=None):
                     lbls.append("%s%d" % (new_names[i], j))
         return Ftot, lbls
 
+def add_fisher_matrices(F1, F2, lbls1, lbls2, info=False, expand=False):
+    """
+    Add two Fisher matrices that may not be aligned.
+    """
+    # If 'expand', expand the final matrix to incorporate the union of all parameters
+    if expand:
+        # Find params in F2 that are missing from F1
+        not_found = [l for l in lbls2 if l not in lbls1]
+        lbls = lbls1 + not_found
+        Nnew = len(lbls)
+        print "add_fisher_matrices: Expanded output matrix to include non-overlapping params:", not_found
+        
+        # Construct expanded F1, with additional params at the end
+        Fnew = np.zeros((Nnew, Nnew))
+        Fnew[:F1.shape[0],:F1.shape[0]] = F1
+        lbls1 = lbls
+    else:
+        # New Fisher matric is found by adding to a copy of F1
+        Fnew = F1.copy()
+    
+    # Go through lists of params, adding matrices where they overlap
+    for ii in range(len(lbls2)):
+      if lbls2[ii] in lbls1:
+        for jj in range(len(lbls2)):
+          if lbls2[jj] in lbls1:
+            _i = lbls1.index(lbls2[ii])
+            _j = lbls1.index(lbls2[jj])
+            Fnew[_i,_j] += F2[ii,jj]
+            if info: print lbls1[_i], lbls2[ii], "//", lbls1[_j], lbls2[jj]
+      if (lbls2[ii] not in lbls1) and info:
+        print "add_fisher_matrices:", lbls2[ii], "not found in Fisher matrix."
+    
+    # Return either new Fisher matrix, or new (expanded) matrix + new labels
+    if expand:
+        return Fnew, lbls1
+    else:
+        return Fnew
 
 def expand_fisher_matrix(z, derivs, F, exclude=[]):
     """
@@ -1902,7 +1876,8 @@ def fisher_with_excluded_params(F, excl):
 
 
 def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None, 
-            massive_nu_fn=None, transfer_fn=None, cv_limited=False ):
+            massive_nu_fn=None, transfer_fn=None, cv_limited=False, 
+            kmin=1e-7, kmax=130. ):
     """
     Return Fisher matrix (an binned power spectrum, with errors) for given
     fiducial cosmology and experimental settings.
@@ -1952,17 +1927,7 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     
     # Fetch/precompute cosmology functions
     HH, rr, DD, ff = cosmo_fns
-    """
-    if cosmo_fns is None:
-        HH, rr, DD, ff = background_evolution_splines(cosmo)
-        
-        # Import CAMB P(k) and construct interpolating function for BAO/smooth split
-        k_in, pk_in = np.genfromtxt(CAMB_MATTERPOWER).T[:2]
-        k_in *= cosmo['h']; pk_in /= cosmo['h']**3. # Convert h^-1 Mpc => Mpc
-        cosmo['pk_nobao'], cosmo['fbao'] = spline_pk_nobao(k_in, pk_in)
-        cosmo['k_in_max'] = np.max(k_in)
-        cosmo['k_in_min'] = np.min(k_in)
-    """
+    
     # Sanity check: k bins must be defined if return_pk is True
     if return_pk and kbins is None:
         raise NameError("If return_pk=True, kbins must be defined.")
@@ -1996,18 +1961,6 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     Vfac = np.pi * Vphys / (2. * np.pi)**3.
     
     # Set-up integration sample points in (k, u)-space
-    kmax = 130. #2. * 12.16 * 0.7 # Attentuated by beam (FIXME: Proper scale to use?)
-    kmin = 1e-5 #2.*np.pi / Vphys**(1./3.) # FIXME
-    
-    # FIXME: kmin is larger than min. interferom. kperp!
-    # Should probably set kmin to be very low -- perhaps min(kperp_min, kpar_min)
-    # kpar_min = kfg
-    # kperp_min ~ sqrt(Sarea) / r [single-dish]
-    # kperp_min = sqrt(fov) / r [interferom.]
-    # C_fg should kill the signal before this in the parallel direction
-    # C_noise should kill the signal before this in the perp. direction (interferom.)
-    # This is the actual angular limit in the single-dish case
-    
     ugrid = np.linspace(-1., 1., NSAMP_U) # N.B. Order of integ. limits is correct
     kgrid = np.logspace(np.log10(kmin), np.log10(kmax), NSAMP_K)
     
@@ -2021,17 +1974,17 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     sigma_kpar = (2.*np.pi) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
     sigma_kperp =  np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
                  / (c['r'] * D0 * (1.+c['z']))
-    
     print "-"*50
-    print "kmin\t", kmin
-    print "kmax\t", kmax
-    print "kfg \t", kfg
-    print "skpar\t", sigma_kpar
-    print "skprp\t", sigma_kperp
-    print "lmin \t", 2.*np.pi / np.sqrt(expt['Sarea']) # FIXME: Should be FOV for interferom.
-    print "lmax \t", sigma_kperp * c['r']
-    print "signl\t", 1./cosmo['sigma_nl']
-    print "RSD fn\t", RSD_FUNCTION
+    print "kmin\t  %s" % kmin
+    print "kmax\t  %s" % kmax
+    print "kfg \t  %3.3e" % kfg
+    print "skpar\t %6.3f" % sigma_kpar
+    print "skprp\t %6.3f" % sigma_kperp
+    print "lmin \t %4.1f" % (2.*np.pi / np.sqrt(expt['Sarea'])) # FIXME: Should be FOV for interferom.
+    print "lmax \t %4.1f" % (sigma_kperp * c['r'])
+    print "signl\t %4.4f" % (1./cosmo['sigma_nl'])
+    print "Vphys\t %4.1f Gpc^3" % (Vphys/1e9)
+    print "RSD fn\t %s" % RSD_FUNCTION
     print "-"*50
     
     # Sanity check on P(k)
@@ -2047,33 +2000,6 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
                                 transfer_fn=transfer_fn,
                                 cv_limited=cv_limited )
     F = Vfac * integrate_fisher_elements(derivs, kgrid, ugrid)
-    
-    """
-    # Calculate binned P(k) errors
-    if return_pk:
-        # Cumulatively integrate power spectrum part of Fisher matrix
-        K, U = np.meshgrid(kgrid, ugrid)
-        _Fpk = integrate_grid_cumulative(K**2. * derivs[-1]*derivs[-1], kgrid, ugrid)
-        _Fpk *= (np.pi * Vphys) / (2.*np.pi)**3.
-        
-        # Get interpolating function for cumulative integral
-        Fpk = scipy.interpolate.interp1d( kgrid, _Fpk, kind='linear', 
-                                        bounds_error=False)
-      
-        # Calculated binned fractional P(k) errors and get bin centroids
-        kbins = np.logspace(np.log10(kmin), np.log10(kmax), kbins_pk)
-        if override_kbins is not None: kbins = override_kbins
-        
-        pbins = Fpk(kbins)
-        pc = np.array( [pbins[i+1] - pbins[i] for i in range(pbins.size-1)] )
-        kc = np.array( [0.5*(kbins[i+1] + kbins[i]) for i in range(kbins.size-1)] )
-        
-        pc[np.where(pc == 0)] = 1e-300
-        pkerr = 1. / np.sqrt(pc)
-        pk = (1. + cosmo['A'] * cosmo['fbao'](kc)) \
-             * cosmo['D']**2. * cosmo['pk_nobao'](kc)
-        wiggles = cosmo['A'] * cosmo['fbao'](kc)
-    """
     
     # Calculate cross-terms between binned P(k) and other params
     if return_pk:
@@ -2099,4 +2025,4 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     # Return results
     if return_pk: return F_pk, kc, binning_info
     return F
-    
+

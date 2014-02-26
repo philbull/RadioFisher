@@ -43,7 +43,7 @@ SURVEY = {
     'ttot':             10e3*HRS_MHZ,      # Total integration time [MHz^-1]
     'Sarea':            30e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'nu_line':          1420.406,          # Rest-frame freq. of emission line [MHz]
-    'epsilon_fg':       1e-8,              # FG subtraction residual amplitude
+    'epsilon_fg':       1e-6,              # FG subtraction residual amplitude
     'use':              USE                # Which constraints to use/ignore
 }
 
@@ -281,15 +281,14 @@ SKA1MID = {
     }
 SKA1MID.update(SURVEY)
 
-
 superSKA1MID = {
     'mode':             'dish',            # Interferometer or single dish
-    'Ndish':            254, #190,               # No. of dishes
-    'Nbeam':            1,  # NOTE!       # No. of beams (for multi-pixel detectors)
+    'Ndish':            254, #190,         # No. of dishes
+    'Nbeam':            1,  # NOTE!        # No. of beams (for multi-pixel detectors)
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            20.*(1e3),         # System temp. [mK]
     'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
-    'survey_numax':     1150., #FIXME 1050            # Max. freq. of survey
+    'survey_numax':     1050.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
     'n(x)': "array_config/nx_SKAM190_dec30.dat" # Interferometer antenna density
     }

@@ -11,194 +11,168 @@ from baofisher import convert_to_camb, cached_camb_output, plot_corrmat
 import camb_wrapper as camb
 from experiments import cosmo
 
-fsky = 1.0 # Sky fraction
-Tcmb = 2.725e6 # Monopole temp., in uK
+fsky = 0.7 # Sky fraction (DETF use f_sky = 0.7)
+Tcmb = 2.725 # Monopole temp., in K
 
 # Planck HFI beams and noise (Table 2 [beams] and Table 6 [noise] of 
 # Planck 2013 results I)
-freq = [70., 100., 143., 217.] # GHz
+freq = [70., 100., 143., 217.] # GHz (DETF use 70 - 143 GHz channels)
 fwhm = [13.08, 9.59, 7.18, 4.87] # arcmin
-rms_px = [23.2, 11., 6., 12.] # Noise RMS/px (uK)
 
-# From Colombo et al.
-#freq = [70., 100., 143., 217.]
-#fwhm = [14., 9.5, 7.1, 5.0]
-#rms_px = np.array([4.7, 2.5, 2.2, 4.8]) * Tcmb
+# Noise RMS/px (uK) [Bluebook Table 1.1]
+#rms_px = [[23.2, 11., 6., 12.],
+#          [23.2, 11., 6., 12.]] # Noise RMS/px (uK) [Planck 2013 I]
+rms_px = [ [4.7, 2.5, 2.2, 4.8],  # sqrt[(sigma_TT)^2], TT (I)
+           [6.7, 4.0, 4.2, 9.8] ] # sqrt[(sigma_TT)^2], EE (Q,U)
+rms_px = np.array(rms_px).T * Tcmb
 
-def convert_to_camb_phys(cosmo):
-    """
-    Convert cosmological parameters to CAMB parameters.
-    (N.B. CAMB derives Omega_Lambda from other density parameters)
-    """
-    p = {}
-    p['hubble'] = 100.*cosmo['h']
-    p['omch2'] = (cosmo['omega_M_0'] - cosmo['omega_b_0']) * cosmo['h']**2.
-    p['ombh2'] = cosmo['omega_b_0'] * cosmo['h']**2.
-    #p['omk'] = 
-    p['scalar_spectral_index__1___'] = cosmo['ns']
-    p['w'] = cosmo['w0']
-    p['wa'] = cosmo['wa']
-    return p
 
-def camb_deriv(paramname, dx, cosmo):
+def camb_deriv(paramname, dx, p):
     """
     Calculate central finite difference to estimate derivative d(C_l)/d(param)
     """
-    c = copy.deepcopy(cosmo)
-    print paramname
-    
-    # Check for special density parameters, ~ Omega_X h^2
-    # Make sure the derivative is corrected for them
-    special_params = ['w_m', 'w_b', 'w_de']
-    param_map = ['omega_M_0', 'omega_b_0', 'omega_lambda_0']
-    paramname_actual = paramname
-    if paramname in special_params:
-        dx_deriv = dx * cosmo['h']**2.
-        paramname = param_map[special_params.index(paramname)]
-    else:
-        dx_deriv = dx
+    p = copy.deepcopy(p)
     
     # Get CAMB output 
-    x = cosmo[paramname]
+    x = p[paramname]
     xvals = [x-dx, x+dx]
-    ells = []; cls = []
+    ells = []; cl_TT = []; cl_EE = []; cl_TE = []
     dat = [0 for i in range(len(xvals))] # Empty list for each worker
     for i in range(len(xvals)):
-        c[paramname] = xvals[i]
-        
-        p = convert_to_camb(c)
-        
-        # Fix density parameters
-        if paramname in ['omega_M_0', 'omega_b_0', 'w_m', 'w_b']: p['omk'] = 0.
+        p[paramname] = xvals[i]
         
         p['get_transfer'] = 'F' # Save some time by turning off P(k)
-        fname = "cmbfisher/%s-%d.dat" % (paramname_actual, i)
+        fname = "cmbfisher/%s-%d.dat" % (paramname, i)
         dat[i] = cached_camb_output(p, fname, mode='cl')
-        ell = dat[i][0]; Dl = dat[i][1]
-        ells.append(ell); cls.append(2.*np.pi * Dl/(ell*(ell+1.)))
+        ell = dat[i][0]; Dl_TT = dat[i][1]; Dl_EE = dat[i][2]; Dl_TE = dat[i][3]
+        ells.append(ell)
+        cl_TT.append(2.*np.pi * Dl_TT/(ell*(ell+1.)))
+        cl_EE.append(2.*np.pi * Dl_EE/(ell*(ell+1.)))
+        cl_TE.append(2.*np.pi * Dl_TE/(ell*(ell+1.)))
     
     # Calculate central finite difference
-    dCl_dx = (cls[1] - cls[0]) / (2. * dx)
-    return dCl_dx
+    dClTT_dx = (cl_TT[1] - cl_TT[0]) / (2. * dx)
+    dClEE_dx = (cl_EE[1] - cl_EE[0]) / (2. * dx)
+    dClTE_dx = (cl_TE[1] - cl_TE[0]) / (2. * dx)
+    return dClTT_dx, dClEE_dx, dClTE_dx
 
 def cmb_fisher(ell, cl, rms_px, fwhm, derivs, lmax=None):
     """
     Calculate the Fisher matrix for a CMB experiment using the simple Fisher 
-    presciption from Dodelson.
+    prescription from Dodelson.
     
     Assumes Gaussian beams and uniform white noise.
     """
     derivs = np.array(derivs)
     
-    # Convert from noise/px into noise/solid angle; convert fwhm arcmin -> rad.
-    px_solid_angle = 4.*np.pi / (12. * 2048**2.) # Healpix Nside=2048
-    beam_solid_angle = (fwhm * np.pi/180./60.)**2.
-    noise = rms_px**2. * px_solid_angle
-    sigma = fwhm * np.pi/180./60.
+    # Fisher matrix for T/E CMB spectrum, using DETF FOMSWG technical report, Eq. A1
+    # Model for noise/beam from Dodelson (around Eq. 11.111?)
+    fwhm *= np.pi/180./60. # Convert arcmin -> rad
+    beam_factor = ell*(ell+1.) * fwhm**2. / (8. * np.log(2.))
+    beam_factor[np.where(beam_factor > 200.)] = 200. # Guard against overflow in exp()
+    Bl = np.exp(beam_factor)
     
-    # Model for noise/cosmic variance (Dodelson Eq. 11.111)
-    delta_cl = cl + noise * np.exp(ell**2. * sigma**2.)
-    delta_cl *= np.sqrt(2. / ((2.*ell + 1.) * fsky))
+    # Signal power spectra (TT, EE, TE)
+    clTT = cl[0]; clEE = cl[1]; clTE = cl[2]
+    
+    # Noise power spectra (assumes uniform white noise and Nside=2048)
+    px_solid_angle = 4.*np.pi / (12. * 2048**2.) # Noise/px -> noise/solid angle
+    nlTT = Bl * rms_px[0]**2. * px_solid_angle
+    nlEE = Bl * rms_px[1]**2. * px_solid_angle
+    nlTE = Bl * rms_px[0]*rms_px[1] * px_solid_angle
+    
+    # Construct inv. covariance, cov^-1 = (C_l + N_l)^-1, using analytic 2x2 inverse
+    detW = (clEE + nlEE)*(clTT + nlTT) - (clTE + nlTE)**2.
+    detW[np.where(detW == 0.)] = 1e-100 # Small, non-zero number
+    Winv = [[clEE + nlEE,   -(clTE + nlTE)],
+            [-(clTE + nlTE),  clTT + nlTT ]]
+    Winv = np.array(Winv) / detW
+    
+    # Set noise to infinity for l < 30 in TE,EE, following DETF FOMSWG
+    # (see p18 of technical report; it's to do with Tau uncertainties)
+    Winv[1,0,:30] = 0.
+    Winv[0,1,:30] = 0.
+    Winv[1,1,:30] = 0.
+    
+    # FIXME: Disable polarisation
+    #print "WARNING: Polarisation disabled."
+    #Winv[1,0,:] = 0.
+    #Winv[0,1,:] = 0.
+    #Winv[1,1,:] = 0.
     
     # Construct derivative product matrix
     N = len(derivs)
     F = [[0 for i in range(N)] for j in range(N)]
     for i in range(N):
         for j in range(i, N):
-            F[i][j] = derivs[i] * derivs[j] / (delta_cl)**2.
+            # Matrix of parameter derivatives of Cl's, for each ell
+            D_i = np.array([[derivs[i][0], derivs[i][2]], [derivs[i][2], derivs[i][1]]])
+            D_j = np.array([[derivs[j][0], derivs[j][2]], [derivs[j][2], derivs[j][1]]])
+            
+            # Calculate Tr[Winv dCl/dp_i Winv dCl/dp_j] for each l
+            T = [ np.trace(
+                  np.dot(Winv[:,:,l], 
+                         np.dot(D_i[:,:,l],
+                           np.dot(Winv[:,:,l], D_j[:,:,l]))))
+                  for l in range(D_i.shape[-1]) ]
+            T = np.array(T)
+            
+            # Sum over ells to get Fisher matrix
+            F[i][j] = 0.5 * fsky * np.sum( ((2.*ell + 1.) * T)[2:lmax] )
             F[j][i] = F[i][j]
-    
-    # Sum over ell (up to lmax)
-    if lmax is not None:
-        F = np.array(F)
-        F = np.sum(F[:,:,:lmax], axis=2)
-    else:
-        F = np.sum(F, axis=2) # Sum over ell
+    F = np.array(F)
     return F
+
+def camb_fisher_derivs(p):
+    """
+    Get derivatives (as a function of ell) for the full set of CAMB Fisher 
+    parameters. Includes TT, EE, TE derivatives.
+    """
+    # Get derivatives for various parameters
+    # {n_s, w0, wa, w_b, omega_k, w_cdm, h}
+    d_ns = camb_deriv("scalar_spectral_index__1___", 0.004, p)
+    d_w0 = camb_deriv("w", 0.01, p)
+    d_wa = camb_deriv("wa", 0.05, p)
+    d_wb = camb_deriv("ombh2", 0.0005, p)
+    d_ok = camb_deriv("omk", 0.005, p)
+    d_wc = camb_deriv("omch2", 0.0005, p)
+    d_h  = camb_deriv("hubble", 0.1, p)
+    derivs = [d_ns, d_w0, d_wa, d_wb, d_ok, d_wc, d_h]
+    return np.array(derivs)
+
+def camb_fiducial(p, fname="cmbfisher/fiducial.dat"):
+    """
+    Calculate fiducial CMB spectra.
+    """
+    p['get_transfer'] = 'F' # Save some time by turning off P(k)
+    dat = cached_camb_output(p, fname, mode='cl')
+    ell = dat[0]
+    fac = 2.*np.pi / (ell*(ell+1.))
+    cl_TT = dat[1] * fac
+    cl_EE = dat[2] * fac
+    cl_TE = dat[3] * fac
+    cls = [cl_TT, cl_EE, cl_TE]
+    return ell, cls
 
 # Get fiducial Cl's
 p = convert_to_camb(cosmo)
-p['get_transfer'] = 'F' # Save some time by turning off P(k)
-fname = "cmbfisher/fiducial.dat"
-dat = cached_camb_output(p, fname, mode='cl')
-ell = dat[0]; cl = dat[1] * 2.*np.pi / (ell*(ell+1.))
-
-# Get derivatives for various parameters
-d_h  = camb_deriv("h", 0.005, cosmo)
-d_om = camb_deriv("omega_M_0", 0.005, cosmo)
-d_ob = camb_deriv("omega_b_0", 0.002, cosmo)
-d_ol = camb_deriv("omega_lambda_0", 0.005, cosmo)
-d_wm = camb_deriv("w_m", 0.003, cosmo)
-d_wb = camb_deriv("w_b", 0.001, cosmo)
-d_wde = camb_deriv("w_de", 0.003, cosmo)
-d_ns = camb_deriv("ns", 0.005, cosmo)
-d_w0 = camb_deriv("w0", 0.01, cosmo)
-d_wa = camb_deriv("wa", 0.05, cosmo)
-#derivs = [d_h, d_om, d_ob, d_ol, d_ns, d_w0, d_wa]
-#derivs = [d_h, d_wm, d_wb, d_wde, d_ns] #, d_w0, d_wa]
-
-
-"""
-# Plot derivatives
-delta_cl = cl + winv * np.exp(ell**2. * sigma**2.)
-delta_cl *= np.sqrt(2. / ((2.*ell + 1.) * fsky))
-lbl = ['h', 'om', 'ob', 'ol', 'ns', 'w0', 'wa']
-
-P.subplot(111)
-for i in range(len(derivs)):
-    P.plot(ell, np.abs(derivs[i])/delta_cl, label=lbl[i])
-#P.xscale('log')
-P.yscale('log')
-P.xlim((1., 350.))
-P.ylim((1e-2, 1e2))
-P.legend(loc='upper right', prop={'size':'x-small'})
-P.show()
-"""
-
-# Planck prior from DETF
-F_planck = np.genfromtxt("fisher_detf_planck.dat")
-lbls_planck = ['n_s', 'omegaM', 'omegab', 'omegak', 'omegaDE', 'h', 'w0', 'wa', 'logA_S']
-
-# Planck prior from Euclid
-import euclid
-Feuc = euclid.planck_prior_full
-#['w0', 'wa', 'omegaDE', 'omegak', 'w_m', 'w_b', 'n_s']
+ell, cls = camb_fiducial(p, "cmbfisher/fiducial.dat")
+derivs = camb_fisher_derivs(p)
 
 # Fisher forecast
-derivs = [d_ns, d_om, d_ob, d_ol, d_h, d_w0, d_wa, d_wm, d_wb, d_wde]
 F = 0
-for i in range(0,4):
-    F += cmb_fisher(ell, cl, rms_px[i], fwhm[i], derivs)
+for i in [1,2,]: # Channels
+    print "Adding", freq[i], "GHz channel."
+    F += cmb_fisher(ell, cls, rms_px[i], fwhm[i], derivs, lmax=1000.) # lmax=2000 for DETF
+    # FIXME: Can we just add the channels like this? Surely the measurements 
+    # aren't independent?! e.g. CV-limited in all channels wouldn't improve?
+print F
 
-# Compare
-print "%8s:  %11s  %11s  %11s" % ("PARAM", "DETF", "Euclid", "Fisher")
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("n_s",      F_planck[0,0], Feuc[6,6], F[0,0])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("omega_M",  F_planck[1,1], 0.       , F[1,1])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("omega_b",  F_planck[2,2], 0.       , F[2,2])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("omega_k",  F_planck[3,3], Feuc[3,3], 0.)
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("omega_DE", F_planck[4,4], Feuc[2,2], F[3,3])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("h",        F_planck[5,5], 0.,        F[4,4])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("w0",       F_planck[6,6], Feuc[0,0], F[5,5])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("wa",       F_planck[7,7], Feuc[1,1], F[6,6])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("omh2",     0.,            Feuc[4,4], F[7,7])
-print "%8s:  %11.4e  %11.4e  %11.4e" % ("obh2",     0.,            Feuc[5,5], F[8,8])
+lbls = ['n_s', 'w0', 'wa', 'w_b', 'omega_k', 'w_cdm', 'h']
+sigma = 1. / np.sqrt(np.diag(F))
 
+for i in range(len(lbls)):
+    print "sigma(%7s):  %6.6f" % (lbls[i], sigma[i])
 
-
-
-
-
-
-
-
-exit()
-
-# Construct Fisher matrix
-#lbl = ['h', 'om', 'ob', 'ol', 'ns', 'w0', 'wa']
-lbl = ['h', 'wm', 'wb', 'wde', 'ns'] #, 'w0', 'wa']
-for j in range(4):
-    F = cmb_fisher(ell, cl, rms_px[j], fwhm[j], derivs)
-    cov = np.linalg.inv(F)
-    for i in range(len(lbl)):
-        print "%4s:  %5.5f" % (lbl[i], np.sqrt(np.diag(cov)[i]))
-    print "-"*50
+# Save Fisher matrix
+np.savetxt("fisher_planck_camb.dat", F)

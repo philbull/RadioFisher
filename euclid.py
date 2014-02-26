@@ -272,8 +272,6 @@ cov_mnu_ns_euclid_boss_planck = np.array( [
   [0.0311**2., -0.034 * (0.0311 * 0.0022)],
   [-0.034 * (0.0311 * 0.0022), 0.0022**2.] ])
 
-
-
 # Planck prior
 # w0, wa, omega_DE, omega_k, w_m, w_b, n_s
 # From Euclid science review, Amendola (et al. 2012), Table 1.17

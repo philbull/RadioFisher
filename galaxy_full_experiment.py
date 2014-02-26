@@ -1,12 +1,12 @@
 #!/usr/bin/python
 """
-Calculate Fisher matrix and P(k) constraints for all redshift bins for a given 
-experiment.
+Calculate Fisher matrix and P(k) constraints for all redshift bins for a galaxy 
+redshift survey.
 """
-
 import numpy as np
 import pylab as P
 import baofisher
+import fisher_galaxy
 import matplotlib.patches
 from units import *
 from mpi4py import MPI
@@ -22,21 +22,20 @@ size = comm.Get_size()
 ################################################################################
 
 # Load cosmology and experimental settings
-e = experiments
 cosmo = experiments.cosmo
+expt = {
+    'fsky':     0.364, # 15,000 deg^2
+    'kmin':     1e-6, # Seo & Eisenstein say: shouldn't make much difference...
+    'kmax':     130.,  # 50. # Seo & Eisenstein say: ~0.1, but evolves with z
+    'use':      experiments.USE
+}
 
-#expts = [e.exptS, e.exptM, e.exptL]
-#names = ['exptS', 'iexptM', 'cexptL']
+# Load number densities and redshift bins
+zmin, zmax, n_opt, n_ref, n_pess = np.genfromtxt("euclid_nz.dat").T
+ngal = np.array([n_opt, n_ref, n_pess]) * cosmo['h']**3. # Rescale to Mpc^-3 units
 
-expts = [ e.exptS, e.exptM, e.exptL, e.GBT, e.BINGO, e.WSRT, e.APERTIF, 
-          e.JVLA, e.ASKAP, e.KAT7, e.MeerKAT_band1, e.MeerKAT, e.SKA1MID,
-          e.SKA1SUR, e.SKA1SUR_band1, e.SKAMID_PLUS, e.SKAMID_PLUS_band1, 
-          e.SKASUR_PLUS, e.SKASUR_PLUS_band1 ]
-
-names = ['exptS', 'iexptM', 'cexptL', 'GBT', 'BINGO', 'WSRT', 'APERTIF', 
-         'JVLA', 'cASKAP', 'cKAT7', 'cMeerKAT_band1', 'cMeerKAT', 'cSKA1MID',
-         'SKA1SUR', 'SKA1SUR_band1', 'SKAMID_PLUS', 'SKAMID_PLUS_band1', 
-         'SKASUR_PLUS', 'SKASUR_PLUS_band1']
+# Choose which survey to run
+names = ["EuclidOpt", "EuclidRef", "EuclidPess"]
 
 # Take command-line argument for which survey to calculate, or set manually
 if len(sys.argv) > 1:
@@ -47,38 +46,19 @@ if myid == 0:
     print "="*50
     print "Survey:", names[k]
     print "="*50
-
-# Tweak settings depending on chosen experiment
-cv_limited = False
-expts[k]['mode'] = "dish"
-if names[k][0] == "i": expts[k]['mode'] = "interferom."
-if names[k][0] == "c": expts[k]['mode'] = "combined"
-
-expt = expts[k]
 survey_name = names[k]
-#expt.pop('n(x)', None)
 root = "output/" + survey_name
-
-# Define redshift bins
-expt_zbins = baofisher.overlapping_expts(expt)
-#zs, zc = baofisher.zbins_equal_spaced(expt_zbins, dz=0.1)
-#zs, zc = baofisher.zbins_const_dr(expt_zbins, cosmo, bins=14)
-zs, zc = baofisher.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
 
 # Define kbins (used for output)
 kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
-#cosmo['mnu'] = 0.1
 cosmo_fns = baofisher.background_evolution_splines(cosmo)
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", comm=comm)
-
+cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk_gal.dat", comm=comm)
 #massive_nu_fn = baofisher.deriv_logpk_mnu(cosmo['mnu'], cosmo, "cache_mnu010", comm=comm)
 #transfer_fn = baofisher.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
-massive_nu_fn = None
-transfer_fn = None
-
 H, r, D, f = cosmo_fns
+zc = 0.5 * (zmin + zmax)
 
 ################################################################################
 # Store cosmological functions
@@ -88,7 +68,7 @@ H, r, D, f = cosmo_fns
 if myid == 0:
     # Calculate cosmo fns. at redshift bin centroids and save
     _H = H(zc)
-    _dA = r(zc) / (1. + np.array(zc))
+    _dA = r(zc) / (1. + zc)
     _D = D(zc)
     _f = f(zc)
     np.savetxt(root+"-cosmofns-zc.dat", np.column_stack((zc, _H, _dA, _D, _f)))
@@ -109,26 +89,18 @@ eos_derivs = baofisher.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
 # Loop through redshift bins, assigning them to each process
 ################################################################################
 
-
-for i in range(zs.size-1):
+for i in range(zmin.size):
     if i % size != myid:
       continue
     
     print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
     
-    # Calculate effective experimental params. in the case of overlapping expts.
-    expt_eff = baofisher.overlapping_expts(expt, zs[i], zs[i+1])
-    
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
-    F_pk, kc, binning_info = baofisher.fisher( zs[i], zs[i+1], cosmo, expt_eff, 
-                                         cosmo_fns=cosmo_fns,
-                                         transfer_fn=transfer_fn,
-                                         massive_nu_fn=massive_nu_fn,
-                                         return_pk=True,
-                                         cv_limited=cv_limited, 
-                                         kbins=kbins )
-    
+    F_pk, kc, binning_info = fisher_galaxy.fisher_galaxy_survey(
+                                                zmin[i], zmax[i], ngal[k][i], 
+                                                cosmo, expt, cosmo_fns, 
+                                                return_pk=True, kbins=kbins )
     # Expand Fisher matrix with EOS parameters
     ##F_eos = baofisher.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
     F_eos = baofisher.expand_fisher_matrix(zc[i], eos_derivs, F_pk, exclude=[])
@@ -152,6 +124,6 @@ for i in range(zs.size-1):
     np.savetxt(root+"-rebin-Fbase-%d.dat" % i, np.array(binning_info['F_base']) )
     np.savetxt(root+"-rebin-cumul-%d.dat" % i, np.array(binning_info['cumul']) )
     np.savetxt(root+"-rebin-kgrid-%d.dat" % i, np.array(binning_info['kgrid']) )
-    np.savetxt(root+"-rebin-Vfac-%d.dat" % i, np.array([binning_info['Vfac'],]) )
+    np.savetxt(root+"-rebin-Vfac-%d.dat" % i, np.array([binning_info['Vsurvey'],]) )
 
 comm.barrier()
