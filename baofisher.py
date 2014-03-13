@@ -490,7 +490,14 @@ def load_power_spectrum( cosmo, cachefile, kmax=CAMB_KMAX, comm=None,
     p = convert_to_camb(cosmo)
     p['transfer_kmax'] = kmax / cosmo['h']
     p['transfer_high_precision'] = 'T'
-    p['transfer_k_per_logint'] = 1000
+    p['transfer_k_per_logint'] = 250 #1000
+    
+    # Check for massive neutrinos
+    if cosmo['mnu'] > 0.001:
+        p['omnuh2'] = cosmo['mnu'] / 93.04
+        p['massless_neutrinos'] = 2.046
+        p['massive_neutrinos'] = "2 1"
+        p['nu_mass_eigenstates'] = 1
     
     # Only let one MPI worker do the calculation, then let all other workers 
     # load the result from cache
@@ -761,40 +768,95 @@ def deriv_transfer(cosmo, cachefile, kmax=CAMB_KMAX, kref=1e-3, comm=None, force
     idscalefn_dMnu = None
     return iscalefn, idscalefn_dk, idscalefn_dMnu
 
-def deriv_logpk_mnu(mnu, cosmo, cacheroot, dmnu=0.01, kmax=CAMB_KMAX, 
-                    comm=None, force=False):
+def deriv_neutrinos(cosmo, cacheroot, kmax=CAMB_KMAX, force=False, 
+                          mnu=0., dmnu=0.01, Neff=3.046, dNeff=0.1, comm=None):
     """
-    Return numerical derivative dlog[P(k)] / d(Sum m_nu) using CAMB. Uses MPI 
-    if available, and caches the result. Assumes a single massive neutrino 
-    species.
-    dmnu ~ 0.01 seems to give good convergence to derivative
+    Return numerical derivative for massive neutrinos, dlog[P(k)] / d(Sum m_nu), 
+    or Neff, dlog[P(k)] / d(N_eff), using CAMB.
+    
+    Uses MPI if available, and caches the result. Assumes a single 
+    massive neutrino species. dmnu ~ 0.01 seems to give good convergence to 
+    M_nu derivative.
+    
+    Parameters
+    ----------
+    
+    cosmo : dict
+        Dictionary of cosmological parameters.
+    
+    cacheroot : str
+        Filename root. Three cache files will be produced, with this string at 
+        the beginning of their names, followed by numbered suffixes.
+    
+    kmax : float, optional
+        Max. k value that CAMB should calculate
+    
+    force : bool, optional (default: False)
+        If a cache file already exists, whether to force the calculation to be 
+        re-done.
+    
+    mnu : float, optional
+        Fiducial neutrino mass, in eV. If this is non-zero, the derivative of 
+        log(P(k)) with respect to neutrino mass will be returned.
+    
+    dmnu : float, optional (default: 0.01)
+        Finite difference for neutrino derivative (in eV).
+    
+    Neff : float, optional (default: 3.046)
+        The fiducial effective no. of neutrino species, N_eff, to use. If mnu is 
+        set to zero, the derivative with respect to Neff will be returned, 
+        assuming no massive species.
+        
+        Otherwise, it will be assumed that there is one massive species, and 
+        (Neff - 1) massless species.
+    
+    dNeff : float, optional (default: 0.1)
+        Finite difference for Neff derivative.
+    
+    Returns
+    -------
+    
+    dlogpk_dp(k) : interpolation function
+        Interpolation function as a function of k, for either the M_nu or 
+        N_eff derivative.
     """
     # MPI set-up
     myid = 0; size = 1
     if comm is not None:
         myid = comm.Get_rank()
         size = comm.Get_size()
-    if myid == 0: print "\tderiv_logpk_mnu(): Loading P(k) data for derivs..."
+    if myid == 0: print "\tderiv_logpk_neutrinos(): Loading P(k) data for derivs..."
     
-    # Set neutrino density and choose one massive neutrino species
-    # (Converts Sum(m_nu) [in eV] into Omega_nu h^2, using expression from p5 of 
-    # Planck 2013 XVI.)
+    # Set finite difference values and other CAMB parameters
     p = convert_to_camb(cosmo)
     p['transfer_kmax'] = kmax
-    p['omnuh2'] = mnu / 93.04
-    p['massless_neutrinos'] = 2.046
-    p['massive_neutrinos'] = "2 1"
-    p['nu_mass_eigenstates'] = 1
+    if mnu != 0.:
+        # Neutrino mass derivative
+        # Set neutrino density and choose one massive neutrino species
+        # (Converts Sum(m_nu) [in eV] into Omega_nu h^2, using expression from 
+        # p5 of Planck 2013 XVI.)
+        p['omnuh2'] = mnu / 93.04
+        p['massless_neutrinos'] = Neff - 1.
+        p['massive_neutrinos'] = "2 1"
+        p['nu_mass_eigenstates'] = 1.
+        deriv_param = 'omnuh2'
+        x = p['omnuh2']
+        dx = dmnu / 93.04
+        dp = dmnu
+    else:
+        # Neff derivative
+        deriv_param = 'massless_neutrinos'
+        x = Neff
+        dx = dNeff
+        dp = dNeff
     
     # Set finite difference derivative values and load/calculate (MPI)
-    x = p['omnuh2']
-    dx = dmnu / 93.04
     xvals = [x-dx, x, x+dx]
     dat = [0 for i in range(len(xvals))] # Empty list for each worker
     for i in range(len(xvals)):
         if i % size == myid:
             fname = "%s-%d.dat" % (cacheroot, i)
-            p['omnuh2'] = xvals[i]
+            p[deriv_param] = xvals[i]
             try:
                 dat[i] = cached_camb_output(p, fname, mode='matterpower', force=force)
             except:
@@ -818,18 +880,13 @@ def deriv_logpk_mnu(mnu, cosmo, cacheroot, dmnu=0.01, kmax=CAMB_KMAX,
             raise ValueError("k arrays do not match up. Summed difference: %f" % diff)
     
     # Take finite difference of P(k)
-    dPk_dmnu = (dat[2][1][:idxmin] - dat[0][1][:idxmin]) / (2.*dmnu)
-    dlogPk_dmnu = dPk_dmnu / dat[1][1][:idxmin]
+    dPk_dp = (dat[2][1][:idxmin] - dat[0][1][:idxmin]) / (2.*dp)
+    dlogPk_dp = dPk_dp / dat[1][1][:idxmin]
     k = dat[0][0][:idxmin]
     
-    # Save data to file
-    #if myid == 0:
-    #    print "\tSaving P(k) neutrino mass derivative to %s.npy" % cachefile
-    #    np.save( cachefile, np.column_stack((k, dlogPk_dmnu)) )
-    
     # Interpolate result
-    idlogpk = scipy.interpolate.interp1d( k, dlogPk_dmnu, kind='linear',
-                                 bounds_error=False, fill_value=dlogPk_dmnu[-1] )
+    idlogpk = scipy.interpolate.interp1d( k, dlogPk_dp, kind='linear',
+                                 bounds_error=False, fill_value=dlogPk_dp[-1] )
     return idlogpk
 
 def logpk_derivative(pk, kgrid):
@@ -890,8 +947,8 @@ def fbao_derivative(fbao, kgrid, kref=[3e-2, 4.5e-1]):
                                             bounds_error=False, fill_value=0. )
     return idfbao_dk
     
-
-def spline_pk_nobao(k_in, pk_in, kref=[2.2e-2, 4.5e-1]): #kref=[3e-2, 4.5e-1]):
+# 2.15e-2!!!!
+def spline_pk_nobao(k_in, pk_in, kref=[2.15e-2, 4.5e-1]): #kref=[3e-2, 4.5e-1]):
     """
     Construct a smooth power spectrum with BAOs removed, and a corresponding 
     BAO template function, by using a two-stage splining process.
@@ -912,7 +969,7 @@ def spline_pk_nobao(k_in, pk_in, kref=[2.2e-2, 4.5e-1]): #kref=[3e-2, 4.5e-1]):
     # and find its 2nd derivative
     fwiggle = scipy.interpolate.UnivariateSpline(k_in, pk_in / pk_smooth(k_in), k=3, s=0)
     derivs = np.array([fwiggle.derivatives(_k) for _k in k_in]).T
-    d2 = scipy.interpolate.UnivariateSpline(k_in, derivs[2], k=3, s=2.0) #s=1.
+    d2 = scipy.interpolate.UnivariateSpline(k_in, derivs[2], k=3, s=1.0) #s=1.
     # (s=1 to get sensible smoothing)
     
     # Find maxima and minima of the gradient (zeros of 2nd deriv.), then put a
@@ -1216,9 +1273,9 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         raise ValueError("Experiment mode not recognised. Choose 'interferom', 'dish', or 'combined'.")
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
-    # FIXME: Leave this cut-off in? It *should* have a small effect
     # FIXME: Removed a factor of 2. Was it in here for a reason?
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
+    #kfg *= expt['kfg_fac'] # FIXME
     noise[np.where(kpar < kfg)] = INF_NOISE
     return noise
 
@@ -1303,7 +1360,7 @@ def n_IM(kgrid, ugrid, cosmo, expt):
 ################################################################################
 
 def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None, 
-                       transfer_fn=None, cv_limited=False,
+                       Neff_fn=None, transfer_fn=None, cv_limited=False,
                        galaxy_survey=False, cs_galaxy=None ):
     """
     Return integrands over (k, u) for the Fisher matrix, for all parameters.
@@ -1510,26 +1567,36 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # Make list of (non-optional) derivatives
     deriv_list = [ deriv_A, deriv_bHI, deriv_Tb, deriv_sig2, deriv_sigma8, 
                    deriv_ns, deriv_f, deriv_aperp, deriv_apar ]
+    paramnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 
+                  'aperp', 'apar']
     # FIXME: Add d_beta1, d_beta2
     
     # Evaluate derivatives for massive neutrinos and add to list
     if massive_nu_fn is not None:
         deriv_mnu = massive_nu_fn(k) * cs / ctot
         deriv_list.append(deriv_mnu)
+        paramnames.append('Mnu')
+   
+    # Evaluate derivatives for Neff and add to list
+    if Neff_fn is not None:
+        deriv_Neff = Neff_fn(k) * cs / ctot
+        deriv_list.append(deriv_Neff)
+        paramnames.append('N_eff')
    
     # Add f_NL deriv. to list
     if transfer_fn is not None:
         deriv_list.append(deriv_fNL)
         #deriv_list.append(deriv_omegak_ng) # FIXME: Currently ignored
         #deriv_list.append(deriv_omegaDE_ng)
+        paramnames.append('f_NL')
     
     # Add deriv_pk to list (always assumed to be last in the list)
     deriv_list.append(deriv_pk)
+    paramnames.append('pk')
     
     # Return derivs. Order is:
-    # ( A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [fNL], 
-    #   [omega_k_ng], [omega_DE_ng], pk )
-    return deriv_list
+    # (A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [Neff], [fNL], pk)
+    return deriv_list, paramnames
 
 
 def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
@@ -1553,6 +1620,7 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
         dE_omegak = lambda a: 0.5 * a**(-2.) / E(a)
     else:
         dE_omegak = lambda a: 0.5 * a**(-2.) / E(a) * (1. - 1./a)
+    dE_omegaM = lambda a: 0.5 * a**(-3.) / E(a)
     dE_omegaDE = lambda a: 0.5 / E(a) * (1. - 1./a**3.)
     dE_w0 = lambda a: -1.5 * omegaDE(a) * np.log(a) / E(a)
     dE_wa = lambda a: -1.5 * omegaDE(a) * (np.log(a) + 1. - a) / E(a)
@@ -1647,7 +1715,7 @@ def indexes_for_sampled_fns(p, Nbins, zfns):
     idxs = np.where(np.array(ids) == p)[0]
     return idxs
 
-def expand_matrix_for_sampled_fn(Fold, idx_fn, Nsamp, isamp):
+def expand_matrix_for_sampled_fn(Fold, idx_fn, Nsamp, isamp, names):
     """
     Expand a Fisher matrix to include a row/column for each sample of a 
     function. The function sample rows are all set to zero, except the one with 
@@ -1671,6 +1739,9 @@ def expand_matrix_for_sampled_fn(Fold, idx_fn, Nsamp, isamp):
         
         To get a total Fisher matrix for a given set of samples, call this 
         function Nsamples times, incrementing isamp after each call.
+    
+    names : list
+        Parameter names.
     """
     idx = idx_fn
     n = Fold.shape[0]
@@ -1690,9 +1761,13 @@ def expand_matrix_for_sampled_fn(Fold, idx_fn, Nsamp, isamp):
     Fnew[idx+isamp,idx+Nsamp:] = Fold[idx,idx+1:]
     Fnew[idx+Nsamp:,idx+isamp] = Fold[idx+1:,idx]
     
-    return Fnew
+    # Update list of parameter names
+    new_names = names[:idx]
+    new_names += ["%s%d" % (names[idx], i) for i in range(Nsamp)]
+    new_names += names[idx+1:]
+    return Fnew, new_names
 
-def combined_fisher_matrix(F_list, exclude=[], expand=[], names=None):
+def combined_fisher_matrix(F_list, names, exclude=[], expand=[]):
     """
     Combine the individual redshift bin Fisher matrices from a survey into one 
     Fisher matrix. In the process, remove unwanted parameters, and expand the 
@@ -1704,12 +1779,12 @@ def combined_fisher_matrix(F_list, exclude=[], expand=[], names=None):
     F_list : list of array_like
         List of Fisher matrices, sorted by redshift bin.
     
-    exclude : list of int (optional)
-        Parameter indices (of the original Fisher matrices) of parameters that 
+    exclude : list (optional)
+        Names of parameters of the original Fisher matrices that 
         should be removed from the final matrix.
         
-    expand : list of int (optional)
-        Parameter indices (of the original Fisher matrices) of parameters that 
+    expand : list (optional)
+        Names of parameters of the original Fisher matrices that 
         should be expanded as functions of redshift.
     
     names : list (optional)
@@ -1722,9 +1797,16 @@ def combined_fisher_matrix(F_list, exclude=[], expand=[], names=None):
     
     Ftot : array_like
         Combined Fisher matrix.
+    
+    names : list
+        Updated list of parameter names.
     """
     Nbins = len(F_list)
     Nparams = F_list[0].shape[0]
+    
+    # Get indices for parameters that will be excluded/expanded
+    exclude = indices_for_param_names(names, exclude)
+    expand = indices_for_param_names(names, expand)
     
     # Calculate indices of params to expand, after excluded params are removed
     idxs = [i for i in range(Nparams)]
@@ -1737,31 +1819,12 @@ def combined_fisher_matrix(F_list, exclude=[], expand=[], names=None):
     Ftot = 0
     for i in range(Nbins):
         # Exclude parameters
-        F = fisher_with_excluded_params(F_list[i], exclude)
-        
+        F, new_names = fisher_with_excluded_params(F_list[i], exclude, names)
         # Expand fns. of z
         for idx in new_expand:
-            F = expand_matrix_for_sampled_fn(F, idx, Nbins, i)
+            F, new_names = expand_matrix_for_sampled_fn(F, idx, Nbins, i, new_names)
         Ftot += F
-    
-    # Return, or else figure out new names and return
-    if names is None:
-        return Ftot
-    else:
-        # Remove names of excluded parameters
-        new_names = [n for n in names]
-        for exc in exclude: new_names.remove(names[exc])
-        
-        # Return labels for all parameters
-        lbls = []
-        for i in range(Nparams - len(exclude)):
-            idxs = indexes_for_sampled_fns(i, Nbins, new_expand)
-            if len(idxs) == 1:
-                lbls.append(new_names[i])
-            else:
-                for j in range(len(idxs)):
-                    lbls.append("%s%d" % (new_names[i], j))
-        return Ftot, lbls
+    return Ftot, new_names
 
 def add_fisher_matrices(F1, F2, lbls1, lbls2, info=False, expand=False):
     """
@@ -1801,7 +1864,78 @@ def add_fisher_matrices(F1, F2, lbls1, lbls2, info=False, expand=False):
     else:
         return Fnew
 
-def expand_fisher_matrix(z, derivs, F, exclude=[]):
+def transform_to_lss_distances(z, F, paramnames, cosmo_fns=None, DA=None, H=None, 
+                               rescale_da=1., rescale_h=1.):
+    """
+    Transform constraints on D_A(z) and H(z) into constraints on the LSS 
+    distance measures, D_V(z) and F(z).
+    
+    Parameters
+    ----------
+    
+    z : float
+        Redshift of the current bin
+    
+    F : array_like
+        Fisher matrix for the current bin
+    
+    paramnames : list
+        Ordered list of parameter names for the Fisher matrix
+    
+    cosmo_fns : tuple of functions, optional
+        Functions for H(z), r(z), D(z), f(z). If specified, these are used to 
+        calculate H(z) and D_A(z).
+    
+    DA, H : float, optional
+        Values of H(z) and D_A(z) at the current redshift. These will be used 
+        if cosmo_fns is not specified.
+    
+    rescale_da, rescale_h : float, optional
+        Scaling factors for H and D_A in the original Fisher matrix.
+    
+    Returns
+    -------
+    Fnew : array_like
+        Updated Fisher matrix, with D_A replaced by D_V, and H replaced by F.
+    
+    newnames : list
+        Updated list of parameter names.
+    """
+    # Calculate distances
+    if cosmo_fns is not None:
+        HH, rr, DD, ff = cosmo_fns
+        DA = rr(z) / (1. + z)
+        H = HH(z)
+    DV = ((1.+z)**2. * DA**2. * C*z / H)**(1./3.)
+    FF = (1.+z) * DA * H / C
+    
+    # Indices of parameters to be replaced (DA <-> DV, H <-> F)
+    idv = ida = paramnames.index('DA')
+    iff = ih = paramnames.index('H')
+    
+    # Construct extension operator, d(D_A, H)/d(D_V, F)
+    S = np.eye(F.shape[0])
+    S[ida,idv] = DA / DV        # d D_A / d D_V
+    S[ida,iff] = DA / (3.*FF)   # d D_A / d F
+    S[ih,idv] = - H / DV        # d H / d D_V
+    S[ih,iff] = 2.*H / (3.*FF)  # d H / d F
+    
+    # Rescale Fisher matrix for DA, H
+    F[ida,:] /= rescale_da; F[:,ida] /= rescale_da
+    F[ih,:] /= rescale_h; F[:,ih] /= rescale_h
+    
+    # Multiply old Fisher matrix by extension operator to get new Fisher matrix
+    Fnew = np.dot(S.T, np.dot(F, S))
+    
+    # Rename parameters
+    newnames = copy.deepcopy(paramnames)
+    newnames[ida] = 'DV'
+    newnames[ih] = 'F'
+    return Fnew, newnames
+    
+    
+
+def expand_fisher_matrix(z, derivs, F, names, exclude=[]):
     """
     Transform Fisher matrix to with (f, aperp, apar) parameters into one with 
     dark energy EOS parameters (Omega_k, Omega_DE, w0, wa, h, gamma) instead.
@@ -1820,7 +1954,10 @@ def expand_fisher_matrix(z, derivs, F, exclude=[]):
     F : array_like
         Fisher matrix for the old parameters.
     
-    exclude : array_like
+    names : list
+        List of names of the parameters in the current Fisher matrix.
+    
+    exclude : list, optional
         Prevent a subset of the functions [f, aperp, apar] from being converted 
         to EOS parameters. e.g. exclude = [1,] will prevent aperp from 
         contributing to the EOS parameter constraints.
@@ -1830,21 +1967,24 @@ def expand_fisher_matrix(z, derivs, F, exclude=[]):
     
     Fnew : array_like
         Fisher matrix for the new parameters.
+    
+    paramnames : list, optional
+        Names parameters in the expanded Fisher matrix.
     """
     a = 1. / (1. + z)
     
     # Define mapping between old and new Fisher matrices (including expanded P(k) terms)
-    old = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 'Mnu'] #, 'fNL']
-    Nkbins = F.shape[0] - len(old)
-    old += ["Pk%d" % i for i in range(Nkbins)] # P(k) bins
+    old = copy.deepcopy(names)
     Nold = len(old)
-    oldidxs = [6, 7, 8] # Indices to be replaced (f, aperp, apar)
+    oldidxs = [old.index(p) for p in ['f', 'aperp', 'apar']]
     
-    new = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-           'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'Mnu'] #, 'fNL']
-    new += ["Pk%d" % i for i in range(Nkbins)] # P(k) bins
+    # Insert new parameters immediately after 'apar'
+    new_params = ['omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
+    new = old[:old.index('apar')+1]
+    new += new_params
+    new += old[old.index('apar')+1:]
+    newidxs = [new.index(p) for p in new_params]
     Nnew = len(new)
-    newidxs = [9, 10, 11, 12, 13, 14] # Indices of new parameters
     
     # Construct extension operator, d(f,aperp,par)/d(beta)
     S = np.zeros((Nold, Nnew))
@@ -1862,21 +2002,81 @@ def expand_fisher_matrix(z, derivs, F, exclude=[]):
     
     # Multiply old Fisher matrix by extension operator to get new Fisher matrix
     Fnew = np.dot(S.T, np.dot(F, S))
-    return Fnew
+    return Fnew, new
 
 
-def fisher_with_excluded_params(F, excl):
+def fisher_with_excluded_params(F, excl, names):
     """
     Return Fisher matrix with certain rows/columns excluded
     """
+    # Remove excluded parameters from Fisher matrix
     Nnew = F.shape[0] - len(excl)
     msk = [i not in excl for i in range(F.shape[0])] # 1D mask
     Fnew = F[np.outer(msk,msk)].reshape((Nnew, Nnew))
-    return Fnew
+    
+    # Remove names of excluded parameters
+    excl_names = [names[i] for i in excl]
+    new_names = copy.deepcopy(names)
+    for n in excl_names: del new_names[new_names.index(n)]
+    return Fnew, new_names
 
+def indices_for_param_names(paramnames, params, warn=True):
+    """
+    Returns indices of parameters 
+    
+    Parameters
+    ----------
+    
+    paramnames : list
+        Full (ordered) list of parameters used in Fisher matrix.
+    
+    params : list
+        List of parameter names to find indices for. If the name is given with 
+        a trailing asterisk, e.g. 'pk*', all parameters *starting* with 'pk' will 
+        be matched. Matches will not be made mid-string.
+    
+    warn : bool, optional
+        Whether to show a warning if a parameter is not found. Default: true.
+    
+    Returns
+    -------
+    
+    idxs : list
+        List of indices of parameters specified in 'params'
+    """
+    if type(params) is str: params = [params,] # Convert single param. string to list
+    idxs = []
+    for p in params:
+      if p[-1] == "*":
+        # Wildcard; match all params
+        for i in range(len(paramnames)):
+          if p[:-1] == paramnames[i][:len(p[:-1])]:
+            idxs.append(i)
+      else:
+        # Add index of parameter to list
+        if p in paramnames:
+          idxs.append( paramnames.index(p) )
+        else:
+          # Parameter not found; throw a warning
+          if warn: print "\tindices_for_param_names(): %s not found in param list." % p
+    return np.array(idxs)
+
+def load_param_names(fname):
+    """
+    Load parameter names from Fisher matrix with a given filename.
+    (Names are stored as a header comment.)
+    """
+    f = open(fname, 'r')
+    hdr = f.readline()
+    if hdr[0] == '#':
+        names = hdr.split()[1:] # (trim leading #)
+    else:
+        raise ValueError("Unable to process line 0 of %s as a header." % fname)
+    f.close()
+    return names
 
 def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None, 
-            massive_nu_fn=None, transfer_fn=None, cv_limited=False, 
+            massive_nu_fn=None, Neff_fn=None, transfer_fn=None, cv_limited=False, 
             kmin=1e-7, kmax=130. ):
     """
     Return Fisher matrix (an binned power spectrum, with errors) for given
@@ -1906,7 +2106,12 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
         If return_pk=True, defines the bin edges in k for the binned P(k).
     
     massive_nu_fn : interpolation fn.
-        Interpolating function for calculating derivative of P(k) w.r.t. Sum(mnu)
+        Interpolating function for calculating derivative of log[P(k)] with 
+        respect to neutrino mass, Sum(mnu)
+    
+    Neff_fn : interpolation fn.
+        Interpolating function for calculating derivative of log[P(k)] with 
+        respect to effective number of neutrinos.
     
     transfer_fn : interpolation fn.
         Interpolating function for calculating T(k) and its derivative w.r.t k.
@@ -1995,10 +2200,11 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     
     # Get derivative terms for Fisher matrix integrands, then perform the 
     # integrals and populate the matrix
-    derivs = fisher_integrands( kgrid, ugrid, cosmo, expt, 
-                                massive_nu_fn=massive_nu_fn,
-                                transfer_fn=transfer_fn,
-                                cv_limited=cv_limited )
+    derivs, paramnames = fisher_integrands( kgrid, ugrid, cosmo, expt, 
+                                            massive_nu_fn=massive_nu_fn,
+                                            Neff_fn=Neff_fn,
+                                            transfer_fn=transfer_fn,
+                                            cv_limited=cv_limited )
     F = Vfac * integrate_fisher_elements(derivs, kgrid, ugrid)
     
     # Calculate cross-terms between binned P(k) and other params
@@ -2009,9 +2215,10 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
         # Calculate binned P(k) and cross-terms with other params
         kc, pbins = bin_cumulative_integrals(cumul, kgrid, kbins)
         
-        # Add k-binned terms to Fisher matrix
+        # Add k-binned terms to Fisher matrix (remove non-binned P(k))
         pnew = len(cumul) - 1
-        FF = fisher_with_excluded_params(F, excl=[F.shape[0]-1]) # Remove non-binned P(k)
+        FF, paramnames = fisher_with_excluded_params(F, excl=[F.shape[0]-1], 
+                                                     names=paramnames)
         F_pk = Vfac * expand_fisher_with_kbinned_parameter(FF / Vfac, pbins, pnew)
         
         # Construct dict. with info needed to rebin P(k) and cross-terms
@@ -2021,8 +2228,20 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
           'cumul':   cumul,
           'kgrid':   kgrid
         }
+        
+        # Append paramnames
+        paramnames += ["pk%d" % i for i in range(kc.size)]
     
     # Return results
-    if return_pk: return F_pk, kc, binning_info
-    return F
+    if return_pk: return F_pk, kc, binning_info, paramnames
+    return F, paramnames
 
+
+class FisherMatrix(object):
+    
+    def __init__(self):
+        """
+        Fisher matrix object.
+        """
+        F = 0
+    
