@@ -16,33 +16,13 @@ import euclid
 
 cosmo = experiments.cosmo
 
-#names = ["cVcexptL", "cNEWexptL", "cNEW2exptL", "cNEW3exptL"] #"iexptM"] #, "exptS"]
-
-names = ["cSKA1MID", "SKA1MID", "iSKA1MID", "SKA1SUR"]
-labels = ["SKA1-MID (Combined)", "SKA1-MID (Dish)", "SKA1-MID (Int.)", "SKA1-SUR (Dish)"]
-
-
-names = ['SKA1MID190', 'SKA1MID250', 'SKA1MID350',
-         'SKA1MID190oHI9', 'SKA1MID250oHI9', 'SKA1MID350oHI9',
-         'SKA1MID350oHI9-numax1150', 'SKA1MID350oHI9-numax1150-dnu800']
-labels = ['SKA1MID190', 'SKA1MID250', 'SKA1MID350',
-         'SKA1MID190oHI9', 'SKA1MID250oHI9', 'SKA1MID350oHI9',
-         'SKA1MID350oHI9-numax1150', 'SKA1MID350oHI9-numax1150-dnu800']
-
-names = ['cexptL', 'iexptM2', 'iexptM', 'exptS']
-labels = ['Facility', 'Mature 30k deg^2', 'Mature 5k deg^2', 'Snapshot']
-
-
-colours = ['#CC0000', '#FAE300', '#5B9C0A', '#1619A1', '#ED5F21', '#56129F', '#990A9C', 'c', 'm', 'y', 'r', 'g']
-#colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C', 'c']
-linestyle = ['solid',]*8 #['solid', 'dashed', 'dashed', 'solid'] + ['solid',]*4
-######colours = ['#990A9C', '#CC0000', '#5B9C0A', '#1619A1'] # FIXME: USE THIS!
-#linestyle = ['solid', 'solid', 'dashed', 'dashdot']
-#labels = ['CV-limited Behemoth', 'Behemoth', 'Mature', 'Snapshot']
-#labels = ['CV-limited', 'SKAMREF2COMP', 'SKAMREF2', 'cNEW3exptL'] #'SKAMREF2(old)']
+names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
+colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
+labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
 # Get f_bao(k) function
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat")
+cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
@@ -64,7 +44,8 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
     pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'fNL']
+             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
+    #if "Euclid" not in names[k]: pnames.append('fNL')
     pnames += ["pk%d" % i for i in range(kc.size)]
     zfns = []; excl = []
     F, lbls = baofisher.combined_fisher_matrix( F_list,
@@ -97,14 +78,17 @@ for k in range(len(names)):
         # Plot errorbars
         P.plot(kc, cov, color=colours[k], label=labels[k], lw=2.2, ls=linestyle[k])
     """
-    P.plot(kc, cov, color=colours[k], label=labels[k], lw=2.2, ls=linestyle[k])
+    line = P.plot(kc, cov, color=colours[k], label=labels[k], lw=2.4)
+    
+    # Set custom linestyle    
+    line[0].set_dashes(linestyle[k])
 
 
 P.xscale('log')
 P.yscale('log')
 P.xlim((2e-3, 3e0))
 P.ylim((9e-4, 1e1))
-P.legend(loc='lower left', prop={'size':'medium'})
+P.legend(loc='lower left', prop={'size':'large'})
 
 # Resize labels/ticks
 fontsize = 18
@@ -120,6 +104,6 @@ P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'20'})
 P.tight_layout()
 # Set size
 P.gcf().set_size_inches(8.,6.)
-P.savefig('mario-pub-dlogp-x.png', dpi=200) # 100
+P.savefig('pub-dlogp.pdf', transparent=True) # 100
 
 P.show()

@@ -2,7 +2,6 @@
 """
 Plot functions of redshift.
 """
-
 import numpy as np
 import pylab as P
 import baofisher
@@ -14,25 +13,20 @@ import experiments
 import os
 import euclid
 
+# Choose which function of redshift to plot
 #fn = 'DA'
 #fn = 'H'
 fn = 'f'
 
 cosmo = experiments.cosmo
 
-names = ["cexptL", "iexptM", "exptS", "iexptL", "iL"]
-#colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
-colours = ['#CC0000', '#1619A1', '#5B9C0A', '#1619A1',   '#990A9C', '#FAE300']
-labels = ['Behemoth', 'Mature', 'Snapshot', 'iBeh', 'iiiBeh']
-linestyle = ['solid', 'solid', 'dashed', 'dashdot', 'solid', 'solid']
+names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
+colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
+labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
-
-names = ["cSKA1MID", "SKA1SUR"] # "SKA1MID"]
-labels = ["SKA1-MID (Combined)", "SKA1-SUR (Dish)"] #, "SKA1-MID (Dish)"]
-
-# Get f_bao(k) function
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
-fbao = cosmo['fbao']
+cosmo_fns = baofisher.background_evolution_splines(cosmo)
+#cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -55,10 +49,10 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
     pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'fNL']
+             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
     pnames += ["pk%d" % i for i in range(kc.size)]
     zfns = [0,1,6,7,8]
-    excl = [2,4,5,  9,10,11,12,13,14,15] # Exclude all cosmo params
+    excl = [2,4,5,  9,10,11,12,13,14] # Exclude all cosmo params
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
     F, lbls = baofisher.combined_fisher_matrix( F_list,
@@ -67,7 +61,7 @@ for k in range(len(names)):
     cov = np.linalg.inv(F)
     
     # Get functions of z
-    zfns = [0,1,3,4,5]
+    zfns = [0,1,3,4,5] # A, b_HI, f, DA, H
     pA  = baofisher.indexes_for_sampled_fns(0, zc.size, zfns)
     #pb  = baofisher.indexes_for_sampled_fns(1, zc.size, zfns)
     pDA = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
@@ -85,9 +79,11 @@ for k in range(len(names)):
     if fn == 'H': err = 1e2 * errs[pH] / Hc
     if fn == 'f': err = errs[pf] / fc
     
-    ax1.plot( zc, err, color=colours[k], lw=1.8, marker='.', label=labels[k], 
-              ls=linestyle[k] )
-    if k == 0:
+    line = ax1.plot(zc, err, color=colours[k], lw=1.8, marker='o', label=labels[k])
+    # Set custom linestyle
+    line[0].set_dashes(linestyle[k])
+    
+    if k == 1:
         if fn == 'DA': ax2.plot(z, dA, color='k', lw=2., alpha=0.4)
         if fn == 'H':  ax2.plot(z, H, color='k', lw=2., alpha=0.4)
         if fn == 'f':  ax2.plot(z, f, color='k', lw=2., alpha=0.4)
@@ -104,9 +100,9 @@ b = pos[0][0,1]
 ax1.set_position([l, b - 0.5*dy - 0.3*h, w, 1.3*h+0.5*dy])
 ax2.set_position([l, (b - 0.5*dy - 0.3*h) - (0.6*h+0.5*dy), w, 0.6*h+0.5*dy])
 
-ax1.set_ylim((0., 0.35))
-ax1.set_xlim((0.26, 2.4))
-ax2.set_xlim((0.26, 2.4))
+ax1.set_ylim((0., 0.067))
+ax1.set_xlim((0.26, 2.2))
+ax2.set_xlim((0.26, 2.2)) # 2.4
 
 #ax1.set_ylim((0., 2.52))
 if fn == 'DA': ax2.set_ylim((800., 1950.))

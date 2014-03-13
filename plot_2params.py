@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Plot 1D constraints on a parameter.
+Plot 2D constraints on a pair of parameters.
 """
 import numpy as np
 import pylab as P
@@ -16,31 +16,40 @@ import euclid
 
 cosmo = experiments.cosmo
 
-fig_name = "pub-ok.pdf"
+#fig_name = "pub-w0omegaDE.pdf"
+#fig_name = "pub-w0wa-okmarg.pdf"
+nsig = 4. # No. of sigma to plot out to
+aspect = 1. #1.7 # Aspect ratio of range (w = aspect * h)
 
-param1 = "omegak"
-label1 = "$\Omega_K$"
-fid1 = 0.
+param1 = "w0"
+label1 = "$w_0$"
+fid1 = cosmo['w0']
 
-USE_DETF_PLANCK_PRIOR = True
-MARGINALISE_CURVATURE = True    # Marginalise over Omega_K
-MARGINALISE_INITIAL_PK = True   # Marginalise over (n_s, sigma_8)
-MARGINALISE_OMEGAB = True      # Marginalise over Omega_baryons
-MARGINALISE_W0WA = True         # Marginalise over (w0, wa)
+param2 = "wa"
+label2 = "$w_a$"
+fid2 = cosmo['wa']
+
+#param2 = "omegaDE"
+#label2 = "$\Omega_\mathrm{DE}$"
+#fid2 = cosmo['omega_lambda_0']
+
+
+USE_DETF_PLANCK_PRIOR = False # FIXME True
+MARGINALISE_CURVATURE = True # Marginalise over Omega_K
+MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
+MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
 labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
-colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
+colours = [ ['#CC0000', '#F09B9B'],
+            ['#1619A1', '#B1C9FD'],
+            ['#5B9C0A', '#BAE484'],
+            ['#FFB928', '#FFEA28'] ]
 
-colours = ['#BAE484', '#5B9C0A',   '#B1C9FD', '#1619A1',   '#F6ADAD', '#CC0000',
-           '#FFB928', '#FFEA28']
-#'#F09B9B'
 # Fiducial value and plotting
 fig = P.figure()
 ax = fig.add_subplot(111)
 
-Nexpt = len(names)
-m = 0
 _k = range(len(names))[::-1]
 for k in _k:
     root = "output/" + names[k]
@@ -56,9 +65,15 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'H', 'DA', 'gamma', 'N_eff', 'pk*']
+    # Actually, (aperp, apar) are (D_A, H)
+    pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
+             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
+    pnames += ["pk%d" % i for i in range(kc.size)]
+    
+    zfns = [1,]
+    excl = [2,  6,7,8,  14] # omega_k free 4,5
+    excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
+    
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -84,45 +99,49 @@ for k in _k:
     if not MARGINALISE_CURVATURE: fixed_params += ['omegak',]
     if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
     if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
-    if not MARGINALISE_W0WA: fixed_params += ['w0', 'wa']
     
     if len(fixed_params) > 0:
-        print "REMOVING:", fixed_params
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=fixed_params )
+                     names=lbls, exclude=[lbls.index(p) for p in fixed_params] )
     
-    # Invert matrix (w0, wa marginalised)
+    # Really hopeful H0 prior
+    #ph = lbls.index('h')
+    #Fpl[ph, ph] += 1./(0.001)**2.
+    
+    # Get indices of params
+    p1 = lbls.index(param1)
+    p2 = lbls.index(param2)
+    
+    print "-"*50
+    print names[k]
+    print "-"*50
+    
+    # Invert matrix
     cov_pl = np.linalg.inv(Fpl)
     
-    # Invert matrix with (w0,wa) fixed
-    Fpl2, lbls2 = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=['w0', 'wa'] )
-    cov_pl2 = np.linalg.inv(Fpl2)
+    # Calculate FOM
+    fom = baofisher.figure_of_merit(p1, p2, None, cov=cov_pl)
+    print "%s: FOM = %3.2f" % (names[k], fom)
+    print "1D sigma(p1) = %3.4f" % np.sqrt(cov_pl[p1,p1])
+    print "1D sigma(p2) = %3.4f" % np.sqrt(cov_pl[p2,p2])
     
-    # Plot errorbars and annotate
-    # (w0, wa) free
-    p1 = lbls.index(param1)
     x = fid1
-    err = np.sqrt(np.diag(cov_pl))[p1]
-    print "%10s -- %s: %4.2e" % (lbls[p1], names[k], err), "\n"
+    y = fid2
     
-    ax.errorbar( x, m, xerr=err, color=colours[m], lw=2., 
-                 marker='.', markersize=10., markeredgewidth=2. )
-    ax.annotate( labels[k], xy=(x, m+1.0), xytext=(0., -10.), 
-                 fontsize='large', textcoords='offset points', ha='center', va='center' )
+    # Plot 2D contours for params
+    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(p1, p2, None, Finv=cov_pl)
+    ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
+                height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
+                ec=colours[k][0], lw=1.5, alpha=1.) for kk in [1,0]]
+    for e in ellipses: ax.add_patch(e)
     
-    # (w0, wa) fixed
-    p1 = lbls.index(param1)
-    x = fid1
-    err = np.sqrt(np.diag(cov_pl2))[p1]
-    print "\n%10s -- %s: %4.2e" % (lbls[p1], names[k], err), "(w0/wa fixed)\n"
+    # Use 4-sigma out of middle experiment to decide on scale of plot
+    if k == 1:
+        dx = aspect * nsig * np.sqrt(cov_pl[p1,p1])
+        dy = nsig * np.sqrt(cov_pl[p2,p2])
     
-    ax.errorbar( x, m+0.5, xerr=err, color=colours[m+1], lw=2., markeredgewidth=2.,
-                 marker='.', markersize=10. )
-    #ax.annotate( labels[k], xy=(x, m), xytext=(0., 10.), 
-    #             fontsize='large', textcoords='offset points', ha='center', va='bottom' )
-    
-    m += 2
+    # Centroid
+    ax.plot(x, y, 'kx')
 
 
 # Report on what options were used
@@ -130,26 +149,15 @@ print "-"*50
 s1 = "Marginalised over Omega_K" if MARGINALISE_CURVATURE else "Fixed Omega_K"
 s2 = "Marginalised over ns, sigma8" if MARGINALISE_INITIAL_PK else "Fixed ns, sigma8"
 s3 = "Marginalised over Omega_b" if MARGINALISE_OMEGAB else "Fixed Omega_b"
-s4 = "Marginalised over w0, wa" if MARGINALISE_W0WA else "Fixed w0, wa"
 print "NOTE:", s1
 print "NOTE:", s2
 print "NOTE:", s3
-print "NOTE:", s4
 
+# Legend
+labels = [labels[k] + " + Planck" for k in range(len(labels))]
+lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-
-# Planck-only 1D
-omegak_planck_up = -5e-4 + 0.5*6.6e-3 # From Planck 2013 XVI, Table 10, Planck+WMAP+highL+BAO, 95% CL
-omegak_planck_low = -5e-4 - 0.5*6.6e-3
-
-ax.axvspan(omegak_planck_up, 1., ec='none', fc='#f2f2f2')
-ax.axvspan(-1., omegak_planck_low, ec='none', fc='#f2f2f2')
-ax.axvline(omegak_planck_up, ls='dotted', color='k', lw=2.)
-ax.axvline(omegak_planck_low, ls='dotted', color='k', lw=2.)
-
-#ax.axvspan(-4e-4, 4e-4, ec='none', fc='#f2f2f2')
-#ax.axvline(-4e-4, ls='dotted', color='k', lw=1.5)
-#ax.axvline(+4e-4, ls='dotted', color='k', lw=1.5)
+P.gcf().legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'large'})
 
 fontsize = 20
 for tick in ax.xaxis.get_major_ticks():
@@ -163,15 +171,13 @@ ax.xaxis.set_minor_locator(xminorLocator)
 ax.yaxis.set_minor_locator(yminorLocator)
 
 ax.set_xlabel(label1, fontdict={'fontsize':'xx-large'}, labelpad=15.)
-#ax.set_ylabel(label2, fontdict={'fontsize':'xx-large'}, labelpad=15.)
+ax.set_ylabel(label2, fontdict={'fontsize':'xx-large'}, labelpad=15.)
 
-ax.set_xlim((-5e-3, 5e-3))
-ax.set_ylim((-0.75, 2.*Nexpt - 0.5))
-
-ax.tick_params(axis='both', which='both', labelleft='off', left='off', right='off', length=8., width=1.5, pad=8.)
+ax.set_xlim((x-dx, x+dx))
+ax.set_ylim((y-dy, y+dy))
 
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
-P.savefig(fig_name, transparent=True)
+#P.savefig(fig_name, transparent=True)
 P.show()

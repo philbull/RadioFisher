@@ -2,7 +2,6 @@
 """
 Plot functions of redshift.
 """
-
 import numpy as np
 import pylab as P
 import baofisher
@@ -14,25 +13,21 @@ import experiments
 import os
 import euclid
 
+# Choose which function of redshift to plot
 #fn = 'DA'
 #fn = 'H'
 fn = 'f'
 
 cosmo = experiments.cosmo
 
-names = ["cexptL", "iexptM", "exptS", "iexptL", "iL"]
-#colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
-colours = ['#5B9C0A', '#1619A1', '#CC0000', '#5B9C0A', '#1619A1',   '#990A9C', '#FAE300']
-labels = ['Behemoth', 'Mature', 'Snapshot', 'iBeh', 'iiiBeh']
-linestyle = ['solid', 'solid', 'dashed', 'dashdot', 'solid', 'solid']
+names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
+colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
+labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
 
-names = ["cSKA1MID", "SKA1SUR"] # "SKA1MID"]
-labels = ["SKA1-MID (Combined)", "SKA1-SUR (Dish)"] #, "SKA1-MID (Dish)"]
-
-# Get f_bao(k) function
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
-fbao = cosmo['fbao']
+cosmo_fns = baofisher.background_evolution_splines(cosmo)
+#cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -54,10 +49,10 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
     pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'fNL']
+             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma'] #, 'fNL']
     pnames += ["pk%d" % i for i in range(kc.size)]
     zfns = [0,1,6,7,8]
-    excl = [2,4,5,  9,10,11,12,13,14,15] # Exclude all cosmo params
+    excl = [2,4,5,  9,10,11,12,13,14] # Exclude all cosmo params
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
     F, lbls = baofisher.combined_fisher_matrix( F_list,
@@ -66,7 +61,7 @@ for k in range(len(names)):
     cov = np.linalg.inv(F)
     
     # Get functions of z
-    zfns = [0,1,3,4,5]
+    zfns = [0,1,3,4,5] # A, b_HI, f, DA, H
     pA  = baofisher.indexes_for_sampled_fns(0, zc.size, zfns)
     #pb  = baofisher.indexes_for_sampled_fns(1, zc.size, zfns)
     pDA = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
@@ -90,8 +85,11 @@ for k in range(len(names)):
         yc = fc
         err = errs[pf]
     
-    ax1.errorbar( zc, yc, yerr=err, color=colours[k], lw=1.8, marker='.', label=labels[k], 
-              ls='none' )
+    line = ax1.errorbar( zc, yc, yerr=err, color=colours[k], lw=1.8, marker='.',
+                         label=labels[k],)
+    # Set custom linestyle    
+    line[0].set_dashes(linestyle[k])
+    
     if k == 0:
         if fn == 'DA': ax1.plot(z, dA, color='k', lw=2., alpha=0.4)
         if fn == 'H':  ax1.plot(z, H, color='k', lw=2., alpha=0.4)
@@ -132,8 +130,8 @@ ax1.legend(loc='upper left', prop={'size':'large'})
 # Set size
 P.gcf().set_size_inches(8.5, 7.)
 
-if fn == 'DA': P.savefig('mario-pub-da-z.png', dpi=100)
-if fn == 'H': P.savefig('mario-pub-h-z.png', dpi=100)
-if fn == 'f': P.savefig('mario-pub-f-z.png', dpi=100)
+if fn == 'DA': P.savefig('pub-da-z.pdf', transparent=True)
+if fn == 'H': P.savefig('pub-h-z.pdf', transparent=True)
+if fn == 'f': P.savefig('pub-f-z.pdf', transparent=True)
 
 P.show()

@@ -14,23 +14,27 @@ import experiments
 import os
 import euclid
 
-fig_name = "pub-w0wa-okmarg.pdf"
-#fig_name = "pub-w0wa-okfixed.pdf"
+fig_name = "pub-w0wa-distance-methods.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
-MARGINALISE_CURVATURE = True # Marginalise over Omega_K
+MARGINALISE_CURVATURE = False # Marginalise over Omega_K
 MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
-names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
 
-#names = ['EuclidRef', 'EuclidRefLINEAR', 'EuclidRefLINEAR2'] #, 'exptS']
-#labels = ['DETF IV', 'DETF IV L', 'DETF IV L2'] #, 'Snapshot']
-#names = ['cexptL_Sarea2k', 'cexptL_Sarea5k', 'cexptL_Sarea10k', 'cexptL_Sarea15k', 'cexptL_Sarea20k', 'cexptL_Sarea30k', 'cexptL_Sarea25k', 'cexptL_Sarea1k']
+
+
+
+names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 'cexptL_bao_vol', 'cexptL_bao_allap', 'cexptL_bao_all']
+labels = ['BAO only', 'BAO + RSD', 'BAO + P(k) shift', 'BAO + Volume', 'BAO + AP', 'All']
+
 
 colours = [ ['#CC0000', '#F09B9B'],
+            ['#1619A1', '#B1C9FD'],
+            ['#5B9C0A', '#BAE484'],
+            ['#FFB928', '#FFEA28'],
+            ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
             ['#5B9C0A', '#BAE484'],
             ['#FFB928', '#FFEA28'] ]
@@ -54,9 +58,13 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
+    # Actually, (aperp, apar) are (D_A, H)
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*']
+    zfns = [1,]
+    excl_names = ['Tb', 'f', 'aperp', 'apar', 'gamma', 'N_eff']
+    excl = [pnames.index(p) for p in excl_names] #[2,  6,7,8,  14,15]
+    excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
+    
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -85,7 +93,7 @@ for k in _k:
     
     if len(fixed_params) > 0:
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=fixed_params )
+                     names=lbls, exclude=[lbls.index(p) for p in fixed_params] )
     
     # Really hopeful H0 prior
     #ph = lbls.index('h')
@@ -111,11 +119,10 @@ for k in _k:
     y = experiments.cosmo['wa']
     
     # Plot contours for w0, wa; omega_k free
-    transp = [1., 0.85]
     w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
-                ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
+                ec=colours[k][0], lw=1.5, alpha=0.3) for kk in [1,0]]
     for e in ellipses: ax.add_patch(e)
     
     # Centroid
@@ -135,9 +142,14 @@ print "NOTE:", s3
 labels = [labels[k] + " + Planck" for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.95, 0.95])
+P.gcf().legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'x-large'})
 
-ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
+fontsize = 20
+for tick in ax.xaxis.get_major_ticks():
+  tick.label1.set_fontsize(fontsize)
+for tick in ax.yaxis.get_major_ticks():
+  tick.label1.set_fontsize(fontsize)
+
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
 yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
 ax.xaxis.set_minor_locator(xminorLocator)
@@ -149,13 +161,14 @@ ax.set_ylabel(r"$w_a$", fontdict={'fontsize':'xx-large'})
 
 ax.set_xlim((-1.75, -0.25))
 ax.set_ylim((-2.1, 2.1))
-
+"""
 if MARGINALISE_CURVATURE:
-    ax.set_xlim((-1.25, -0.75))
-    ax.set_ylim((-0.9, 0.9))
+    ax.set_xlim((-1.75, -0.25))
+    ax.set_ylim((-2.1, 2.1))
 else:
     ax.set_xlim((-1.25, -0.75))
     ax.set_ylim((-0.9, 0.9))
+"""
 
 # Set size and save
 P.tight_layout()

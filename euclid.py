@@ -69,7 +69,8 @@ def euclid_to_baofisher(F, cosmo):
     Fisher matrix available from Mukherjee et al., arXiv:0803.1616v1.
     
     Euclid:    {w0, wa, omega_DE, omega_k, w_m, w_b, n_s}
-    BAOFisher: {n_s, w0, wa, omega_b, omega_k, omega_DE, h}
+    Old BAOFisher: {n_s, w0, wa, omega_b, omega_k, omega_DE, h}
+    New BAOFisher: {n_s, w0, wa, w_b, omega_k, omega_DE, h}
     """
     # Fiducial parameters from Mukherjee et al.
     h = 0.73; w_m = 0.127; w_b = 0.022
@@ -81,7 +82,7 @@ def euclid_to_baofisher(F, cosmo):
     # Our fiducial values
     _om = cosmo['omega_M_0']; _ob = cosmo['omega_b_0']
     _ode = cosmo['omega_lambda_0']; _h = cosmo['h']; _ns = cosmo['ns']
-    _ok = 1. - _om - _ode; _w0 = -1.; _wa = 0.
+    _ok = 1. - _om - _ode; _wb = _ob*_h**2.; _w0 = -1.; _wa = 0.
     
     # Construct transformation matrix from derivatives
     dw0_dp  = [0., 1., 0., 0., 0., 0., 0.]
@@ -90,6 +91,7 @@ def euclid_to_baofisher(F, cosmo):
     dok_dp  = [0., 0., 0., 0., 1., 0., 0.]
     dwm_dp  = [0., 0., 0., 0., -h2, -h2, 2.*h*om]
     dwb_dp  = [0., 0., 0., h2, 0., 0., 2.*h*ob]
+    #dwb_dp  = [0., 0., 0., 1., 0., 0., 0.]
     dns_dp  = [1., 0., 0., 0., 0., 0., 0.]
     M = [dw0_dp, dwa_dp, doDE_dp, dok_dp, dwm_dp, dwb_dp, dns_dp]
     M = np.array(M).T
@@ -98,6 +100,7 @@ def euclid_to_baofisher(F, cosmo):
     M[0,:] *= n_s / _ns
     M[1,:] *= w0 / _w0
     M[3,:] *= ob / _ob
+    #M[3,:] *= w_b / _wb
     M[5,:] *= ode / _ode
     M[6,:] *= h / _h
     
@@ -133,14 +136,18 @@ def camb_to_baofisher(F, cosmo):
     Fnew = np.dot(M, np.dot(F, M.T))
     return Fnew
 
-def detf_to_baofisher(fname, cosmo):
+def detf_to_baofisher(fname, cosmo, omegab=False):
     """
     Transform Planck prior from DETF to our set of parameters. DETF Fisher 
     matrix can be obtained from:
     http://c3.lbl.gov:8000/Trac.Cosmology/browser/Programs/FoMSWG/tags/original/DATA/PLANCK.dat?rev=842
     
     DETF:      {n_s, w_m, w_b, w_k, w_DE, deltaGamma, M, logG0, log A_S, {w_i}}
-    BAOFisher: {n_s, w0, wa, omega_b, omega_k, omega_DE, h}
+    BAOFisher: {n_s, w0, wa, w_b, omega_k, omega_DE, h, sigma_8}
+    
+    If omegab = True, use Omega_b as a parameter instead of w_b = Omega_b h^2.
+    
+    DETF fiducial parameters are taken from the FoMSWG Technical Report (p8).
     """
     # Load DETF Planck Fisher matrix (indexes start from 0)
     dat = np.genfromtxt(fname).T
@@ -153,17 +160,18 @@ def detf_to_baofisher(fname, cosmo):
     
     # DETF fiducial values (from p8 of arXiv:0901.0721)
     n_s = 0.963; w_m = 0.1326; w_b = 0.0227; w_k = 0.; w_DE = 0.3844; h = 0.719
-    w0 = -1.; wa = 0.; h2 = h**2.
+    w0 = -1.; wa = 0.; h2 = h**2.; sig8 = 0.798
     om = w_m / h2; ob = w_b / h2; ok = w_k / h2; ode = w_DE / h2
     
     # Our fiducial values
     _om = cosmo['omega_M_0']; _ob = cosmo['omega_b_0']
     _ode = cosmo['omega_lambda_0']; _h = cosmo['h']; _ns = cosmo['ns']
-    _ok = 1. - _om - _ode; _w0 = -1.; _wa = 0.
+    _sig8 = cosmo['sigma_8']
+    _ok = 1. - _om - _ode; _wb = _ob * _h**2.; _w0 = -1.; _wa = 0.
     a0 = 0.1; da = 0.025 # Scale-factor binning
 
     # Define transformation matrix (derivatives)
-    M = np.zeros((7, N))
+    M = np.zeros((8, N))
     
     # d(DETF)/d(n_s)
     M[0,0] = 1. * (n_s/_ns)
@@ -175,7 +183,10 @@ def detf_to_baofisher(fname, cosmo):
         M[2, 9+i] = 1. - aa       # d(w_i)/d(wa)
     
     # d(DETF)/d(omega_b)
-    M[3,2] = h2 * (ob/_ob) # d(w_b)/d(omega_b)
+    if omegab:
+        M[3,2] = h2 * (ob/_ob) # d(w_b)/d(omega_b)
+    else:
+        M[3,2] = 1. * (w_b/_wb) # d(w_b)/d(w_b)
     
     # d(DETF)/d(omega_k)
     M[4,1] = -h2 # d(w_m)/d(omega_k)
@@ -186,10 +197,16 @@ def detf_to_baofisher(fname, cosmo):
     M[5,4] = h2 * (ode/_ode)  # d(w_DE)/d(omega_DE)
     
     # d(DETF)/d(h)
-    M[6,2] = 2.*h*ob * (h/_h)  # d(w_b)/d(h)
+    if omegab:
+        M[6,2] = 2.*h*ob * (h/_h)  # d(w_b)/d(h)
+    else:
+        M[6,2] = 0. # d(w_b)/d(h), since w_b is indep. parameter
     M[6,1] = 2.*h*om * (h/_h)  # d(w_m)/d(h)
     M[6,3] = 2.*h*ok * (h/_h)  # d(w_k)/d(h)
     M[6,4] = 2.*h*ode * (h/_h) # d(w_DE)/d(h)
+    
+    # d(DETF)/d(sigma_8)
+    M[7,8] = 2. / sig8 * (sig8/_sig8) # dlog(A_s)/d(sigma_8) == dlog(Delta^2)/d(sigma_8)
     
     # Transform into new set of parameters
     M = np.array(M)

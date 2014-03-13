@@ -98,7 +98,7 @@ for tick in P.gca().xaxis.get_major_ticks():
 P.tight_layout()
 
 #P.gcf().set_size_inches(8.5,10.)
-P.savefig('pub-veff.png', dpi=100)
+P.savefig('pub-veff.pdf', transparent=True)
 
 P.show()
 

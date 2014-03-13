@@ -16,22 +16,20 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ["cexptL", "iexptM", "exptS"]
+names = ["EuclidRef", "cexptL", "iexptM", "exptS"]
 
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
-colours = ['#CC0000', '#5B9C0A', '#1619A1']
-labels = ['Behemoth', 'Mature', 'Snapshot']
-
-names = ["SKA1MID", "cSKA1MID", "SKA1SUR"]
-labels = ["SKA1-MID (Dish)", "SKA1-MID (Comb.)", "SKA1-SUR (Dish)"]
+colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
+labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
 
 # Get f_bao(k) function
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns = baofisher.background_evolution_splines(cosmo)
+cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk_mnu005.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 fig = P.figure()
-axes = [fig.add_subplot(311), fig.add_subplot(312), fig.add_subplot(313)]
+axes = [fig.add_subplot(411), fig.add_subplot(412), fig.add_subplot(413), fig.add_subplot(414)]
 
 for k in range(len(names)):
     root = "output/" + names[k]
@@ -49,7 +47,7 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
     pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'fNL']
+             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
     pnames += ["pk%d" % i for i in range(kc.size)]
     zfns = []; excl = []
     F, lbls = baofisher.combined_fisher_matrix( F_list,
@@ -63,6 +61,10 @@ for k in range(len(names)):
     
     # Plot errorbars
     yup, ydn = baofisher.fix_log_plot(pk, cov)
+    
+    # Fix for PDF
+    yup[np.where(yup > 1e1)] = 1e1
+    ydn[np.where(ydn > 1e1)] = 1e1
     axes[k].errorbar( kc, fbao(kc), yerr=[ydn, yup], color=colours[k], ls='none', 
                       lw=1.8, capthick=1.8, label=names[k], ms='.' )
 
@@ -74,42 +76,37 @@ for k in range(len(names)):
     axes[k].set_xscale('log')
     axes[k].set_xlim((4e-3, 1e0))
     axes[k].set_ylim((-0.13, 0.13))
+    #axes[k].set_ylim((-0.08, 0.08))
     
-    axes[k].text( 0.38, 0.09, labels[k], fontsize=14, 
+    axes[k].text( 0.39, 0.09, labels[k], fontsize=14, 
                   bbox={'facecolor':'white', 'alpha':1., 'edgecolor':'white',
                         'pad':15.} )
 
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]
-pos = [ax.get_position().get_points() for ax in axes]
-dy = pos[0][0,1] - pos[1][1,1]
-l = pos[0][0,0]
-w = pos[0][1,0] - pos[0][0,0]
-h = pos[0][1,1] - pos[0][0,1]
-b = pos[0][0,1]
-
-axes[0].set_position([l, b - 0.5*dy, w, h+0.5*dy])
-axes[1].set_position([l, b - h - dy, w, h+0.5*dy])
-axes[2].set_position([l, b - 2.*h - 1.5*dy, w, h+0.5*dy])
-
-
+l0 = 0.1
+b0 = 0.1
+ww = 0.75
+hh = 0.8 / 4.
+for i in range(len(names))[::-1]:
+    axes[i].set_position([l0, b0 + hh*i, ww, hh])
+    
 # Resize labels/ticks
 fontsize = 18
 for i in range(len(axes)):
     ax = axes[i]
     for tick in ax.xaxis.get_major_ticks():
       tick.label1.set_fontsize(fontsize)
-      if i == 0 or i == 1: tick.label1.set_visible(False) # Hide x lbls in upper subplots
+      if i != 0: tick.label1.set_visible(False) # Hide x lbls in upper subplots
     for tick in ax.yaxis.get_major_ticks():
       tick.label1.set_fontsize(fontsize)
 
-axes[-1].set_xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'20'})
+axes[0].set_xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'20'}, labelpad=10.)
 #ax.set_ylabel(r"$P(k)$", fontdict={'fontsize':'20'})
 
-#P.tight_layout()
 # Set size
-P.gcf().set_size_inches(8.5,10.)
-P.savefig('mario-pub-fbao.png', dpi=200) #100
+P.gcf().set_size_inches(8.5,12.)
+#P.savefig('pub-fbao.pdf', transparent=True)
 
 P.show()

@@ -58,7 +58,7 @@ def const_nu(u, Ndish, Dmin, Dmax, Ddish=None, ff=None):
 
 
 # Experiment configs
-n1, fov1 = const_nu(u, Ndish=250, Dmin=15., Dmax=500., Ddish=15.)
+n1, fov1 = const_nu(u, Ndish=250, Dmin=15., Dmax=600., Ddish=15.)
 
 n2, fov2 = const_nu(u, Ndish=49, Dmin=2., Dmax=60., Ddish=2.)
 n3, fov3 = const_nu(u, Ndish=160, Dmin=4., Dmax=60., Ddish=4.)
@@ -81,9 +81,9 @@ min2 = np.min(f2/nn2)
 P.axhline(min2, color='c')
 P.axhline(20.*min2, color='c')
 
-P.plot(u, fov1/n1, 'r-', lw=1.5, label="A")
-P.plot(u, fov2/n2, 'b-', lw=1.5, label="B")
-P.plot(u, fov3/n3, 'g-', lw=1.5, label="C")
+P.plot(u, fov1/n1, 'r-', lw=1.5, label="FACILITY (const. n(u) approx.)")
+#P.plot(u, fov2/n2, 'b-', lw=1.5, label="B")
+#P.plot(u, fov3/n3, 'g-', lw=1.5, label="C")
 P.xscale('log')
 P.yscale('log')
 P.ylim((1e-2, 1e4))

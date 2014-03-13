@@ -16,30 +16,26 @@ import euclid
 
 cosmo = experiments.cosmo
 
-###names = ["cVcexptL", "cNEWexptL", "cNEW2exptL", "cNEW3exptL"] #"iexptM"] #, "exptS"]
-names = ["ctestL", "itestL", "testL", "ctestM", "itestM", "testM"] #["cNEWexptL", "iexptM"] #, "exptS"]
+names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
+colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
+labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
-#colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
-colours = ['#990A9C', '#CC0000', '#5B9C0A', '#1619A1']
-linestyle = ['solid', 'solid', 'dashed', 'dashdot']
-#labels = ['CV-limited Behemoth', 'Behemoth', 'Mature', 'Snapshot']
-labels = ['CV-limited','SKAMREF2COMP', 'SKAMREF2', 'cNEW3exptL'] #'SKAMREF2(old)']
+
+# FIXME
+#names = ['cexptL',]
+#colours = ['#1619A1',]
+#labels = ['Facility',]
+
 
 # Get f_bao(k) function
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
-#fig, (ax1, ax2, ax3) = P.subplots(1, 3)
-#axes = [ax1, ax2, ax3]
+P.subplot(111)
 
-ax = P.subplot(111)
-#ax2 = P.subplot(122)
-cmaps = [matplotlib.cm.autumn, matplotlib.cm.winter]
-cols = ['r-', 'y--', 'm:', 'b-', 'g--', 'c:']
-
-for k in range(len(names)):
-    #ax = axes[k]
+for k in [1,]: #range(len(names)):
     root = "output/" + names[k]
 
     # Load cosmo fns.
@@ -51,84 +47,71 @@ for k in range(len(names)):
     # Load Fisher matrices as fn. of z
     Nbins = zc.size
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
-
+    
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'fNL']
-    pnames += ["pk%d" % i for i in range(kc.size)]
+    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    ppk = baofisher.indices_for_param_names(pnames, 'pk*')
     
-    mins = []
-
-    for j in range(len(F_list)):
+    cmap = matplotlib.cm.Blues_r
+    for j in range(len(F_list))[::-1]:
         F = F_list[j]
-        print F.shape
         
         # Just do the simplest thing for P(k) and get 1/sqrt(F)
-        cov = [np.sqrt(1. / np.diag(F)[pnames.index(lbl)]) for lbl in pnames if "pk" in lbl]
-        cov = np.array(cov)
+        cov = np.sqrt(1. / np.diag(F)[ppk])
         pk = cosmo['pk_nobao'](kc) * (1. + fbao(kc))
-
+        
         # Replace nan/inf values
         cov[np.where(np.isnan(cov))] = 1e10
         cov[np.where(np.isinf(cov))] = 1e10
         
-        #cmap = cmaps[k]
+        # Line with fading colour
+        col = cmap(0.8*j / len(F_list))
+        line = P.plot(kc, cov, color=col, lw=2., alpha=1.)
         
-        frac = float(j) / float(len(F_list))
-
-        # Plot errorbars
-        #if "exptS" in names[k]:
-        #    ax.plot(kc, cov, color=cmap(frac), lw=2.4, ls='solid')
-        #else:
-        #    if j % 1 == 0: ax.plot(kc, cov, color=cmap(frac), lw=2.4, ls='solid', label="%d: %3.2f" % (k, zc[j]))
-        
-        """
-        if (zc[j] > 0.8 and zc[j] < 0.9) or \
-           (zc[j] > 1.5 and zc[j] < 1.65) or \
-           (zc[j] > 2.0 and zc[j] < 2.15):
-            #color=cmap(frac)
-            ax.plot( kc, cov, color=cols[k], lw=2.4, ls='solid', 
-                     label="%d: %3.2f" % (k, zc[j]) )
-        mins.append(np.min(cov))
-        """
-        
-        ax.plot( kc, cov, cols[k], lw=2.4, label=names[k]) #label="%d: %3.2f" % (k, zc[j]) )
-        
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        #ax.set_xlim((2e-3, 3e0))
-        #ax.set_ylim((9e-4, 1e1))
+        # Label for min/max redshifts
+        N = kc.size
+        if j == 0:
+            P.annotate("z = %3.2f" % zc[j], xy=(kc[N/2+5], cov[N/2+5]), 
+                       xytext=(65., -60.), fontsize='large', 
+                       textcoords='offset points', ha='center', va='center', 
+                       arrowprops={'width':1.8, 'color':'#1619A1', 'shrink':0.05} )
+        if j == len(F_list) - 1:
+            P.annotate("z = %3.2f" % zc[j], xy=(kc[N/2], cov[N/2]), 
+                       xytext=(-65., 60.), fontsize='large', 
+                       textcoords='offset points', ha='center', va='center',
+                       arrowprops={'width':1.8, 'color':'#1619A1', 'shrink':0.07} )
     
-    # Output table of min. dP/P
-    print "-"*50
-    for j in range(len(mins)):
-        print "%2d:  %3.3f  %3.3e" % (j, zc[j], mins[j])
-    print "-"*50
-    #ax2.plot(zc, mins, lw=1.8, marker='.')
-    P.title(str(zc))
+    # Plot the summed constraint (over all z)
+    F, lbls = baofisher.combined_fisher_matrix(F_list, expand=[], names=pnames, exclude=[])
+    cov = np.sqrt(1. / np.diag(F)[ppk])
+    pk = cosmo['pk_nobao'](kc) * (1. + fbao(kc))
     
-    P.ylim((1e-3, 1e10))
+    # Replace nan/inf values
+    cov[np.where(np.isnan(cov))] = 1e10
+    cov[np.where(np.isinf(cov))] = 1e10
+    
+    # Line with fading colour
+    line = P.plot(kc, cov, color='k', lw=3.)
+    
+    # Set custom linestyle
+    #line[0].set_dashes(linestyle[k])
 
-ax.legend(loc='lower left', prop={'size':'x-small'}, ncol=2)
 
+P.xscale('log')
+P.yscale('log')
+P.xlim((2e-3, 3e0))
+P.ylim((3e-3, 1e1))
+#P.legend(loc='lower left', prop={'size':'large'})
 
-"""
-# Resize labels/ticks
-fontsize = 18
-ax = P.gca()
-for tick in ax.xaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
-for tick in ax.yaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
-
-P.xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'20'})
-P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'20'})
-"""
+P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
+P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.2)
+P.xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'}, labelpad=10.)
+P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'}, labelpad=10.)
 
 P.tight_layout()
 # Set size
-#P.gcf().set_size_inches(8.,6.)
-#P.savefig('pub-dlogp.png', dpi=100)
+P.gcf().set_size_inches(8.,6.)
+P.savefig('pub-dlogp-fnz.pdf', transparent=True) # 100
 
 P.show()

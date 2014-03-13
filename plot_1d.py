@@ -32,9 +32,11 @@ names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
 labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
 
-colours = ['#BAE484', '#5B9C0A',   '#B1C9FD', '#1619A1',   '#F6ADAD', '#CC0000',
-           '#FFB928', '#FFEA28']
-#'#F09B9B'
+#colours = [ ['#CC0000', '#F09B9B'],
+#            ['#1619A1', '#B1C9FD'],
+#            ['#5B9C0A', '#BAE484'],
+#            ['#FFB928', '#FFEA28'] ]            
+
 # Fiducial value and plotting
 fig = P.figure()
 ax = fig.add_subplot(111)
@@ -56,9 +58,15 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'H', 'DA', 'gamma', 'N_eff', 'pk*']
+    # Actually, (aperp, apar) are (D_A, H)
+    pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
+             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
+    pnames += ["pk%d" % i for i in range(kc.size)]
+    
+    zfns = [1,]
+    excl = [2,  6,7,8,  14]
+    excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
+    
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -87,42 +95,24 @@ for k in _k:
     if not MARGINALISE_W0WA: fixed_params += ['w0', 'wa']
     
     if len(fixed_params) > 0:
-        print "REMOVING:", fixed_params
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=fixed_params )
+                     names=lbls, exclude=[lbls.index(p) for p in fixed_params] )
     
-    # Invert matrix (w0, wa marginalised)
+    # Invert matrix
     cov_pl = np.linalg.inv(Fpl)
     
-    # Invert matrix with (w0,wa) fixed
-    Fpl2, lbls2 = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=['w0', 'wa'] )
-    cov_pl2 = np.linalg.inv(Fpl2)
-    
-    # Plot errorbars and annotate
-    # (w0, wa) free
+    # Fiducial value and 1-sigma errorbars
     p1 = lbls.index(param1)
     x = fid1
     err = np.sqrt(np.diag(cov_pl))[p1]
-    print "%10s -- %s: %4.2e" % (lbls[p1], names[k], err), "\n"
+    print "\n%10s -- %s: %4.2e" % (lbls[p1], names[k], err), "\n"
     
-    ax.errorbar( x, m, xerr=err, color=colours[m], lw=2., 
-                 marker='.', markersize=10., markeredgewidth=2. )
-    ax.annotate( labels[k], xy=(x, m+1.0), xytext=(0., -10.), 
-                 fontsize='large', textcoords='offset points', ha='center', va='center' )
-    
-    # (w0, wa) fixed
-    p1 = lbls.index(param1)
-    x = fid1
-    err = np.sqrt(np.diag(cov_pl2))[p1]
-    print "\n%10s -- %s: %4.2e" % (lbls[p1], names[k], err), "(w0/wa fixed)\n"
-    
-    ax.errorbar( x, m+0.5, xerr=err, color=colours[m+1], lw=2., markeredgewidth=2.,
+    # Plot errorbar and annotate
+    ax.errorbar( x, m+Nexpt, xerr=err, color=colours[k], lw=2., 
                  marker='.', markersize=10. )
-    #ax.annotate( labels[k], xy=(x, m), xytext=(0., 10.), 
-    #             fontsize='large', textcoords='offset points', ha='center', va='bottom' )
-    
-    m += 2
+    ax.annotate( labels[k], xy=(x, m+Nexpt), xytext=(0., 10.), 
+                 fontsize='large', textcoords='offset points', ha='center', va='bottom' )
+    m += 1
 
 
 # Report on what options were used
@@ -144,12 +134,13 @@ omegak_planck_low = -5e-4 - 0.5*6.6e-3
 
 ax.axvspan(omegak_planck_up, 1., ec='none', fc='#f2f2f2')
 ax.axvspan(-1., omegak_planck_low, ec='none', fc='#f2f2f2')
-ax.axvline(omegak_planck_up, ls='dotted', color='k', lw=2.)
-ax.axvline(omegak_planck_low, ls='dotted', color='k', lw=2.)
+#ax.axvline(omegak_planck_up, ls='dotted', color='k', lw=2.)
+#ax.axvline(omegak_planck_low, ls='dotted', color='k', lw=2.)
 
-#ax.axvspan(-4e-4, 4e-4, ec='none', fc='#f2f2f2')
-#ax.axvline(-4e-4, ls='dotted', color='k', lw=1.5)
-#ax.axvline(+4e-4, ls='dotted', color='k', lw=1.5)
+ax.axvline(-4e-4, ls='dotted', color='k', lw=1.5)
+ax.axvline(+4e-4, ls='dotted', color='k', lw=1.5)
+
+
 
 fontsize = 20
 for tick in ax.xaxis.get_major_ticks():
@@ -165,10 +156,8 @@ ax.yaxis.set_minor_locator(yminorLocator)
 ax.set_xlabel(label1, fontdict={'fontsize':'xx-large'}, labelpad=15.)
 #ax.set_ylabel(label2, fontdict={'fontsize':'xx-large'}, labelpad=15.)
 
-ax.set_xlim((-5e-3, 5e-3))
-ax.set_ylim((-0.75, 2.*Nexpt - 0.5))
-
-ax.tick_params(axis='both', which='both', labelleft='off', left='off', right='off', length=8., width=1.5, pad=8.)
+ax.set_xlim((-6e-3, 6e-3))
+ax.set_ylim((0., 2.*Nexpt))
 
 # Set size and save
 P.tight_layout()

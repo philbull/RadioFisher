@@ -24,9 +24,9 @@ size = comm.Get_size()
 # Load cosmology and experimental settings
 cosmo = experiments.cosmo
 expt = {
-    'fsky':     0.364, # 15,000 deg^2
-    'kmin':     1e-6, # Seo & Eisenstein say: shouldn't make much difference...
-    'kmax':     130.,  # 50. # Seo & Eisenstein say: ~0.1, but evolves with z
+    'fsky':     0.350, #0.350, #Euclid has: 0.364, 15,000 deg^2
+    'kmin':     1e-4, # Seo & Eisenstein say: shouldn't make much difference...
+    'kmax':     0.2, #130., FIXME # 50. # Seo & Eisenstein say: ~0.1, but evolves with z
     'use':      experiments.USE
 }
 
@@ -60,6 +60,8 @@ cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk_gal.dat", comm=comm)
 H, r, D, f = cosmo_fns
 zc = 0.5 * (zmin + zmax)
 
+#Neff_fn = baofisher.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
+
 ################################################################################
 # Store cosmological functions
 ################################################################################
@@ -89,6 +91,7 @@ eos_derivs = baofisher.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
 # Loop through redshift bins, assigning them to each process
 ################################################################################
 
+Ngal = np.zeros(size)
 for i in range(zmin.size):
     if i % size != myid:
       continue
@@ -97,28 +100,33 @@ for i in range(zmin.size):
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
-    F_pk, kc, binning_info = fisher_galaxy.fisher_galaxy_survey(
+    F_pk, kc, binning_info, paramnames = fisher_galaxy.fisher_galaxy_survey(
                                                 zmin[i], zmax[i], ngal[k][i], 
                                                 cosmo, expt, cosmo_fns, 
                                                 return_pk=True, kbins=kbins )
     # Expand Fisher matrix with EOS parameters
     ##F_eos = baofisher.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
-    F_eos = baofisher.expand_fisher_matrix(zc[i], eos_derivs, F_pk, exclude=[])
-    
+    F_eos, paramnames = baofisher.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
+                                                   exclude=[], names=paramnames)
     # Expand Fisher matrix for H(z), dA(z)
     # Replace aperp with dA(zi), using product rule. aperp(z) = dA(fid,z) / dA(z)
     # (And convert dA to Gpc, to help with the numerics)
+    paramnames[paramnames.index('aperp')] = 'DA'
     da = r(zc[i]) / (1. + zc[i]) / 1000. # Gpc
     F_eos[7,:] *= -1. / da
     F_eos[:,7] *= -1. / da
     
     # Replace apar with H(zi)/100, using product rule. apar(z) = H(z) / H(fid,z)
+    paramnames[paramnames.index('apar')] = 'H'
     F_eos[8,:] *= 1. / H(zc[i]) * 100.
     F_eos[:,8] *= 1. / H(zc[i]) * 100.
     
     # Save Fisher matrix and k bins
-    np.savetxt(root+"-fisher-full-%d.dat" % i, F_eos)
+    np.savetxt(root+"-fisher-full-%d.dat" % i, F_eos, header=" ".join(paramnames))
     if myid == 0: np.savetxt(root+"-fisher-kc.dat", kc)
+    
+    # Count no. of galaxies
+    Ngal[myid] += binning_info['Vsurvey'] * ngal[k][i]
     
     # Save P(k) rebinning info
     np.savetxt(root+"-rebin-Fbase-%d.dat" % i, np.array(binning_info['F_base']) )
@@ -127,3 +135,8 @@ for i in range(zmin.size):
     np.savetxt(root+"-rebin-Vfac-%d.dat" % i, np.array([binning_info['Vsurvey'],]) )
 
 comm.barrier()
+
+# Count total no. of galaxies
+Ngal_tot = np.zeros(4)
+comm.Reduce(Ngal, Ngal_tot, op=MPI.SUM, root=0)
+if myid == 0: print "Total no. of galaxies: %3.3e" % np.sum(Ngal_tot)

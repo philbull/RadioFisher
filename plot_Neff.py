@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Plot 1D constraints on a parameter.
+Plot 1D constraints on Neff.
 """
 import numpy as np
 import pylab as P
@@ -16,11 +16,11 @@ import euclid
 
 cosmo = experiments.cosmo
 
-fig_name = "pub-ok.pdf"
+fig_name = "pub-Neff.pdf"
 
-param1 = "omegak"
-label1 = "$\Omega_K$"
-fid1 = 0.
+param1 = "N_eff"
+label1 = "$N_\mathrm{eff}$"
+fid1 = cosmo['N_eff']
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True    # Marginalise over Omega_K
@@ -28,13 +28,16 @@ MARGINALISE_INITIAL_PK = True   # Marginalise over (n_s, sigma_8)
 MARGINALISE_OMEGAB = True      # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True         # Marginalise over (w0, wa)
 
-names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
-colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
+#names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
+#labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
+names = ['cexptL', 'iexptM', 'exptS']
+labels = ['Facility', 'Mature', 'Snapshot']
 
-colours = ['#BAE484', '#5B9C0A',   '#B1C9FD', '#1619A1',   '#F6ADAD', '#CC0000',
-           '#FFB928', '#FFEA28']
-#'#F09B9B'
+colours = [ ['#CC0000', '#F09B9B'],
+            ['#1619A1', '#B1C9FD'],
+            ['#5B9C0A', '#BAE484'],
+            ['#FFB928', '#FFEA28'] ]
+
 # Fiducial value and plotting
 fig = P.figure()
 ax = fig.add_subplot(111)
@@ -56,12 +59,14 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
+    # Actually, (aperp, apar) are (D_A, H)
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'H', 'DA', 'gamma', 'N_eff', 'pk*']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    zfns = [1,]
+    excl = [2,  6,7,8,  14]
+    excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
+    
+    F, lbls = baofisher.combined_fisher_matrix( F_list, expand=zfns, 
+                                                names=pnames, exclude=excl )
     # Add Planck prior
     #Fpl = euclid.add_detf_planck_prior(F, lbls, info=False)
     #Fpl = euclid.add_planck_prior(F, lbls, info=False)
@@ -69,7 +74,7 @@ for k in _k:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo)
+        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
         Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     else:
         # Euclid Planck prior
@@ -89,40 +94,26 @@ for k in _k:
     if len(fixed_params) > 0:
         print "REMOVING:", fixed_params
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=fixed_params )
+                     names=lbls, exclude=[lbls.index(p) for p in fixed_params] )
     
-    # Invert matrix (w0, wa marginalised)
+    # Get indices
+    pNeff = lbls.index('N_eff'); psig8 = lbls.index('sigma8')
+    
+    # Invert matrix
     cov_pl = np.linalg.inv(Fpl)
     
-    # Invert matrix with (w0,wa) fixed
-    Fpl2, lbls2 = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=['w0', 'wa'] )
-    cov_pl2 = np.linalg.inv(Fpl2)
+    x = experiments.cosmo['N_eff']
+    y = experiments.cosmo['sigma_8']
     
-    # Plot errorbars and annotate
-    # (w0, wa) free
-    p1 = lbls.index(param1)
-    x = fid1
-    err = np.sqrt(np.diag(cov_pl))[p1]
-    print "%10s -- %s: %4.2e" % (lbls[p1], names[k], err), "\n"
+    # Plot contours for N_eff, sigma_8
+    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pNeff, psig8, None, Finv=cov_pl)
+    ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
+                height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
+                ec=colours[k][0], lw=1.5, alpha=1.) for kk in [1,0]]
+    for e in ellipses: ax.add_patch(e)
     
-    ax.errorbar( x, m, xerr=err, color=colours[m], lw=2., 
-                 marker='.', markersize=10., markeredgewidth=2. )
-    ax.annotate( labels[k], xy=(x, m+1.0), xytext=(0., -10.), 
-                 fontsize='large', textcoords='offset points', ha='center', va='center' )
-    
-    # (w0, wa) fixed
-    p1 = lbls.index(param1)
-    x = fid1
-    err = np.sqrt(np.diag(cov_pl2))[p1]
-    print "\n%10s -- %s: %4.2e" % (lbls[p1], names[k], err), "(w0/wa fixed)\n"
-    
-    ax.errorbar( x, m+0.5, xerr=err, color=colours[m+1], lw=2., markeredgewidth=2.,
-                 marker='.', markersize=10. )
-    #ax.annotate( labels[k], xy=(x, m), xytext=(0., 10.), 
-    #             fontsize='large', textcoords='offset points', ha='center', va='bottom' )
-    
-    m += 2
+    # Centroid
+    ax.plot(x, y, 'kx', markersize=8., markeredgewidth=1.5)
 
 
 # Report on what options were used
@@ -136,39 +127,30 @@ print "NOTE:", s2
 print "NOTE:", s3
 print "NOTE:", s4
 
-
-
-# Planck-only 1D
-omegak_planck_up = -5e-4 + 0.5*6.6e-3 # From Planck 2013 XVI, Table 10, Planck+WMAP+highL+BAO, 95% CL
-omegak_planck_low = -5e-4 - 0.5*6.6e-3
-
-ax.axvspan(omegak_planck_up, 1., ec='none', fc='#f2f2f2')
-ax.axvspan(-1., omegak_planck_low, ec='none', fc='#f2f2f2')
-ax.axvline(omegak_planck_up, ls='dotted', color='k', lw=2.)
-ax.axvline(omegak_planck_low, ls='dotted', color='k', lw=2.)
-
-#ax.axvspan(-4e-4, 4e-4, ec='none', fc='#f2f2f2')
-#ax.axvline(-4e-4, ls='dotted', color='k', lw=1.5)
-#ax.axvline(+4e-4, ls='dotted', color='k', lw=1.5)
-
-fontsize = 20
+fontsize = 18
 for tick in ax.xaxis.get_major_ticks():
   tick.label1.set_fontsize(fontsize)
 for tick in ax.yaxis.get_major_ticks():
   tick.label1.set_fontsize(fontsize)
 
-xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
-yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
+xminorLocator = matplotlib.ticker.MultipleLocator(0.5)
+yminorLocator = matplotlib.ticker.MultipleLocator(0.1)
 ax.xaxis.set_minor_locator(xminorLocator)
 ax.yaxis.set_minor_locator(yminorLocator)
 
-ax.set_xlabel(label1, fontdict={'fontsize':'xx-large'}, labelpad=15.)
-#ax.set_ylabel(label2, fontdict={'fontsize':'xx-large'}, labelpad=15.)
+# Legend
+labels = [labels[k] + " + Planck" for k in range(len(labels))]
+lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-ax.set_xlim((-5e-3, 5e-3))
-ax.set_ylim((-0.75, 2.*Nexpt - 0.5))
+P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.52,0.95])
 
-ax.tick_params(axis='both', which='both', labelleft='off', left='off', right='off', length=8., width=1.5, pad=8.)
+ax.set_xlabel("$\mathrm{N}_\mathrm{eff}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
+ax.set_ylabel("$\sigma_8$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
+
+ax.set_xlim((1.8, 4.3))
+ax.set_ylim((0.67, 1.02))
+
+ax.tick_params(axis='both', which='both', length=6., width=1.5)
 
 # Set size and save
 P.tight_layout()

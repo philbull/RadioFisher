@@ -8,8 +8,8 @@ cosmo = {
     'omega_M_0':        0.316,
     'omega_lambda_0':   0.684,
     'omega_b_0':        0.049,
-    'omega_HI_0':       6.5e-4, # 9.4e-4
-    'N_nu':             0,
+    'omega_HI_0':       6.50e-4, # 9.4e-4
+    'N_eff':            3.046,
     'h':                0.67,
     'ns':               0.962,
     'sigma_8':          0.834,
@@ -31,12 +31,12 @@ cosmo = {
 USE = {
   'f_rsd':             True,     # RSD constraint on f(z)
   'f_growthfactor':    False,    # D(z) constraint on f(z)
-  'alpha_all':         False,     # Use all constraints on alpha_{perp,par}
-  'alpha_volume':      False,
-  'alpha_rsd_angle':   False, #t
-  'alpha_rsd_shift':   False, #t
-  'alpha_bao_shift':   True,
-  'alpha_pk_shift':    False # True
+  'alpha_all':         True,     # Use all constraints on alpha_{perp,par}
+  'alpha_volume':      True,
+  'alpha_rsd_angle':   True, #t
+  'alpha_rsd_shift':   True, #t
+  'alpha_bao_shift':   True, # was True
+  'alpha_pk_shift':    True # True
 }
 
 SURVEY = {

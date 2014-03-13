@@ -66,7 +66,7 @@ def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns,
     cosmo['r'] = rr(z); cosmo['rnu'] = C*(1.+z)**2. / HH(z) # Perp/par. dist. scales
     
     # Use effective bias parameter; setup n(z)
-    cosmo['bHI'] = cosmo['bgal'] = np.sqrt(1. + z) # FIXME
+    cosmo['bHI'] = cosmo['bgal'] = 1.2 * np.sqrt(1. + z) # FIXME 1.2!
     cosmo['ngal'] = ngal
     
     # Calculate Vsurvey
@@ -90,7 +90,7 @@ def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns,
           % (cosmo['k_in_max'], kmax) )
     
     # Calculate derivatives and integrate
-    derivs = rf.fisher_integrands( kgrid, ugrid, cosmo, expt=expt, 
+    derivs, paramnames = rf.fisher_integrands( kgrid, ugrid, cosmo, expt=expt, 
                                    massive_nu_fn=None, transfer_fn=None, 
                                    galaxy_survey=True, cs_galaxy=Csignal_galaxy )
     Vfac = Vsurvey / (8. * np.pi**2.)
@@ -104,22 +104,27 @@ def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns,
         # Calculate binned P(k) and cross-terms with other params
         kc, pbins = rf.bin_cumulative_integrals(cumul, kgrid, kbins) # FIXME: kbins
         
-        # Add k-binned terms to Fisher matrix
+        # Add k-binned terms to Fisher matrix (remove non-binned P(k))
         pnew = len(cumul) - 1
-        FF = rf.fisher_with_excluded_params(F, excl=[F.shape[0]-1]) # Rmv. non-binned P(k)
+        FF, paramnames = rf.fisher_with_excluded_params(F, excl=[F.shape[0]-1], 
+                                                        names=paramnames)
         F_pk = Vfac * rf.expand_fisher_with_kbinned_parameter(FF / Vfac, pbins, pnew)
         
         # Construct dict. with info needed to rebin P(k) and cross-terms
         binning_info = {
           'F_base':  FF,
-          'Vsurvey': Vfac,
+          'Vsurvey': Vsurvey,
+          'Vfac':    Vfac,
           'cumul':   cumul,
           'kgrid':   kgrid
         }
+        
+        # Append paramnames
+        paramnames += ["pk%d" % i for i in range(kc.size)]
     
     # Return results
-    if return_pk: return F_pk, kc, binning_info
-    return F
+    if return_pk: return F_pk, kc, binning_info, paramnames
+    return F, paramnames
 
 # FIXME:
 # * What about an angular cut-off? No beam on angular scales is currently defined.
