@@ -54,11 +54,11 @@ names = ['exptS', 'iexptM', 'cexptL', 'GBT', 'BINGO', 'WSRT', 'APERTIF',
 #sname = 'bHI0'
 #svals = np.array([0.3, 0.4, 0.5, 0.6, 0.702, 0.8, 0.9, 1.0, 1.1])
 
-sname = 'kfg_fac'
-svals = np.logspace(-1., 1., 21)
+#sname = 'kfg_fac'
+#svals = np.logspace(-1., 1., 21)
 
-#sname = 'sigma_nl'
-#svals = np.array([0.5, 1., 3., 5., 7., 9., 1.2, 1.5])
+sname = 'sigma_nl'
+svals = np.array([0.25, 0.5, 0.75, 1., 1.25, 1.5, 1.75, 2.]) * 7.
 
 # Take command-line argument for which survey to calculate, or set manually
 if len(sys.argv) > 1:

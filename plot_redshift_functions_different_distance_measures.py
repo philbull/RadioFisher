@@ -42,12 +42,9 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = [0,1,6,7,8]
-    excl_names = ['Tb', 'sigma8', 'n_s', 'omegak', 'omegaDE', 'w0', 'wa', 'h', 
-                  'gamma', 'N_eff']
-    excl = [pnames.index(p) for p in excl_names]
-    excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
-    
+    zfns = ['A', 'bs8', 'fs8', 'H', 'DA', 'aperp', 'apar']
+    excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
+            'gamma', 'N_eff', 'pk*', 'f', 'b_HI']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -55,15 +52,15 @@ for k in range(len(names)):
     errs = np.sqrt(np.diag(cov))
     
     # Identify functions of z
-    zfns = [0,1,3,4,5] # A, b_HI, f, DA, H
-    pA  = baofisher.indexes_for_sampled_fns(0, zc.size, zfns)
-    #pb  = baofisher.indexes_for_sampled_fns(1, zc.size, zfns)
-    pDA = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
-    pH  = baofisher.indexes_for_sampled_fns(5, zc.size, zfns)
-    pf  = baofisher.indexes_for_sampled_fns(3, zc.size, zfns)
+    # Identify functions of z
+    pA = baofisher.indices_for_param_names(lbls, 'A*')
+    pDA = baofisher.indices_for_param_names(lbls, 'DA*')
+    pH = baofisher.indices_for_param_names(lbls, 'H*')
+    pf = baofisher.indices_for_param_names(lbls, 'fs8*')
+    #pf = baofisher.indices_for_param_names(lbls, 'f*')
     
     indexes = [pf, pDA, pH]
-    fn_vals = [fc, dAc/1e3, Hc/1e2]
+    fn_vals = [cosmo['sigma_8']*fc*Dc, dAc/1e3, Hc/1e2]
     
     # Plot errors as fn. of redshift
     for jj in range(len(axes)):
@@ -72,11 +69,10 @@ for k in range(len(names)):
         line[0].set_dashes(linestyle[k])
         axes[jj].plot( zc, err, color=colours[k], marker='o', ls='none')
         #axes[jj].set_ylabel(ax_lbls[jj], fontdict={'fontsize':'20'}, labelpad=10.)
-    
-    
+
 
 # Subplot labels
-ax_lbls = ["$\sigma_f/f$", "$\sigma_{D_A}/D_A$", "$\sigma_H/H$"]
+ax_lbls = ["$\sigma_{f \sigma_8}/f\sigma_8$", "$\sigma_{D_A}/D_A$", "$\sigma_H/H$"]
 ymax = [0.159, 0.159, 0.159]
 
 # Move subplots

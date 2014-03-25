@@ -17,14 +17,13 @@ import euclid
 cosmo = experiments.cosmo
 
 names = ["EuclidRef", "cexptL", "iexptM", "exptS"]
-
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
 labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
 
 # Get f_bao(k) function
 cosmo_fns = baofisher.background_evolution_splines(cosmo)
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk_mnu005.dat", force_load=True)
+cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
@@ -45,11 +44,10 @@ for k in range(len(names)):
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    # Actually, (aperp, apar) are (D_A, H)
-    pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
-    pnames += ["pk%d" % i for i in range(kc.size)]
-    zfns = []; excl = []
+    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    zfns = ['b_HI',]
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff']
+    
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -85,7 +83,7 @@ for k in range(len(names)):
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]
-l0 = 0.1
+l0 = 0.15
 b0 = 0.1
 ww = 0.75
 hh = 0.8 / 4.
@@ -93,20 +91,19 @@ for i in range(len(names))[::-1]:
     axes[i].set_position([l0, b0 + hh*i, ww, hh])
     
 # Resize labels/ticks
-fontsize = 18
 for i in range(len(axes)):
     ax = axes[i]
-    for tick in ax.xaxis.get_major_ticks():
-      tick.label1.set_fontsize(fontsize)
-      if i != 0: tick.label1.set_visible(False) # Hide x lbls in upper subplots
-    for tick in ax.yaxis.get_major_ticks():
-      tick.label1.set_fontsize(fontsize)
+    
+    ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
+    ax.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5)
+    
+    if i != 0: ax.tick_params(axis='x', which='major', labelbottom='off')
 
-axes[0].set_xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'20'}, labelpad=10.)
+axes[0].set_xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'}, labelpad=10.)
 #ax.set_ylabel(r"$P(k)$", fontdict={'fontsize':'20'})
 
 # Set size
 P.gcf().set_size_inches(8.5,12.)
-#P.savefig('pub-fbao.pdf', transparent=True)
-
+#P.gcf().set_size_inches(8.5,10.)
+P.savefig('pub-fbao.pdf', transparent=True)
 P.show()

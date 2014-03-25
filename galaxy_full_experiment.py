@@ -24,9 +24,9 @@ size = comm.Get_size()
 # Load cosmology and experimental settings
 cosmo = experiments.cosmo
 expt = {
-    'fsky':     0.350, #0.350, #Euclid has: 0.364, 15,000 deg^2
-    'kmin':     1e-4, # Seo & Eisenstein say: shouldn't make much difference...
-    'kmax':     0.2, #130., FIXME # 50. # Seo & Eisenstein say: ~0.1, but evolves with z
+    'fsky':     0.350,  # Euclid has: 0.364, 15,000 deg^2
+    'kmin':     1e-4,   # Seo & Eisenstein say: shouldn't make much difference...
+    'k_nl0':    0.1,    # Non-linear scale at z=0 (effective kmax)
     'use':      experiments.USE
 }
 

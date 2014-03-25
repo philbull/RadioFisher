@@ -53,19 +53,11 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    #pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-    #         'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
-    #pnames += ["pk%d" % i for i in range(kc.size)]
-    #zfns = [0,1,6,7,8]
-    #excl = [2,4,5,  9,10,11,12,13,14] # Exclude all cosmo params
-    #zfns = [0,1,6,7,8]
-    #excl = [pnames.index(p) for p in excl_names]
-    #excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
-    
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = ['A', 'b_HI', 'f', 'H', 'DA', 'aperp', 'apar']
-    excl = ['Tb', 'sigma8', 'n_s', 'omegak', 'omegaDE', 'w0', 'wa', 'h', 
-                  'gamma', 'N_eff', 'pk*']
+    #zfns = ['A', 'b_HI', 'f', 'H', 'DA', 'aperp', 'apar']
+    zfns = ['A', 'bs8', 'fs8', 'H', 'DA', 'aperp', 'apar']
+    excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
+            'gamma', 'N_eff', 'pk*', 'f', 'b_HI']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -76,9 +68,12 @@ for k in range(len(names)):
     pA = baofisher.indices_for_param_names(lbls, 'A*')
     pDA = baofisher.indices_for_param_names(lbls, 'DA*')
     pH = baofisher.indices_for_param_names(lbls, 'H*')
-    pf = baofisher.indices_for_param_names(lbls, 'f*')
+    pf = baofisher.indices_for_param_names(lbls, 'fs8*')
+    #pf = baofisher.indices_for_param_names(lbls, 'f*')
+    
     indexes = [pDA, pA, pH, pf]
-    fn_vals = [dAc/1e3, 1., Hc/1e2, fc]
+    fn_vals = [dAc/1e3, 1., Hc/1e2, cosmo['sigma_8']*fc*Dc]
+    #fn_vals = [dAc/1e3, 1., Hc/1e2, fc]
     
     # Plot errors as fn. of redshift
     for jj in range(len(axes)):
@@ -89,12 +84,12 @@ for k in range(len(names)):
     
 
 # Subplot labels
-ax_lbls = ["$\sigma_{D_A}/D_A$", "$\sigma_A/A$", "$\sigma_H/H$", "$\sigma_f/f$"]
+ax_lbls = ["$\sigma_{D_A}/D_A$", "$\sigma_A/A$", "$\sigma_H/H$", "$\sigma_{f\sigma_8}/f\sigma_8$"]
 
 if PLOT_DIFFERENT_MEASURES:
     ymax = [0.18, 0.85, 0.11, 0.065]
 else:
-    ymax = [0.07, 0.85, 0.07, 0.098]
+    ymax = [0.07, 0.85, 0.07, 0.05] #0.098]
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]

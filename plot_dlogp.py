@@ -43,10 +43,7 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
-    #if "Euclid" not in names[k]: pnames.append('fNL')
-    pnames += ["pk%d" % i for i in range(kc.size)]
+    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = []; excl = []
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
@@ -86,20 +83,15 @@ for k in range(len(names)):
 
 P.xscale('log')
 P.yscale('log')
-P.xlim((2e-3, 3e0))
+P.xlim((1.5e-3, 3e0))
 P.ylim((9e-4, 1e1))
 P.legend(loc='lower left', prop={'size':'large'})
 
-# Resize labels/ticks
-fontsize = 18
-ax = P.gca()
-for tick in ax.xaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
-for tick in ax.yaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
+P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
+P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5)
 
-P.xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'20'})
-P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'20'})
+P.xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'})
+P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'})
 
 P.tight_layout()
 # Set size

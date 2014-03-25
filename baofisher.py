@@ -1447,6 +1447,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # (Ignores scale-dep. of bias in drsd_sk; that's included later)
     if RSD_FUNCTION == 'kaiser':
         drsd_df = 2. * u2 / (b + c['f']*u2)
+        drsd_dfsig8 = 2. * u2 / (b*c['sigma_8']*c['D'] + c['f']*c['sigma_8']*c['D']*u2)
         drsd_dsig2 = -k**2. * u2
         drsd_du2 = 2.*c['f'] / (b + c['f']*u2) - (k * c['sigma_nl'])**2.
         drsd_dk = -2. * k * u2 * c['sigma_nl']**2.
@@ -1502,11 +1503,14 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         deriv_omegaDE_ng = 0.
     
     # Get analytic log-derivatives for parameters
+    # FIXME: (f sigma8) and (b sigma8) terms don't handle NG properly
     deriv_A   = c['fbao'](k) / (1. + c['A']*c['fbao'](k)) * cs / ctot
     deriv_bHI = 2. * dbng_bHI / (b + c['f']*u2) * cs / ctot
     deriv_f   = ( use['f_rsd'] * drsd_df \
                 + use['f_growthfactor'] * 2.*np.log(a) \
                 + dbng_df_term ) * cs / ctot
+    deriv_bsig8 = 2. * dbng_bHI / (b*c['sigma_8']*c['D'] + c['f']*c['sigma_8']*c['D']*u2) * cs / ctot
+    deriv_fsig8 = drsd_dfsig8 * cs / ctot
     deriv_sig2 = drsd_dsig2 * cs / ctot
     deriv_pk = cs / ctot
     
@@ -1566,9 +1570,10 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     
     # Make list of (non-optional) derivatives
     deriv_list = [ deriv_A, deriv_bHI, deriv_Tb, deriv_sig2, deriv_sigma8, 
-                   deriv_ns, deriv_f, deriv_aperp, deriv_apar ]
+                   deriv_ns, deriv_f, deriv_aperp, deriv_apar, 
+                   deriv_bsig8, deriv_fsig8 ]
     paramnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 
-                  'aperp', 'apar']
+                  'aperp', 'apar', 'fs8', 'bs8']
     # FIXME: Add d_beta1, d_beta2
     
     # Evaluate derivatives for massive neutrinos and add to list

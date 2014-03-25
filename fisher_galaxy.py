@@ -66,7 +66,7 @@ def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns,
     cosmo['r'] = rr(z); cosmo['rnu'] = C*(1.+z)**2. / HH(z) # Perp/par. dist. scales
     
     # Use effective bias parameter; setup n(z)
-    cosmo['bHI'] = cosmo['bgal'] = 1.2 * np.sqrt(1. + z) # FIXME 1.2!
+    cosmo['bHI'] = cosmo['bgal'] = np.sqrt(1. + z)
     cosmo['ngal'] = ngal
     
     # Calculate Vsurvey
@@ -75,8 +75,16 @@ def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns,
     Vsurvey *= 4. * np.pi * expt['fsky']
     print "\tSurvey volume: %3.2f Gpc^3" % (Vsurvey/1e9)
     
+    # Define kmin, kmax
+    kmin = 2.*np.pi / Vsurvey**(1./3.)
+    # Eq. 20 of Smith et al. 2003 (arXiv:astro-ph/0207664v2)
+    kmax = expt['k_nl0'] * (1.+z)**(2./(2. + cosmo['ns']))
+    
+    print "\t   z = %3.2f" % z
+    print "\tkmin = %4.4f Mpc^-1" % kmin
+    print "\tkmax = %4.4f Mpc^-1" % kmax
+    
     # Set-up integration sample points in (k, u)-space (FIXME: Limits)
-    kmin = expt['kmin']; kmax = expt['kmax']
     ugrid = np.linspace(-1., 1., rf.NSAMP_U) # N.B. Order of integ. limits is correct
     kgrid = np.logspace(np.log10(kmin), np.log10(kmax), rf.NSAMP_K)
     

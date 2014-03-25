@@ -62,15 +62,15 @@ for k in _k:
     
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = ['A', 'b_HI', 'f', 'DA', 'H', 'aperp', 'apar']
+    zfns = ['A', 'bs8', 'fs8', 'DA', 'H', 'aperp', 'apar']
     excl = ['Tb', 'sigma8', 'n_s', 'omegak', 'omegaDE', 'w0', 'wa', 'h', 
-            'gamma', 'N_eff', 'pk*']
+            'gamma', 'N_eff', 'pk*', 'f', 'b_HI']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Get indices of f, b_HI
-    pf = baofisher.indices_for_param_names(lbls, 'f*')
-    pb = baofisher.indices_for_param_names(lbls, 'b_HI*')
+    pf = baofisher.indices_for_param_names(lbls, 'fs8*')
+    pb = baofisher.indices_for_param_names(lbls, 'bs8*')
     
     print "-"*50
     print names[k]
@@ -83,8 +83,8 @@ for k in _k:
         #if jj % 2 == 0: continue
         
         print jj, lbls[pb[jj]], lbls[pf[jj]]
-        x = baofisher.bias_HI(zc[jj], cosmo)
-        y = fc[jj]
+        x = baofisher.bias_HI(zc[jj], cosmo) * cosmo['sigma_8']
+        y = fc[jj] * cosmo['sigma_8']
         
         # Plot contours for w0, wa; omega_k free
         w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pb[jj], pf[jj], None, Finv=cov_pl)
@@ -100,16 +100,19 @@ for k in _k:
             ax.annotate( "z = %3.2f"%zc[jj], xy=(x, y), xytext=(10., -25.), 
                fontsize='large', textcoords='offset points', ha='center', va='center' )
         if jj == 11:
-            ax.annotate( "z = %3.2f"%zc[jj], xy=(x, y), xytext=(20., -150.), 
+            ax.annotate( "z = %3.2f"%zc[jj], xy=(x, y), xytext=(10., -80.), 
                fontsize='large', textcoords='offset points', ha='center', va='center' )
 
 
 # Axis ticks and labels
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
-ax.set_xlabel(r"$b_\mathrm{HI}(z)$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-ax.set_ylabel(r"$f(z)$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-ax.set_xlim((0.65, 1.9))
-ax.set_ylim((0.55, 1.25))
+ax.set_xlabel(r"$b_\mathrm{HI}\sigma_8(z)$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
+ax.set_ylabel(r"$f\sigma_8(z)$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
+ax.set_xlim((0.56, 1.62))
+ax.set_ylim((0.49, 0.95))
+ymajorLocator = matplotlib.ticker.MultipleLocator(0.1)
+ax.yaxis.set_major_locator(ymajorLocator)
+
 
 # Set size and save
 P.tight_layout()

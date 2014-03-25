@@ -23,17 +23,24 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
-names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
+#names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
+#labels = ['DETF IV + Planck', 'Facility + Planck', 'Mature + Planck'] #, 'Snapshot']
+
+
+names = ['EuclidRef', 'cexptL', 'cexptO', 'iexptM']
+labels = ['DETF IV', 'Facility', 'Optimal', 'Mature']
+
+#names = ['cSKA1MID', 'SKAMIDdishonly', 'SKAMIDionly5k'] #, 'exptS'] # 'EuclidRef',
+#labels = ['SKA1-MID (190 dish) Combined', 'SKA1-MID (190 dish) Dish-only', 'SKA1-MID (190 dish) Interferom.-only'] #, 'Snapshot'] # 'DETF IV'
 
 #names = ['EuclidRef', 'EuclidRefLINEAR', 'EuclidRefLINEAR2'] #, 'exptS']
 #labels = ['DETF IV', 'DETF IV L', 'DETF IV L2'] #, 'Snapshot']
 #names = ['cexptL_Sarea2k', 'cexptL_Sarea5k', 'cexptL_Sarea10k', 'cexptL_Sarea15k', 'cexptL_Sarea20k', 'cexptL_Sarea30k', 'cexptL_Sarea25k', 'cexptL_Sarea1k']
 
-colours = [ ['#CC0000', '#F09B9B'],
-            ['#1619A1', '#B1C9FD'],
+colours = [ ['#1619A1', '#B1C9FD'],
             ['#5B9C0A', '#BAE484'],
-            ['#FFB928', '#FFEA28'] ]
+            ['#FFB928', '#FFEA28'],
+            ['#CC0000', '#F09B9B'], ]
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -42,6 +49,9 @@ ax = fig.add_subplot(111)
 _k = range(len(names))[::-1]
 for k in _k:
     root = "output/" + names[k]
+    
+    print ">"*50
+    print "We're doing", names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -106,6 +116,8 @@ for k in _k:
     print "%s: FOM = %3.2f, sig(A) = %3.3f" % (names[k], fom, np.sqrt(cov_pl[pA,pA]))
     print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
     print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
+    pnl = lbls.index('sigma_NL')
+    print "1D sigma(sigma_NL) = %3.4f" % np.sqrt(cov_pl[pnl,pnl])
     
     x = experiments.cosmo['w0']
     y = experiments.cosmo['wa']
@@ -120,6 +132,7 @@ for k in _k:
     
     # Centroid
     ax.plot(x, y, 'kx')
+    print "\nDONE\n"
 
 
 # Report on what options were used
@@ -132,10 +145,10 @@ print "NOTE:", s2
 print "NOTE:", s3
 
 # Legend
-labels = [labels[k] + " + Planck" for k in range(len(labels))]
+labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.95, 0.95])
+P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'medium'}, bbox_to_anchor=[0.95, 0.95])
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
@@ -157,8 +170,15 @@ else:
     ax.set_xlim((-1.25, -0.75))
     ax.set_ylim((-0.9, 0.9))
 
+
+# FIXME
+ax.set_xlim((-1.45, -0.5))
+ax.set_ylim((-1., 1.5))
+
+
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
-P.savefig(fig_name, transparent=True)
+##P.savefig(fig_name, transparent=True)
+#P.savefig("mario-w0wa-SKAMID.pdf", transparent=True)
 P.show()

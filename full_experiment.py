@@ -28,15 +28,15 @@ cosmo = experiments.cosmo
 #expts = [e.exptS, e.exptM, e.exptL]
 #names = ['exptS', 'iexptM', 'cexptL']
 
-expts = [ e.exptS, e.exptM, e.exptL, e.GBT, e.BINGO, e.WSRT, e.APERTIF, 
+expts = [ e.exptS, e.exptM, e.exptL, e.exptO, e.GBT, e.BINGO, e.WSRT, e.APERTIF, 
           e.JVLA, e.ASKAP, e.KAT7, e.MeerKAT_band1, e.MeerKAT, e.SKA1MID,
           e.SKA1SUR, e.SKA1SUR_band1, e.SKAMID_PLUS, e.SKAMID_PLUS_band1, 
-          e.SKASUR_PLUS, e.SKASUR_PLUS_band1 ]
+          e.SKASUR_PLUS, e.SKASUR_PLUS_band1, e.SKA1MID, e.SKA1MID ]
 
-names = ['exptS', 'iexptM', 'cexptL', 'GBT', 'BINGO', 'WSRT', 'APERTIF', 
+names = ['exptS', 'iexptM', 'cexptL', 'cexptO', 'GBT', 'BINGO', 'WSRT', 'APERTIF', 
          'JVLA', 'cASKAP', 'cKAT7', 'cMeerKAT_band1', 'cMeerKAT', 'cSKA1MID',
          'SKA1SUR', 'SKA1SUR_band1', 'SKAMID_PLUS', 'SKAMID_PLUS_band1', 
-         'SKASUR_PLUS', 'SKASUR_PLUS_band1']
+         'SKASUR_PLUS', 'SKASUR_PLUS_band1', 'SKAMIDdishonly', 'SKAMIDionly5k']
 
 #names = ['exptS_mnu02', 'iexptM_mnu02', 'cexptL_mnu02']
 
@@ -81,19 +81,27 @@ if names[k][0] == "c": expts[k]['mode'] = "combined"
 
 expt = expts[k]
 survey_name = names[k]
-#expt.pop('n(x)', None)
 root = "output/" + survey_name
 
-
+"""
 # FIXME:
 if "exptM" in names[k]:
     expt['Sarea'] /= 6. # 5,000deg^2
     print "Setting survey area to 5,000 deg^2."
 
 # FIXME
-#areas = [2., 5., 10., 15., 20., 30.,   25., 1.]
-#expt['Sarea'] *= (areas[k] / 30.)
-#if myid == 0: print "Setting Sarea to", areas[k], "k deg^2"
+if names[k] == "cSKA1MID":
+    expt['Sarea'] /= 1.5 #1.5
+
+# FIXME
+if names[k] == "SKAMIDdishonly":
+    expt['mode'] = 'dish'
+    expt['Sarea'] /= 1.5
+
+if names[k] == "SKAMIDionly5k":
+    expt['mode'] = 'interferom'
+    expt['Sarea'] /= 60.
+"""
 
 # Define redshift bins
 expt_zbins = baofisher.overlapping_expts(expt)

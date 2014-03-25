@@ -41,7 +41,6 @@ USE = {
 
 SURVEY = {
     'ttot':             10e3*HRS_MHZ,      # Total integration time [MHz^-1]
-    'Sarea':            30e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'nu_line':          1420.406,          # Rest-frame freq. of emission line [MHz]
     'epsilon_fg':       1e-6,              # FG subtraction residual amplitude
     'use':              USE                # Which constraints to use/ignore
@@ -72,19 +71,21 @@ exptS = {
     'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1100.,             # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
     }
 exptS.update(SURVEY)
 
 exptM = {
     'mode':             'interferom',      # Interferometer or single dish
-    'Ndish':            160, #128              # No. of dishes
+    'Ndish':            160, #128          # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            4.,                # Single dish diameter [m]
-    'Tinst':            35.*(1e3),   #35      # System temp. [mK]
+    'Tinst':            35.*(1e3),         # System temp. [mK]
     'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
-    'survey_numax':     1000., #800.,              # Max. freq. of survey
+    'survey_numax':     1000., #800.,      # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
-    'Dmax':             60.,              # Max. interferom. baseline [m]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'Dmax':             60.,               # Max. interferom. baseline [m]
     'Dmin':             4.                 # Min. interferom. baseline [m]
     }
 exptM.update(SURVEY)
@@ -97,11 +98,28 @@ exptL = {
     'Tinst':            20.*(1e3),         # System temp. [mK]
     'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1100.,             # Max. freq. of survey
-    'dnu':              0.1,             # Bandwidth of single channel [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'Dmax':             600.,              # Max. interferom. baseline [m]
     'Dmin':             15.                # Min. interferom. baseline [m]
     }
 exptL.update(SURVEY)
+
+exptO = {
+    'mode':             'combined',        # Interferometer or single dish
+    'Ndish':            250,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            2.5,               # Single dish diameter [m]
+    'Tinst':            25.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1100.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            3e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'Dmax':             60.,               # Max. interferom. baseline [m]
+    'Dmin':             2.5                # Min. interferom. baseline [m]
+    }
+exptO.update(SURVEY)
+
 
 #################################
 # OLD VERSIONS
@@ -161,6 +179,7 @@ GBT = {
     'survey_dnutot':    240.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     920.,              # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            1e2*(D2RAD)**2.,   # Total survey area [radians^2]
     }
 GBT.update(SURVEY)
 
@@ -173,6 +192,7 @@ BINGO = {
     'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1260.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            2e3*(D2RAD)**2.,   # Total survey area [radians^2]
     }
 BINGO.update(SURVEY)
 
@@ -186,6 +206,7 @@ WSRT = {
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1200.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            1e3*(D2RAD)**2.,   # Total survey area [radians^2]
     }
 WSRT.update(SURVEY)
 
@@ -198,6 +219,7 @@ APERTIF = {
     'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1300.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
     }
 APERTIF.update(SURVEY)
 
@@ -210,6 +232,7 @@ JVLA = {
     'survey_dnutot':    420.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            1e3*(D2RAD)**2.,   # Total survey area [radians^2]
     'n(x)': "array_config/nx_VLAD_dec90.dat" # Interferometer antenna density
     }
 JVLA.update(SURVEY)
@@ -223,6 +246,7 @@ ASKAP = {
     'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1000.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            10e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)': "array_config/nx_ASKAP_dec30.dat" # Interferometer antenna density
     }
 ASKAP.update(SURVEY)
@@ -236,6 +260,7 @@ KAT7 = {
     'survey_dnutot':    220.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            2e3*(D2RAD)**2.,   # Total survey area [radians^2]
     'n(x)': "array_config/nx_KAT7_dec30.dat" # Interferometer antenna density
     }
 KAT7.update(SURVEY)
@@ -250,6 +275,7 @@ MeerKAT_band1 = {
     'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)': "array_config/nx_MKREF2_dec30.dat" # Interferometer antenna density
     }
 MeerKAT_band1.update(SURVEY)
@@ -264,6 +290,7 @@ MeerKAT = {
     'survey_dnutot':    435.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1015.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
     'n(x)': "array_config/nx_MKREF2_dec30.dat" # Interferometer antenna density
     }
 MeerKAT.update(SURVEY)
@@ -277,6 +304,7 @@ SKA1MID = {
     'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1050.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)': "array_config/nx_SKAM190_dec30.dat" # Interferometer antenna density
     }
 SKA1MID.update(SURVEY)
@@ -284,12 +312,13 @@ SKA1MID.update(SURVEY)
 superSKA1MID = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            254, #190,         # No. of dishes
-    'Nbeam':            1,  # NOTE!        # No. of beams (for multi-pixel detectors)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            20.*(1e3),         # System temp. [mK]
     'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1050.,             # Max. freq. of survey
     'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)': "array_config/nx_SKAM190_dec30.dat" # Interferometer antenna density
     }
 superSKA1MID.update(SURVEY)
@@ -303,7 +332,8 @@ SKA1SUR = {
     'Tinst':            30.*(1e3),         # System temp. [mK]
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1150.,             # Max. freq. of survey
-    'dnu':              0.005              # Bandwidth of single channel [MHz]
+    'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.   # Total survey area [radians^2]
     }
 SKA1SUR.update(SURVEY)
 
@@ -315,25 +345,30 @@ SKA1SUR_band1 = {
     'Tinst':            50.*(1e3),         # System temp. [mK]
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     850.,              # Max. freq. of survey
-    'dnu':              0.005              # Bandwidth of single channel [MHz]
+    'dnu':              0.005,             # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.   # Total survey area [radians^2]
     }
 SKA1SUR_band1.update(SURVEY)
 
 # Surveys that are fefined as overlap between two instruments
 SKAMID_PLUS = {
     'overlap':          [SKA1MID, MeerKAT],
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)':             "array_config/nx_SKAMREF2COMP_dec30.dat"
     }
 
 SKAMID_PLUS_band1 = {
     'overlap':          [SKA1MID, MeerKAT_band1],
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)':             "array_config/nx_SKAMREF2COMP_dec30.dat"
     }
 
 SKASUR_PLUS = {
-    'overlap':          [SKA1SUR, ASKAP]
+    'overlap':          [SKA1SUR, ASKAP],
+    'Sarea':            25e3*(D2RAD)**2.   # Total survey area [radians^2]
     }
 
 SKASUR_PLUS_band1 = {
-    'overlap':          [SKA1SUR_band1, ASKAP]
+    'overlap':          [SKA1SUR_band1, ASKAP],
+    'Sarea':            25e3*(D2RAD)**2.   # Total survey area [radians^2]
     }

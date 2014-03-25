@@ -18,20 +18,21 @@ USE_DETF_PLANCK_PRIOR = True
 cosmo = experiments.cosmo
 
 # Define names of parameters being varied
-snames = ['ttot', 'Sarea', 'epsilon_fg', 'omega_HI_0', 'kfg_fac']
+snames = ['ttot', 'Sarea', 'epsilon_fg', 'omega_HI_0', 'kfg_fac', 'sigma_nl']
 slabels = ['$t_\mathrm{tot} [10^3 \mathrm{hrs}]$',
            '$S_\mathrm{area} [10^3 \mathrm{deg}^2]$', 
            '$\epsilon_\mathrm{FG}$',
            '$\Omega_\mathrm{HI} / 10^{-4}$',
-           '$k_\mathrm{FG} / k_{\mathrm{FG}, 0}$']
-logscale = [False, False, True, False, False]
-fname = ['pub-ttot.pdf', 'pub-sarea.pdf', 'pub-efg.pdf', 'pub-omegaHI.pdf', 'pub-kfg.pdf']
-fac = [1e3 * HRS_MHZ, 1e3 * (D2RAD)**2., 1., 1e-4, 1.] # Divide by this factor to get sensible units
+           '$k_\mathrm{FG} / k_{\mathrm{FG}, 0}$',
+           '$\sigma_\mathrm{NL} \, [\mathrm{Mpc}]$']
+logscale = [False, False, True, False, False, False]
+fname = ['pub-ttot.pdf', 'pub-sarea.pdf', 'pub-efg.pdf', 'pub-omegaHI.pdf', 'pub-kfg.pdf', 'pub-signl.pdf']
+fac = [1e3 * HRS_MHZ, 1e3 * (D2RAD)**2., 1., 1e-4, 1., 1.] # Divide by this factor to get sensible units
 
 markers = ['o', 'D', 's']
 
 # Choose which parameter to plot
-j = 4
+j = 5
 
 # Experiments
 #names = ['exptS', 'iexptM', 'cexptL']
@@ -132,6 +133,7 @@ bbox = [[0.92,0.45],
         [0.92,0.45],
         [0.42,0.45],
         [0.92,0.45],
+        [0.39,0.45],
         [0.39,0.45]]
 labels = ['DE FOM', '$(\sigma_K)^{-1}$', '$(\sigma_\gamma)^{-1}$']
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=lw[k], marker=markers[k], color='k', alpha=1.) for k in range(3)]
@@ -148,12 +150,14 @@ if j == 1: ax.set_xlim((0., 30.4))
 if j == 2: ax.set_xlim((8e-8, 1.3e-4))
 if j == 3: ax.set_xlim((1.8, 11.2))
 if j == 4: ax.set_xlim((9e-2, 1.3e1))
+if j == 5: ax.set_xlim((1.4, 14.5))
 
 if j == 0: ax.set_ylim((0., 1.02))
 if j == 1: ax.set_ylim((0., 1.05))
 if j == 2: ax.set_ylim((7e-3, 1.5))
 if j == 3: ax.set_ylim((1e-3, 2.02))
 if j == 4: ax.set_ylim((0.6, 1.02))
+if j == 5: ax.set_ylim((0.2, 1.05))
 
 if j == 2: ax.set_xscale('log')
 if j == 4: ax.set_xscale('log')
@@ -164,6 +168,7 @@ if j == 3: ax.set_yscale('log')
 if j == 3: ax.axvline(cosmo['omega_HI_0']/1e-4, color='k', ls='dotted', alpha=0.5, lw=1.8)
 if j == 2: ax.axvline(1e-6, color='k', ls='dotted', alpha=0.5, lw=1.8)
 if j == 4: ax.axvline(1., color='k', ls='dotted', alpha=0.5, lw=1.8)
+if j == 5: ax.axvline(cosmo['sigma_nl'], color='k', ls='dotted', alpha=0.5, lw=1.8)
 
 # Set size
 P.tight_layout()
