@@ -29,7 +29,7 @@ MARGINALISE_OMEGAB = True      # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True         # Marginalise over (w0, wa)
 
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Pathfinder'] #, 'Snapshot']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
 
 colours = ['#BAE484', '#5B9C0A',   '#B1C9FD', '#1619A1',   '#F6ADAD', '#CC0000',
@@ -58,7 +58,7 @@ for k in _k:
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'H', 'DA', 'gamma', 'N_eff', 'pk*']
+    excl = ['Tb', 'f', 'aperp', 'apar', 'H', 'DA', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -157,18 +157,17 @@ for tick in ax.xaxis.get_major_ticks():
 for tick in ax.yaxis.get_major_ticks():
   tick.label1.set_fontsize(fontsize)
 
-xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
-yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
-ax.xaxis.set_minor_locator(xminorLocator)
-ax.yaxis.set_minor_locator(yminorLocator)
-
 ax.set_xlabel(label1, fontdict={'fontsize':'xx-large'}, labelpad=15.)
 #ax.set_ylabel(label2, fontdict={'fontsize':'xx-large'}, labelpad=15.)
 
 ax.set_xlim((-5e-3, 5e-3))
 ax.set_ylim((-0.75, 2.*Nexpt - 0.5))
 
-ax.tick_params(axis='both', which='both', labelleft='off', left='off', right='off', length=8., width=1.5, pad=8.)
+ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(0.002))
+ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(0.001))
+
+ax.tick_params(axis='both', which='major', labelleft='off', left='off', right='off', length=8., width=1.5, pad=8.)
+ax.tick_params(axis='both', which='minor', labelleft='off', left='off', right='off', length=5., width=1.5, pad=8.)
 
 # Set size and save
 P.tight_layout()

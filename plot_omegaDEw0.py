@@ -24,7 +24,7 @@ MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Pathfinder'] #, 'Snapshot']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -100,10 +100,10 @@ for k in _k:
     cov_pl = np.linalg.inv(Fpl)
     
     # Calculate FOM
-    fom = baofisher.figure_of_merit(pw0, pode, None, cov=cov_pl)
-    #print "%s: FOM = %3.2f, sig(A) = %3.3f" % (names[k], fom, np.sqrt(cov_pl[pA,pA]))
-    #print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
-    #print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
+    fom = baofisher.figure_of_merit(pw0, pwa, None, cov=cov_pl)
+    print "%s: FOM = %3.2f" % (names[k], fom)
+    print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
+    print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
     
     x = experiments.cosmo['w0']
     y1 = experiments.cosmo['omega_lambda_0']

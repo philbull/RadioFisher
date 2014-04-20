@@ -19,7 +19,7 @@ cosmo = experiments.cosmo
 names = ["EuclidRef", "cexptL", "iexptM", "exptS"]
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Pathfinder', 'FirstGen']
 
 # Get f_bao(k) function
 cosmo_fns = baofisher.background_evolution_splines(cosmo)
@@ -46,8 +46,7 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff']
-    
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'fs8', 'bs8', 'gamma', 'N_eff']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )

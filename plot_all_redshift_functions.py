@@ -20,7 +20,7 @@ cosmo = experiments.cosmo
 if not PLOT_DIFFERENT_MEASURES:
     names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
     colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-    labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+    labels = ['DETF IV', 'Facility', 'Pathfinder', 'FirstGen']
     linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 else:
     names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 

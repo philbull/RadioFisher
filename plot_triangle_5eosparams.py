@@ -67,7 +67,7 @@ for k in _k:
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*', 'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )

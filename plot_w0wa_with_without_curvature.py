@@ -23,14 +23,16 @@ MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
 names = ['cexptL', 'cexptL', 'cexptL']
-labels = ['Planck $H_0$ prior', 'Flatness prior', 'No priors']
+labels = ['Flatness prior', 'Planck $H_0$ prior', 'No priors']
 
-fix = [None, 'omegak', None,]
+fix = ['omegak', None, None,]
 
-colours = [ ['#CC0000', '#F09B9B'],
+colours = [ 
+            ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
-            ['#5B9C0A', '#BAE484'],
-            ['#FFB928', '#FFEA28'] ]
+            ['#6B6B6B', '#BDBDBD'],
+            ['#5B9C0A', '#BAE484'] ]
+            #['#FFB928', '#FFEA28'],
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -51,22 +53,13 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    # Actually, (aperp, apar) are (D_A, H)
-    pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-             'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
-    pnames += ["pk%d" % i for i in range(kc.size)]
-    
-    zfns = [1,]
-    excl = [2,   6,7,8,  14,]
-    excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
-    
+    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    zfns = ['b_HI',]
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
-    # Add Planck prior
-    #Fpl = euclid.add_detf_planck_prior(F, lbls, info=False)
-    #Fpl = euclid.add_planck_prior(F, lbls, info=False)
-    
+    print lbls
     if USE_DETF_PLANCK_PRIOR:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
@@ -84,19 +77,15 @@ for k in _k:
     # Decide whether to fix various parameters
     fixed_params = []
     if fix[k] is not None: fixed_params.append(fix[k])
-    print fixed_params
-    
-    #if not MARGINALISE_CURVATURE or k == 2: fixed_params += ['omegak',]
-    #if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
-    #if not MARGINALISE_OMEGAB or k == 0: fixed_params += ['omega_b',]
-    #if k == 1: fixed_params += ['h',]
+    print ">>> Fixed:", fixed_params, labels[k]
     
     if len(fixed_params) > 0:
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=[lbls.index(p) for p in fixed_params] )
+                     names=lbls, exclude=fixed_params )
     
     # H0 prior
     if 'H_0' in labels[k]:
+        print ">>> Adding H_0 prior"
         ph = lbls.index('h')
         Fpl[ph, ph] += 1./(0.012)**2.
         
@@ -119,11 +108,12 @@ for k in _k:
     x = experiments.cosmo['w0']
     y = experiments.cosmo['wa']
     
-    # Plot contours for w0, wa; omega_k free
+    # Plot contours for w0, wa
+    transp = [1., 0.85]
     w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
-                ec=colours[k][0], lw=1.5, alpha=1.0) for kk in [1,0]]
+                ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
     for e in ellipses: ax.add_patch(e)
     
     # Centroid
@@ -143,24 +133,21 @@ print "NOTE:", s3
 labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'x-large'})
+P.gcf().legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'x-large'}, bbox_to_anchor=[0.95, 0.96])
 
-fontsize = 18
-for tick in ax.xaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
-for tick in ax.yaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
+ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
+ax.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)
 
-xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
-yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
-ax.xaxis.set_minor_locator(xminorLocator)
-ax.yaxis.set_minor_locator(yminorLocator)
+#xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
+#yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
+#ax.xaxis.set_minor_locator(xminorLocator)
+#ax.yaxis.set_minor_locator(yminorLocator)
 
 ax.set_xlabel(r"$w_0$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_ylabel(r"$w_a$", fontdict={'fontsize':'xx-large'})
 
-#ax.set_xlim((-1.31, -0.69))
-ax.set_ylim((-1.7, 1.7))
+ax.set_xlim((-1.21, -0.79))
+ax.set_ylim((-0.5, 0.5))
 
 # Set size and save
 P.tight_layout()

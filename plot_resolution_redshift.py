@@ -66,7 +66,8 @@ kpar_max = 1. / cosmo['sigma_nl'] * np.ones(zz.shape)
 kperp_min_int = 2.*np.pi * Dmin / (r * l)
 kperp_max_int = 2.*np.pi * Dmax / (r * l)
 kperp_min_sd = 2.*np.pi / np.sqrt(r**2. * Sarea)
-kperp_max_sd = 16.*np.log(2.) / 1.22 * Ddish / (r * l)
+kperp_max_sd = 2.*np.pi * Ddish / (r * l) # 16.*np.log(2.) / 1.22
+kperp_max_sd2 = np.sqrt(16.*np.log(2.)) * Ddish / (r * l)
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -84,7 +85,8 @@ ax.annotate("Int.", xy=(0.9, 0.8), xytext=(0., 0.), fontsize='xx-large',
 
 # Single-dish transverse
 ax.plot(kperp_min_sd, zz, lw=1.8, color='#CC0000')
-ax.plot(kperp_max_sd, zz, lw=1.8, color='#CC0000')
+ax.plot(kperp_max_sd, zz, lw=1.8, color='#CC0000', ls='dashed')
+#ax.plot(kperp_max_sd2, zz, lw=1.8, color='g')
 ax.fill_betweenx(zz, kperp_min_sd, kperp_max_sd, color='#F09B9B', alpha=0.7)
 
 ax.annotate("SD", xy=(0.01, 0.8), xytext=(0., 0.), fontsize='xx-large', 

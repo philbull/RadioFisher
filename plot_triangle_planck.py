@@ -14,6 +14,9 @@ import experiments
 import os
 import euclid
 
+print "Obsolete."
+exit()
+
 USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
 MARGINALISE_OVER_W0WA = True # Whether to fix or marginalise over (w0, wa)
 

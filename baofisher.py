@@ -1213,10 +1213,12 @@ def dish_response(q, y, cosmo, expt):
     I = 1. / (expt['Ndish'] * expt['Nbeam'])
     
     # Define parallel/perp. beam scales
-    D0 = 0.5 * 1.22 * 300. / np.sqrt(2.*np.log(2.)) # Dish FWHM prefactor [metres]
+    l = 3e8 * (1. + c['z']) / (1e6 * expt['nu_line'])
+    theta_fwhm = l / expt['Ddish']
     sigma_kpar = np.sqrt(16.*np.log(2)) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
-    sigma_kperp =  np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
-                 / (c['r'] * D0 * (1.+c['z']))
+    sigma_kperp = np.sqrt(16.*np.log(2)) / (c['r'] * theta_fwhm)
+    #            np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
+    #             / (c['r'] * D0 * (1.+c['z']))
     
     # Sanity check: Require that Sarea > Nbeam * (beam)^2
     if (expt['Sarea'] < expt['Nbeam'] / (sigma_kperp * c['r'])**2.):
@@ -1253,6 +1255,10 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         # Interferometer mode
         print "\tInterferometer mode."
         noise *= interferometer_response(q, y, cosmo, expt)
+    elif 'cyl' in expt['mode']:
+        # Cylinder mode
+        print "\tCylinder (interferometer) mode."
+        noise *= interferometer_response(q, y, cosmo, expt)
     elif 'dish' in expt['mode']:
         # Dish (autocorrelation) mode
         print "\tSingle-dish mode."
@@ -1267,7 +1273,8 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         # pessimistic in the noise-dominated regime, since it throwws information away
         r_int = interferometer_response(q, y, cosmo, expt)
         r_dish = dish_response(q, y, cosmo, expt)
-        noise *= np.minimum(r_int, r_dish)
+        #noise *= np.minimum(r_int, r_dish) # Taking the elementwise minimum
+        noise *= 1./(1./r_int + 1./r_dish) # Adding in quadrature
     else:
         # Mode not recognised (safest just to raise an error)
         raise ValueError("Experiment mode not recognised. Choose 'interferom', 'dish', or 'combined'.")
@@ -2151,10 +2158,15 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     # Calculate FOV (only used for interferom. mode)
     # FOV in radians, with C = 3e8 m/s, freq = (nu [MHz])*1e6 Hz
     nu = expt['nu_line'] / (1. + z)
-    expt['fov'] = (1.02 / (nu * expt['Ddish']) * (3e8 / 1e6))**2.
+    l = 3e8 / (nu*1e6)
+    if 'cyl' in expt['mode']:
+        expt['fov'] = np.pi * (l / expt['Ddish']) # Cylinder mode, 180deg * theta
+    else:
+        expt['fov'] = (l / expt['Ddish'])**2.
     
     # Load n(u) interpolation function, if needed
-    if ('int' in expt['mode'] or 'comb' in expt['mode']) and 'n(x)' in expt.keys():
+    if ( 'int' in expt['mode'] or 'cyl' in expt['mode'] or 
+         'comb' in expt['mode']) and 'n(x)' in expt.keys():
         expt['n(x)_file'] = expt['n(x)']
         expt['n(x)'] = load_interferom_file(expt['n(x)'])
     
@@ -2179,7 +2191,7 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     
     # Output k values
     c = cosmo
-    D0 = 0.5 * 1.22 * 300. / np.sqrt(2.*np.log(2.)) # Dish FWHM prefactor [metres]
+    D0 = 0.5 * 1.02 * 300. / np.sqrt(2.*np.log(2.)) # Dish FWHM prefactor [metres]
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
     sigma_kpar = (2.*np.pi) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
     sigma_kperp =  np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \

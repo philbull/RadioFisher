@@ -19,18 +19,18 @@ cosmo = experiments.cosmo
 nsig = 1.5 # No. of sigma to plot out to
 aspect = 1. #1.7 # Aspect ratio of range (w = aspect * h)
 
-param1 = "omegak"
-label1 = "\Omega_K"
-fid1 = 0.
-fig_name = "pub-ok-improvement.pdf"
+#param1 = "omegak"
+#label1 = "\Omega_K"
+#fid1 = 0.
+#fig_name = "pub-ok-improvement.pdf"
 
-#param1 = "gamma"
-#label1 = "\gamma"
-#fid1 = cosmo['gamma']
-#fig_name = "pub-gamma-improvement.pdf"
+param1 = "gamma"
+label1 = "\gamma"
+fid1 = cosmo['gamma']
+fig_name = "pub-gamma-improvement.pdf"
 
-param1 = "fom"
-fig_name = "pub-fom-improvement.pdf"
+#param1 = "fom"
+#fig_name = "pub-fom-improvement.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_GAMMA = True # Marginalise over gamma
@@ -40,7 +40,7 @@ MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True # Marginalise over (w0, wa)
 
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Pathfinder'] #, 'Snapshot']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
@@ -71,7 +71,7 @@ for k in _k:
         # Actually, (aperp, apar) are (D_A, H)
         pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
         zfns = ['b_HI',]
-        excl = ['Tb', 'f', 'H', 'DA', 'apar', 'aperp', 'pk*', 'N_eff']
+        excl = ['Tb', 'f', 'H', 'DA', 'apar', 'aperp', 'pk*', 'N_eff', 'fs8', 'bs8']
         F, lbls = baofisher.combined_fisher_matrix( F_list[:l],
                                                     expand=zfns, names=pnames,
                                                     exclude=excl )
@@ -146,10 +146,15 @@ ax.set_xlim((0.25, 2.55))
 ax.set_xlabel("$z_\mathrm{max}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 if param1 == 'fom':
     ax.set_ylabel("$\mathrm{FOM}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-    ax.set_ylim((-0.5, 75.))
+    ax.set_ylim((-0.5, 90.))
+elif param1=='omegak':
+    ax.set_ylabel("$[\sigma({%s})]^{-1}$" % label1, fontdict={'fontsize':'xx-large'}, 
+                  labelpad=15.)
+    ax.set_ylim((-10., 1200.))
 else:
     ax.set_ylabel("$[\sigma({%s})]^{-1}$" % label1, fontdict={'fontsize':'xx-large'}, 
                   labelpad=15.)
+    ax.set_ylim((-0.5, 37.))
 
 # Set size and save
 P.tight_layout()

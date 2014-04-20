@@ -17,7 +17,7 @@ cosmo = experiments.cosmo
 
 names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Pathfinder', 'FirstGen']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
 # Fiducial value and plotting
@@ -56,14 +56,10 @@ for k in range(len(names)):
     pnames = pnames_new
     F_list = F_list_lss
     
-    #zfns = [0,1,6,7,8]
-    zfns = ['A', 'b_HI', 'f', 'DV', 'F']
+    #zfns = ['A', 'b_HI', 'f', 'DV', 'F']
+    zfns = ['A', 'bs8', 'fs8', 'DV', 'F']
     excl = ['Tb', 'sigma8', 'n_s', 'omegak', 'omegaDE', 'w0', 'wa', 'h', 
-            'gamma', 'N_eff', 'pk*']
-                  
-    #excl = [pnames.index(p) for p in excl_names]
-    #excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
-    
+            'gamma', 'N_eff', 'pk*', 'f', 'b_HI'] #'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -71,9 +67,8 @@ for k in range(len(names)):
     errs = np.sqrt(np.diag(cov))
     
     # Identify functions of z
-    zfns = [0,1,3,4,5] # A, b_HI, f, DA<->DV, H<->F
-    pDV = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
-    pFF = baofisher.indexes_for_sampled_fns(5, zc.size, zfns)
+    pDV = baofisher.indices_for_param_names(lbls, 'DV*')
+    pFF = baofisher.indices_for_param_names(lbls, 'F*')
     
     DV = ((1.+zc)**2. * dAc**2. * C*zc / Hc)**(1./3.)
     Fz = (1.+zc) * dAc * Hc / C

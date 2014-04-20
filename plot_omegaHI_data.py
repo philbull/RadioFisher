@@ -81,11 +81,12 @@ P.errorbar([0.609, 1.219], [0.97, 0.94], yerr=[0.36, 0.28], marker='^', ls='none
 # ALFALFA (Martin et al. 2010)
 P.errorbar([0.,], [0.43,], [0.03,], marker='s', ls='none', markeredgecolor='none', color='#CC0000',  lw=1.5, capthick=1.5, label="ALFALFA / Martin (2010)")
 
-# HIPASS (Zwaan 2005), http://arxiv.org/abs/astro-ph/0502257
-P.errorbar([0.,], [0.35,], [0.04,], marker='^', ls='none', markeredgecolor='none', color='#CC0000', lw=1.5, capthick=1.5, markersize=8., label="HIPASS / Zwaan (2010)")
-
 # GMRT (Lah 2007), http://arxiv.org/abs/astro-ph/0701668
 P.errorbar([0.24,], [0.91,], [0.42,], marker='v', ls='none', markeredgecolor='none', color='#CC0000', lw=1.5, capthick=1.5, markersize=8., label="GMRT / Lah (2007)")
+
+# HIPASS (Zwaan 2005), http://arxiv.org/abs/astro-ph/0502257
+P.errorbar([0.,], [0.35,], [0.04,], marker='^', ls='none', markeredgecolor='none', color='#CC0000', lw=1.5, capthick=1.5, markersize=8., label="HIPASS / Zwaan (2005)")
+
 
 
 # Simulations

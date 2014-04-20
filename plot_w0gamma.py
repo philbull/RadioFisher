@@ -26,8 +26,8 @@ names = ['EuclidRef', 'cexptL'] #'iexptM'] #, 'exptS']
 labels = ['DETF IV + Planck', 'Facility + Planck']# 'Mature'] #, 'Snapshot']
 
 
-names = ['EuclidRef', 'SKAMID_PLUS'] #'SKAMID_PLUS']
-labels = ['DETF IV + Planck', 'SKA1MID + Planck']
+#names = ['EuclidRef', 'SKAMID_PLUS'] #'SKAMID_PLUS']
+#labels = ['DETF IV + Planck', 'SKA1MID + Planck']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -137,7 +137,6 @@ Fc, lbls = baofisher.add_fisher_matrices(Fc, F_detf, lbls, l2, expand=True)
 cov_pl = np.linalg.inv(Fc)
 
 # Plot contours for gamma, w0
-"""
 transp = [1., 0.95]
 w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pw0, None, Finv=cov_pl)
 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
@@ -145,7 +144,6 @@ ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w,
             ec=colours[-1][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
 for e in ellipses: ax.add_patch(e)
 labels += ['Combined']
-"""
 
 print "\nCOMBINED"
 pw0 = lbls.index('w0'); pgam = lbls.index('gamma')
@@ -180,7 +178,7 @@ lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alp
 
 P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.5, 0.95])
 
-ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
+ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=15.)
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
 yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
 ax.xaxis.set_minor_locator(xminorLocator)
@@ -189,12 +187,12 @@ ax.yaxis.set_minor_locator(yminorLocator)
 ax.set_xlabel(r"$\gamma$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_ylabel(r"$w_0$", fontdict={'fontsize':'xx-large'})
 
-ax.set_xlim((0.34, 0.72))
+ax.set_xlim((0.32, 0.72))
 ax.set_ylim((-1.22, -0.73))
 
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
-#P.savefig(fig_name, transparent=True)
-P.savefig("mario-w0gamma-SKA1MID.pdf", transparent=True)
+P.savefig(fig_name, transparent=True)
+#P.savefig("mario-w0gamma-SKA1MID.pdf", transparent=True)
 P.show()

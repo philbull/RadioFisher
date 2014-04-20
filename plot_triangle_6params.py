@@ -15,7 +15,7 @@ import os
 import euclid
 
 USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
-MARGINALISE_OVER_W0WA = True # Whether to fix or marginalise over (w0, wa)
+MARGINALISE_OVER_W0WA = False # Whether to fix or marginalise over (w0, wa)
 
 cosmo = experiments.cosmo
 
@@ -23,7 +23,7 @@ colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'] ]
 if MARGINALISE_OVER_W0WA:
     names = ['EuclidRef', 'cexptL', 'iexptM']
-    labels = ['DETF IV + Planck', 'Facility + Planck', 'Mature + Planck']
+    labels = ['DETF IV + Planck', 'Facility + Planck', 'Pathfinder + Planck']
     colours.append(['#5B9C0A', '#BAE484']) # Green
 else:
     names = ['EuclidRef', 'cexptL', 'cexptL']
@@ -68,23 +68,19 @@ for k in _k:
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = [1,]
-    excl_names = ['Tb', 'f', 'aperp', 'apar', 'gamma']
-    if 'N_eff' in pnames: excl_names += ['N_eff',]
-    excl = [pnames.index(p) for p in excl_names]
-    excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
-    
-    #pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-    #         'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma'] #, 'Mnu']
-    #pnames += ["pk%d" % i for i in range(kc.size)]
+    #pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     #zfns = [1,]
-    #excl = [2,  6,7,8,   14,]
-    #excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
-    
+    #excl_names = ['Tb', 'f', 'aperp', 'apar', 'gamma']
+    #if 'N_eff' in pnames: excl_names += ['N_eff',]
+    #excl = [pnames.index(p) for p in excl_names]
+    #excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
+    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    zfns = ['b_HI', ]
+    excl = ['Tb', 'f', 'aperp', 'apar', 'fs8', 'bs8', 'DA', 'H', 'gamma', 'N_eff', 'pk*']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
+    
     # Apply Planck prior
     if USE_DETF_PLANCK_PRIOR:
         # DETF Planck prior
@@ -111,10 +107,10 @@ for k in _k:
     else:
         print "*** Fixing (w0, wa) ***"
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], names=lbls,
-                                     exclude=[lbls.index('w0'), lbls.index('wa')] )
+                                     exclude=['w0', 'wa'] )
     # Exclude Omega_K (flatness prior)
     Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], names=lbls,
-                                     exclude=[lbls.index('omegak'),] )
+                                     exclude=['omegak',] )
     
     # Add Planck H_0 prior
     #ph = lbls.index('h')
@@ -160,13 +156,14 @@ for k in _k:
             ax.tick_params(axis='both', which='minor', labelsize=12)
             
             # Plot ellipse *or* 1D
+            transp = [1., 0.85]
             if p1 != p2:
                 # Plot contours
                 ww, hh, ang, alpha = baofisher.ellipse_for_fisher_params(
                                                       p1, p2, None, Finv=cov_pl)
                 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*ww, 
                             height=alpha[kk]*hh, angle=ang, fc=colours[k][kk], 
-                            ec=colours[k][0], lw=1.5, alpha=1.) for kk in [1,0]]
+                            ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
                 for e in ellipses: ax.add_patch(e)
                 
                 # Centroid and axis scale

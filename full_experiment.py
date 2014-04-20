@@ -28,15 +28,17 @@ cosmo = experiments.cosmo
 #expts = [e.exptS, e.exptM, e.exptL]
 #names = ['exptS', 'iexptM', 'cexptL']
 
+"""
 expts = [ e.exptS, e.exptM, e.exptL, e.exptO, e.GBT, e.BINGO, e.WSRT, e.APERTIF, 
           e.JVLA, e.ASKAP, e.KAT7, e.MeerKAT_band1, e.MeerKAT, e.SKA1MID,
           e.SKA1SUR, e.SKA1SUR_band1, e.SKAMID_PLUS, e.SKAMID_PLUS_band1, 
           e.SKASUR_PLUS, e.SKASUR_PLUS_band1, e.SKA1MID, e.SKA1MID ]
 
-names = ['exptS', 'iexptM', 'cexptL', 'cexptO', 'GBT', 'BINGO', 'WSRT', 'APERTIF', 
+names = ['exptS', 'iexptM', 'cexptL', 'iexptO', 'GBT', 'BINGO', 'WSRT', 'APERTIF', 
          'JVLA', 'cASKAP', 'cKAT7', 'cMeerKAT_band1', 'cMeerKAT', 'cSKA1MID',
          'SKA1SUR', 'SKA1SUR_band1', 'SKAMID_PLUS', 'SKAMID_PLUS_band1', 
          'SKASUR_PLUS', 'SKASUR_PLUS_band1', 'SKAMIDdishonly', 'SKAMIDionly5k']
+"""
 
 #names = ['exptS_mnu02', 'iexptM_mnu02', 'cexptL_mnu02']
 
@@ -62,10 +64,41 @@ names = ['exptS', 'iexptM', 'cexptL', 'cexptO', 'GBT', 'BINGO', 'WSRT', 'APERTIF
 #  'alpha_pk_shift':    True # True
 #}
 
+################################################################################
+
+expts = [ 
+  e.exptS, e.exptM, e.exptL, e.exptL, e.exptL,
+  e.GBT, e.Parkes, e.GMRT, e.WSRT, e.APERTIF,
+  e.VLBA, e.JVLA, e.JVLA, e.BINGO, e.BAOBAB,
+  e.CHIME, e.AERA3, e.KAT7, e.KAT7, e.KAT7,
+  e.MeerKATb1, e.MeerKATb1, e.MeerKATb1, e.MeerKATb2, e.MeerKATb2,
+  e.MeerKATb2, e.ASKAP, e.SKA1MIDbase1, e.SKA1MIDbase1, e.SKA1MIDbase1,
+  e.SKA1MIDbase2, e.SKA1MIDbase2, e.SKA1MIDbase2, e.SKA1MIDfull1, e.SKA1MIDfull1,
+  e.SKA1MIDfull1, e.SKA1MIDfull2, e.SKA1MIDfull2, e.SKA1MIDfull2, e.SKA1SURbase1,
+  e.SKA1SURbase2, e.SKA1SURfull1, e.SKA1SURfull2 ]
+
+names = [
+  'exptS', 'iexptM', 'exptL', 'iexptL', 'cexptL',
+  'GBT', 'Parkes', 'GMRT', 'WSRT', 'APERTIF',
+  'VLBA', 'JVLA', 'iJVLA', 'BINGO', 'iBAOBAB',
+  'yCHIME', 'iAERA3', 'KAT7', 'iKAT7', 'cKAT7',
+  'MeerKATb1', 'iMeerKATb1', 'cMeerKATb1', 'MeerKATb2', 'iMeerKATb2',
+  'cMeerKATb2', 'ASKAP', 'SKA1MIDbase1', 'iSKA1MIDbase1', 'cSKA1MIDbase1',
+  'SKA1MIDbase2', 'iSKA1MIDbase2', 'cSKA1MIDbase2', 'SKA1MIDfull1', 'iSKA1MIDfull1',
+  'cSKA1MIDfull1', 'SKA1MIDfull2', 'iSKA1MIDfull2', 'cSKA1MIDfull2', 'SKA1SURbase1',
+  'SKA1SURbase2', 'SKA1SURfull1', 'SKA1SURfull2' ]
+
+################################################################################
+
 
 # Take command-line argument for which survey to calculate, or set manually
 if len(sys.argv) > 1:
     k = int(sys.argv[1])
+    try:
+        Sarea = float(sys.argv[2])
+    except:
+        Sarea = None
+        pass
 else:
     raise IndexError("Need to specify ID for experiment.")
 if myid == 0:
@@ -78,30 +111,21 @@ cv_limited = False
 expts[k]['mode'] = "dish"
 if names[k][0] == "i": expts[k]['mode'] = "interferom."
 if names[k][0] == "c": expts[k]['mode'] = "combined"
+if names[k][0] == "y": expts[k]['mode'] = "cylinder"
 
 expt = expts[k]
-survey_name = names[k]
-root = "output/" + survey_name
+if Sarea is None:    
+    survey_name = names[k]
+    root = "output/" + survey_name
+else:
+    expt['Sarea'] = Sarea * (D2RAD)**2.
+    survey_name = names[k] + "_" + str(int(Sarea))
+    root = "output/" + survey_name
 
-"""
-# FIXME:
-if "exptM" in names[k]:
-    expt['Sarea'] /= 6. # 5,000deg^2
-    print "Setting survey area to 5,000 deg^2."
 
-# FIXME
-if names[k] == "cSKA1MID":
-    expt['Sarea'] /= 1.5 #1.5
-
-# FIXME
-if names[k] == "SKAMIDdishonly":
-    expt['mode'] = 'dish'
-    expt['Sarea'] /= 1.5
-
-if names[k] == "SKAMIDionly5k":
-    expt['mode'] = 'interferom'
-    expt['Sarea'] /= 60.
-"""
+print "survey_name:", survey_name
+print "root:", root
+exit()
 
 # Define redshift bins
 expt_zbins = baofisher.overlapping_expts(expt)

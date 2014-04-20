@@ -23,12 +23,12 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
-#names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-#labels = ['DETF IV + Planck', 'Facility + Planck', 'Mature + Planck'] #, 'Snapshot']
+names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
+labels = ['DETF IV + Planck', 'Facility + Planck', 'Pathfinder + Planck'] #, 'Snapshot']
 
 
-names = ['EuclidRef', 'cexptL', 'cexptO', 'iexptM']
-labels = ['DETF IV', 'Facility', 'Optimal', 'Mature']
+#names = ['EuclidRef', 'iexptO', 'cexptL', 'iexptM']
+#labels = ['DETF IV', 'Optimal', 'Facility', 'Pathfinder']
 
 #names = ['cSKA1MID', 'SKAMIDdishonly', 'SKAMIDionly5k'] #, 'exptS'] # 'EuclidRef',
 #labels = ['SKA1-MID (190 dish) Combined', 'SKA1-MID (190 dish) Dish-only', 'SKA1-MID (190 dish) Interferom.-only'] #, 'Snapshot'] # 'DETF IV'
@@ -37,10 +37,10 @@ labels = ['DETF IV', 'Facility', 'Optimal', 'Mature']
 #labels = ['DETF IV', 'DETF IV L', 'DETF IV L2'] #, 'Snapshot']
 #names = ['cexptL_Sarea2k', 'cexptL_Sarea5k', 'cexptL_Sarea10k', 'cexptL_Sarea15k', 'cexptL_Sarea20k', 'cexptL_Sarea30k', 'cexptL_Sarea25k', 'cexptL_Sarea1k']
 
-colours = [ ['#1619A1', '#B1C9FD'],
+colours = [ ['#CC0000', '#F09B9B'],
+            ['#1619A1', '#B1C9FD'],
             ['#5B9C0A', '#BAE484'],
-            ['#FFB928', '#FFEA28'],
-            ['#CC0000', '#F09B9B'], ]
+            ['#FFB928', '#FFEA28'], ]
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -66,7 +66,7 @@ for k in _k:
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*']
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
@@ -172,13 +172,13 @@ else:
 
 
 # FIXME
-ax.set_xlim((-1.45, -0.5))
-ax.set_ylim((-1., 1.5))
+#ax.set_xlim((-1.45, -0.5))
+#ax.set_ylim((-1., 1.5))
 
 
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
-##P.savefig(fig_name, transparent=True)
+P.savefig(fig_name, transparent=True)
 #P.savefig("mario-w0wa-SKAMID.pdf", transparent=True)
 P.show()

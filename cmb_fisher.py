@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Calculate basic Fisher matrixc estimate for a CMB experiment, using the results 
+Calculate basic Fisher matrix estimate for a CMB experiment, using the results 
 from Dodelson.
 """
 import numpy as np

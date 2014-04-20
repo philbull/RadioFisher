@@ -18,8 +18,13 @@ cosmo = experiments.cosmo
 
 names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Pathfinder', 'FirstGen']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
+
+
+names = ['EuclidRef', 'cexptLx', 'cexptLy', 'exptX']
+labels = ['Euclid', 'Fac. quadrature', 'Fac. min.', 'MEGA']
+
 
 # Get f_bao(k) function
 cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
@@ -96,6 +101,6 @@ P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'})
 P.tight_layout()
 # Set size
 P.gcf().set_size_inches(8.,6.)
-P.savefig('pub-dlogp.pdf', transparent=True) # 100
+#P.savefig('pub-dlogp.pdf', transparent=True) # 100
 
 P.show()

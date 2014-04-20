@@ -23,6 +23,8 @@ def load_nu(u, fname, Ddish, z=0.):
     x = u / nu
     n_u = n_x(x) / nu**2.
     fov = (1.02 / (nu * Ddish) * (3e8 / 1e6))**2.
+    
+    print "FOV   = %3.3f deg^2" % (fov * (180./np.pi)**2.)
     return n_u, fov
 
 def const_nu(u, Ndish, Dmin, Dmax, Ddish=None, ff=None, z=0.):
@@ -89,10 +91,12 @@ k3, Os2 = const_nu(u, Ndish=250, Dmin=2.5, Dmax=70., Ddish=2.5, z=2.) # optimal
 # From BAOBAB paper, Ddish~1.8m, Dmin~1.6m, Dmax~60m
 
 # Real experiments
-#nn1, f1 = load_nu(u, "array_config/nx_SKAMREF2COMP_dec30.dat", Ddish=15.)
-#nn2, f2 = load_nu(u, "array_config/nx_SKAMREF2_dec30.dat", Ddish=15.)
-#nn3, f3 = load_nu(u, "array_config/nx_SKAM190_dec90.dat", Ddish=15.)
+nn1, f1 = load_nu(u, "array_config/nx_SKAMREF2COMP_dec30.dat", Ddish=15.)
+nn2, f2 = load_nu(u, "array_config/nx_SKAMREF2_dec30.dat", Ddish=15.)
+nn3, f3 = load_nu(u, "array_config/nx_SKAM190_dec90.dat", Ddish=15.)
 
+nn4, f4 = load_nu(u, "array_config/nx_CHIME_800.dat", Ddish=2.3, z=0.775) # 800 MHz
+nn5, f5 = load_nu(u, "array_config/nx_CHIME_400.dat", Ddish=2.3, z=0.775) # 800 MHz
 
 # Plot results
 P.subplot(111)
@@ -109,9 +113,12 @@ P.plot(k0, Os0, 'k-', lw=1.5, label="O")
 P.plot(k1, Os1, color='0.5', lw=1.5)
 P.plot(k2, Os2, color='0.7', lw=1.5)
 
-#P.plot(u, f1/nn1, 'm-', lw=1.5, label="SKAMREF2-COMP")
-#P.plot(u, f2/nn2, 'c-', lw=1.5, label="SKAMREF2")
-#P.plot(u, f3/nn3, 'y-', lw=1.5, label="SKAM-190")
+P.plot(u, f1/nn1, 'm-', lw=1.5, label="SKAMREF2-COMP")
+P.plot(u, f2/nn2, 'c-', lw=1.5, label="SKAMREF2")
+P.plot(u, f3/nn3, 'y-', lw=1.5, label="SKAM-190")
+
+P.plot(u, f4/nn4, 'g-', lw=1.5, label="CHIME")
+P.plot(u, f5/nn5, 'r-', lw=1.5, label="CHIME400")
 
 #min2 = np.min(f2/nn2)
 #P.axhline(min2, color='c')

@@ -26,7 +26,7 @@ cosmo = experiments.cosmo
 expt = {
     'fsky':     0.350,  # Euclid has: 0.364, 15,000 deg^2
     'kmin':     1e-4,   # Seo & Eisenstein say: shouldn't make much difference...
-    'k_nl0':    0.1,    # Non-linear scale at z=0 (effective kmax)
+    'k_nl0':    0.14,  # 0.1 # Non-linear scale at z=0 (effective kmax)
     'use':      experiments.USE
 }
 

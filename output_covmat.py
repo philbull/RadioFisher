@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Plot 2D constraints on (w0, wa).
+Output marginalised Euclid covariance matrix.
 """
 import numpy as np
 import pylab as P
@@ -16,18 +16,13 @@ import euclid
 
 FILENAME = "euclid_covmat.dat"
 
-USE_DETF_PLANCK_PRIOR = True
-MARGINALISE_CURVATURE = True # Marginalise over Omega_K
-MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
-MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
-
 cosmo = experiments.cosmo
-names = ['EuclidRef', 'cexptL']
-labels = ['DETF IV + Planck', 'Facility + Planck']
+names = ['EuclidRef',]
+labels = ['DETF IV + Planck',]
 
-colours = [ ['#CC0000', '#F09B9B'],
-            ['#1619A1', '#B1C9FD'],
-            ['#6B6B6B', '#BDBDBD'] ]
+#colours = [ ['#CC0000', '#F09B9B'],
+#            ['#1619A1', '#B1C9FD'],
+#            ['#6B6B6B', '#BDBDBD'] ]
 #            ['#5B9C0A', '#BAE484'],
 #            ['#FFB928', '#FFEA28'] ]
 
@@ -56,65 +51,45 @@ for k in _k:
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
-    if 'Euclid' in names[k]:
-        F1 = F; lbl1 = copy.deepcopy(lbls)
-    else:
-        F2 = F; lbl2 = copy.deepcopy(lbls)
+    F1 = F; lbl1 = copy.deepcopy(lbls)
     
-    # Add Planck prior
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    # Add DETF Planck prior
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+    F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
-    fixed_params = []
-    if not MARGINALISE_CURVATURE: fixed_params += ['omegak',]
-    if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
-    if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
-    
-    if len(fixed_params) > 0:
-        Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=fixed_params )
-    
-    # Really hopeful H0 prior
-    #ph = lbls.index('h')
-    #Fpl[ph, ph] += 1./(0.012)**2.
+    fixed_params = ['omegak',]
+    Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
+                 names=lbls, exclude=fixed_params )
     
     # Get indices of w0, wa
-    pw0 = lbls.index('w0'); pwa = lbls.index('wa')
-    
-    print "-"*50
-    print names[k]
-    print "-"*50
+    #pw0 = lbls.index('w0'); pwa = lbls.index('wa')
     
     # Invert matrix
     cov_pl = np.linalg.inv(Fpl)
     
-    # Print 1D marginals
-    fom = baofisher.figure_of_merit(pw0, pwa, None, cov=cov_pl)
-    print "%s: FOM = %3.2f" % (names[k], fom)
-    print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
-    print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
+    # Save marginalised Euclid + Planck Fisher matrix
+    np.savetxt(FILENAME, cov_pl, header=",".join(lbls))
     
-    x = experiments.cosmo['w0']
-    y = experiments.cosmo['wa']
+    exit()
+    
+    # Print 1D marginals
+    #fom = baofisher.figure_of_merit(pw0, pwa, None, cov=cov_pl)
+    #print "%s: FOM = %3.2f" % (names[k], fom)
+    #print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
+    #print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
+    
+    #x = experiments.cosmo['w0']
+    #y = experiments.cosmo['wa']
     
     # Plot contours for w0, wa
-    transp = [1., 0.85]
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
-    ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
-                height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
-                ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
+    #transp = [1., 0.85]
+    #w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
+    #ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
+    #            height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
+    #            ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
     for e in ellipses: ax.add_patch(e)
     
     # Centroid
