@@ -9,7 +9,7 @@ import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
-from mpi4py import MPI
+#from mpi4py import MPI
 import experiments
 import os
 import euclid
@@ -65,9 +65,9 @@ for k in range(len(names)):
                 
         # Decide whether to fix various parameters
         fixed_params = []
-        if not MARGINALISE_CURVATURE: fixed_params += ['omegak',]
-        if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
-        if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
+        #if not MARGINALISE_CURVATURE: fixed_params += ['omegak',]
+        #if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
+        #if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
         
         if len(fixed_params) > 0:
             Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
@@ -90,7 +90,7 @@ for k in range(len(names)):
     
     idx_max.append(_idx_max)
     fom_max.append(_fom_max)
-    sarea_max.append(sarea[j])
+    sarea_max.append(sarea[_idx_max])
     
     print "-"*50
 
