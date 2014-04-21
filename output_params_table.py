@@ -9,7 +9,7 @@ import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
-from mpi4py import MPI
+#from mpi4py import MPI
 import experiments
 import os
 import euclid
@@ -39,7 +39,7 @@ names = [
   'SKA1MIDfull1', 'iSKA1MIDfull1', 'cSKA1MIDfull1',
   'SKA1MIDfull2', 'iSKA1MIDfull2', 'cSKA1MIDfull2',
   'SKA1SURbase1', 'SKA1SURbase2',
-  'SKA1SURfull1', 'SKA1SURfull2' ] #35
+  'SKA1SURfull1', 'SKA1SURfull2' ]
 
 labels = [
   'Stage I', 'Stage II', 'Facility',
@@ -52,7 +52,7 @@ labels = [
   'SKA1-MID Full (B1) SD', 'SKA1-MID Full (B1) Int.', 'SKA1-MID Full (B1) Comb.',
   'SKA1-MID Full (B2) SD', 'SKA1-MID Full (B2) Int.', 'SKA1-MID Full (B2) Comb.',
   'SKA1-SUR Base (B1)', 'SKA1-SUR Base (B2)',
-  'SKA1-SUR Full (B1)', 'SKA1-SUR Full (B2)' ] #35
+  'SKA1-SUR Full (B1)', 'SKA1-SUR Full (B2)' ]
 
 sarea = [
   5000, 2000, 25000,
