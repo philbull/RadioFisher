@@ -68,9 +68,9 @@ sarea = [
   25000, 25000 ]
 
 # Define output parameters
-params = ['h', 'omega_b', 'omegak', 'omegaDE', 'n_s', 'sigma8']
-plabels = ['$h$', '$\Omega_b$', '$\Omega_K$', '$\Omega_\mathrm{DE}$', '$n_s$', '$\sigma_8$']
-exponent = np.array([-3, -4, -4, -3, -4, -3])
+params = ['h', 'omega_b', 'omegaDE', 'n_s', 'sigma8']
+plabels = ['$h$', '$\Omega_b$', '$\Omega_\mathrm{DE}$', '$n_s$', '$\sigma_8$']
+exponent = np.array([-3, -4, -3, -4, -3])
 plabels = [plabels[i] + r" $/ 10^{%d}$" % exponent[i] for i in range(len(plabels))]
 
 # Prepare to save 1D marginals
@@ -105,7 +105,7 @@ for k in _k:
     Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
             
     # Decide whether to fix various parameters
-    fixed_params = []
+    fixed_params = ['omegak', 'w0', 'wa']
     #if not MARGINALISE_CURVATURE: fixed_params += ['omegak',]
     #if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
     #if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
@@ -115,7 +115,7 @@ for k in _k:
                      names=lbls, exclude=fixed_params )
     
     # Get indices of w0, wa
-    pw0 = lbls.index('w0'); pwa = lbls.index('wa'); pA = lbls.index('A')
+    #pw0 = lbls.index('w0'); pwa = lbls.index('wa'); pA = lbls.index('A')
     
     # Invert matrix
     cov_pl = np.linalg.inv(Fpl)
