@@ -291,20 +291,36 @@ BINGO = {
     }
 BINGO.update(SURVEY)
 
-BAOBAB = {
+BAOBAB32 = {
     'mode':             'interferom',      # Interferometer or single dish
-    'Ndish':            49,                # No. of dishes
+    'Ndish':            32,                # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
-    'Ddish':            2.,                # Single dish diameter [m]
-    'Tinst':            50.*(1e3),         # System temp. [mK]
+    'Ddish':            1.6,               # Single dish diameter [m]
+    'Tinst':            40.*(1e3),         # System temp. [mK]
     'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     900.,              # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
     'Sarea':            2e3*(D2RAD)**2.,   # Total survey area [radians^2]
-    'Dmax':             60.,               # Max. interferom. baseline [m]
-    'Dmin':             2.                 # Min. interferom. baseline [m]
+    'Dmax':             13.8,              # Max. interferom. baseline [m]
+    'Dmin':             1.6                # Min. interferom. baseline [m]
     }
-BAOBAB.update(SURVEY)
+BAOBAB32.update(SURVEY)
+
+BAOBAB128 = {
+    'mode':             'interferom',      # Interferometer or single dish
+    'Ndish':            128,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            1.6,               # Single dish diameter [m]
+    'Tinst':            40.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     900.,              # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            2e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'Dmax':             26.,               # Max. interferom. baseline [m]
+    'Dmin':             1.6                # Min. interferom. baseline [m]
+    }
+BAOBAB128.update(SURVEY)
+
 
 CHIME = {
     'mode':             'cylinder',        # Interferometer or single dish
