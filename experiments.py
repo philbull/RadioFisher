@@ -451,7 +451,7 @@ SKA1MIDfull1 = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            254,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
-    'Ddish':        (190.*15. + 64.*13.5), # Single dish diameter [m]
+    'Ddish': (190.*15. + 64.*13.5)/(254.), # Single dish diameter [m]
     'Tinst':            28.*(1e3),         # System temp. [mK]
     'survey_dnutot':    435.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1015.,             # Max. freq. of survey
