@@ -465,7 +465,7 @@ SKA1MIDfull2 = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            254,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
-    'Ddish':        (190.*15. + 64.*13.5), # Single dish diameter [m]
+    'Ddish': (190.*15. + 64.*13.5)/(254.), # Single dish diameter [m]
     'Tinst':            20.*(1e3),         # System temp. [mK]
     'survey_dnutot':    470.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
@@ -479,7 +479,7 @@ SKA1SURfull1 = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            96,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
-    'Ddish':         (60.*15. + 36.*12.),  # Single dish diameter [m]
+    'Ddish':    (60.*15. + 36.*12.)/(96.), # Single dish diameter [m]
     'Tinst':            50.*(1e3),         # System temp. [mK]
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     900.,              # Max. freq. of survey
@@ -492,7 +492,7 @@ SKA1SURfull2 = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            96,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
-    'Ddish':         (60.*15. + 36.*12.),  # Single dish diameter [m]
+    'Ddish':    (60.*15. + 36.*12.)/(96.), # Single dish diameter [m]
     'Tinst':            30.*(1e3),         # System temp. [mK]
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1150.,             # Max. freq. of survey
