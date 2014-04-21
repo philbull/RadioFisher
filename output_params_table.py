@@ -39,7 +39,7 @@ names = [
   'SKA1MIDfull1', 'iSKA1MIDfull1', 'cSKA1MIDfull1',
   'SKA1MIDfull2', 'iSKA1MIDfull2', 'cSKA1MIDfull2',
   'SKA1SURbase1', 'SKA1SURbase2',
-  'SKA1SURfull1', 'SKA1SURfull2' ]
+  'SKA1SURfull1', 'SKA1SURfull2' ] #35
 
 labels = [
   'Stage I', 'Stage II', 'Facility',
@@ -52,14 +52,14 @@ labels = [
   'SKA1-MID Full (B1) SD', 'SKA1-MID Full (B1) Int.', 'SKA1-MID Full (B1) Comb.',
   'SKA1-MID Full (B2) SD', 'SKA1-MID Full (B2) Int.', 'SKA1-MID Full (B2) Comb.',
   'SKA1-SUR Base (B1)', 'SKA1-SUR Base (B2)',
-  'SKA1-SUR Full (B1)', 'SKA1-SUR Full (B2)' ]
+  'SKA1-SUR Full (B1)', 'SKA1-SUR Full (B2)' ] #35
 
 sarea = [
   5000, 2000, 25000,
   100, 500, 2000, 100, 25000,
   5000, 1000, 5000, 500,
   2000, 5000, 500,
-  5000, 15000, 25000,
+  5000, 15000, 25000, 25000,
   25000, 25000, 25000,
   25000, 25000, 25000,
   25000, 25000, 25000,
