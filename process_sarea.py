@@ -22,7 +22,7 @@ cosmo = experiments.cosmo
 names = [
   'exptS', 'iexptM', 'exptL', 'iexptL', 'cexptL',
   'GBT', 'Parkes', 'GMRT', 'WSRT', 'APERTIF',
-  'VLBA', 'JVLA', 'iJVLA', 'BINGO', 'iBAOBAB',
+  'VLBA', 'JVLA', 'iJVLA', 'BINGO', 'iBAOBAB32',   'iBAOBAB128',
   'yCHIME', 'iAERA3', 'KAT7', 'iKAT7', 'cKAT7',
   'MeerKATb1', 'iMeerKATb1', 'cMeerKATb1', 'MeerKATb2', 'iMeerKATb2',
   'cMeerKATb2', 'ASKAP', 'SKA1MIDbase1', 'iSKA1MIDbase1', 'cSKA1MIDbase1',
@@ -32,7 +32,11 @@ names = [
 
 sarea = [100, 500, 1000, 2000, 5000, 10000, 15000, 20000, 25000]
 
+idx_max = []; fom_max = []; sarea_max = []
+
 for k in range(len(names)):
+    _fom_max = 0.
+    _idx_max = -1
     for j in range(len(sarea)):
         root = "output/" + names[k] + ("_%d" % sarea[j])
         
@@ -78,4 +82,19 @@ for k in range(len(names)):
         # Calculate FOM
         fom = baofisher.figure_of_merit(pw0, pwa, None, cov=cov_pl)
         print "%s:%6d: FOM = %3.2f" % (names[k], sarea[j], fom)
+        
+        # Select best FOM
+        if fom > _fom_max:
+            _fom_max = fom
+            _idx_max = j
+    
+    idx_max.append(_idx_max)
+    fom_max.append(_fom_max)
+    sarea_max.append(sarea[j])
+    
     print "-"*50
+
+print "\n\n"
+print "id  name  Sarea  FOM"
+for i in range(len(idx_max)):
+    print i, names[i], sarea_max[i], fom_max[i]

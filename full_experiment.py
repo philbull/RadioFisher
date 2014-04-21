@@ -122,11 +122,6 @@ else:
     survey_name = names[k] + "_" + str(int(Sarea))
     root = "output/" + survey_name
 
-
-print "survey_name:", survey_name
-print "root:", root
-exit()
-
 # Define redshift bins
 expt_zbins = baofisher.overlapping_expts(expt)
 #zs, zc = baofisher.zbins_equal_spaced(expt_zbins, dz=0.1)
