@@ -135,6 +135,22 @@ exptX = {
     }
 exptX.update(SURVEY)
 
+# FIXME
+exptOpt = {
+    'mode':             'interferom',      # Interferometer or single dish
+    'Ndish':            1500,              # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            2.,                # Single dish diameter [m]
+    'Tinst':            25.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    1070.,             # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1420.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            10e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'Dmax':             85, #125.,         # Max. interferom. baseline [m]
+    'Dmin':             2.                 # Min. interferom. baseline [m]
+    }
+exptOpt.update(SURVEY)
+
 
 #################################
 # OLD VERSIONS

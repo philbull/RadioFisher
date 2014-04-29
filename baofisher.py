@@ -1152,6 +1152,7 @@ def interferometer_response(q, y, cosmo, expt):
     # Mario's interferometer noise calculation
     u = kperp * c['r'] / (2. * np.pi) # UV plane: |u| = d / lambda
     nu = expt['nu_line'] / (1. + c['z'])
+    l = 3e8 / (nu * 1e6) # Wavelength (m)
     
     # Calculate interferometer baseline density, n(u)
     use_nx = False
@@ -1166,7 +1167,6 @@ def interferometer_response(q, y, cosmo, expt):
     else:
         # Approximate expression for n(u), assuming uniform density in UV plane
         print "\tUsing uniform baseline density, n(u) ~ const."
-        l = 3e8 / (nu * 1e6) # Wavelength (m)
         u_min = expt['Dmin'] / l
         u_max = expt['Dmax'] / l
         
@@ -1186,6 +1186,11 @@ def interferometer_response(q, y, cosmo, expt):
               / (2. * np.pi * (expt['Dmax']**2. - expt['Dmin']**2.) )
         n_u[np.where(u < u_min)] = 1. / INF_NOISE
         n_u[np.where(u > u_max)] = 1. / INF_NOISE
+    
+    # FOV cut-off
+    l = 3e8 / (nu * 1e6) # Wavelength (m)
+    u_fov = 1. / np.sqrt(expt['fov'])
+    n_u[np.where(u < u_fov)] = 1. / INF_NOISE
     
     # Interferometer multiplicity factor, /I/
     I = 4./9. * expt['fov'] / n_u

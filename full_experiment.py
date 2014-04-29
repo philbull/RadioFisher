@@ -75,7 +75,8 @@ expts = [
   e.MeerKATb2, e.MeerKATb2, e.ASKAP, e.SKA1MIDbase1, e.SKA1MIDbase1, 
   e.SKA1MIDbase1, e.SKA1MIDbase2, e.SKA1MIDbase2, e.SKA1MIDbase2, e.SKA1MIDfull1, 
   e.SKA1MIDfull1, e.SKA1MIDfull1, e.SKA1MIDfull2, e.SKA1MIDfull2, e.SKA1MIDfull2,
-  e.SKA1SURbase1, e.SKA1SURbase2, e.SKA1SURfull1, e.SKA1SURfull2 ]
+  e.SKA1SURbase1, e.SKA1SURbase2, e.SKA1SURfull1, e.SKA1SURfull2,
+  e.exptOpt ]
 
 names = [
   'exptS', 'iexptM', 'exptL', 'iexptL', 'cexptL',
@@ -86,7 +87,8 @@ names = [
   'iMeerKATb2', 'cMeerKATb2', 'ASKAP', 'SKA1MIDbase1', 'iSKA1MIDbase1', 
   'cSKA1MIDbase1', 'SKA1MIDbase2', 'iSKA1MIDbase2', 'cSKA1MIDbase2', 'SKA1MIDfull1',
   'iSKA1MIDfull1', 'cSKA1MIDfull1', 'SKA1MIDfull2', 'iSKA1MIDfull2', 'cSKA1MIDfull2',
-  'SKA1SURbase1', 'SKA1SURbase2', 'SKA1SURfull1', 'SKA1SURfull2' ]
+  'SKA1SURbase1', 'SKA1SURbase2', 'SKA1SURfull1', 'SKA1SURfull2',
+  'iexptOpt' ]
 
 ################################################################################
 
