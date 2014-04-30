@@ -337,7 +337,6 @@ BAOBAB128 = {
     }
 BAOBAB128.update(SURVEY)
 
-
 CHIME = {
     'mode':             'cylinder',        # Interferometer or single dish
     'Ndish':            1280,              # No. of dishes
@@ -347,7 +346,7 @@ CHIME = {
     'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     800.,              # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
-    'Sarea':            2e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'Dmax':             128.,              # Max. interferom. baseline [m]
     'Dmin':             20.,               # Min. interferom. baseline [m]
     'n(x)': "array_config/nx_CHIME_800.dat" # Interferometer antenna density
