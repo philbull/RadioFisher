@@ -298,7 +298,7 @@ BINGO = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            1,                 # No. of dishes
     'Nbeam':            50,                # No. of beams (for multi-pixel detectors)
-    'Ddish':            30.,               # Single dish diameter [m]
+    'Ddish':            25.,               # Single dish diameter [m]
     'Tinst':            50.*(1e3),         # System temp. [mK]
     'survey_dnutot':    300.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1260.,             # Max. freq. of survey
