@@ -336,7 +336,7 @@ CHIME = {
     }
 CHIME.update(SURVEY)
 
-CHIME_nocut = {
+CHIME_fullfov = {
     'mode':             'cylinder',        # Interferometer or single dish
     'Ndish':            1280,              # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
@@ -350,7 +350,7 @@ CHIME_nocut = {
     'Dmin':             20.,               # Min. interferom. baseline [m]
     'n(x)': "array_config/nx_CHIME_800_nocut.dat" # Interferometer antenna density
     }
-CHIME_nocut.update(SURVEY)
+CHIME_fullfov.update(SURVEY)
 
 AERA3 = {
     'mode':             'interferom',      # Interferometer or single dish
