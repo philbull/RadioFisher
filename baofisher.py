@@ -1140,6 +1140,36 @@ def expand_fisher_with_kbinned_parameter(F_old, pbins, pnew):
 # Noise and signal covariances
 ################################################################################
 
+def noise_rms_per_voxel(z, expt):
+    """
+    Convenience function for calculating the rms noise per voxel,
+    (sigma_T)^2 = Tsys^2 . Sarea / (dnu . t_tot . theta_b^2 . Nd . Nb )
+    """
+    Tsky = 60e3 * (300.*(1. + z)/expt['nu_line'])**2.55 # Foreground sky signal (mK)
+    Tsys = expt['Tinst'] + Tsky # System temperature
+    I = 1. / (expt['Ndish'] * expt['Nbeam']) # Dish multiplicity
+    theta_fwhm = 3e8 * (1. + z) / (1e6 * expt['nu_line']) / expt['Ddish'] # Beam FWHM
+    
+    sigma_T = Tsys * np.sqrt(expt['Sarea'] * I) \
+            / np.sqrt(expt['dnu'] * expt['ttot'] * theta_fwhm**2.)
+    return sigma_T
+
+def noise_rms_per_voxel_interferom(z, expt):
+    """
+    Convenience function for calculating the rms noise per voxel,
+    (sigma_T)^2 = Tsys^2 . Sarea / (dnu . t_tot . n(u)) * FOV^2
+    """
+    Tsky = 60e3 * (300.*(1. + z)/expt['nu_line'])**2.55 # Foreground sky signal (mK)
+    Tsys = expt['Tinst'] + Tsky # System temperature
+    
+    nu = expt['nu_line'] / (1. + z)
+    l = 3e8 / (nu*1e6)
+    fov = (l / expt['Ddish'])**2.
+    
+    sigma_T = Tsys * np.sqrt(expt['Sarea'] * fov**2.) \
+            / np.sqrt(expt['dnu'] * expt['ttot'])
+    return sigma_T
+
 def interferometer_response(q, y, cosmo, expt):
     """
     Dish multiplicity and beam factors (I * B_perp * B_par) for the noise 
@@ -1285,9 +1315,8 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         raise ValueError("Experiment mode not recognised. Choose 'interferom', 'dish', or 'combined'.")
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
-    # FIXME: Removed a factor of 2. Was it in here for a reason?
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
-    #kfg *= expt['kfg_fac'] # FIXME
+    #if 'kfg_fac' in expt.keys(): kfg *= expt['kfg_fac']
     noise[np.where(kpar < kfg)] = INF_NOISE
     return noise
 
@@ -1413,7 +1442,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # Choose signal/noise models depending on whether galaxy or HI survey
     if galaxy_survey:
         # Calculate Csignal, Cnoise for galaxy survey
-        cs = cs_galaxy(q, y, cosmo)
+        cs = cs_galaxy(q, y, cosmo, expt)
         cn = 1./cosmo['ngal']
         ctot = cs + cn
     else:
