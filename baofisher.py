@@ -45,12 +45,14 @@ CAMB_EXEC = "/home/phil/oslo/bao21cm/camb" # Directory containing camb executabl
 # Plotting functions
 ################################################################################
 
-def figure_of_merit(p1, p2, F, cov=None):
+def figure_of_merit(p1, p2, F, cov=None, twosigma=False):
     """
     DETF Figure of Merit, defined as the area inside the 95% contour of w0,wa.
     
-    fom = 1 / [ 4 * sqrt( |cov(w0, wa)| ) ], where cov = F^-1, and cov(w0, wa) 
-    is the w0,wa 2x2 sub-matrix of the covmat. The factor of 4 comes from 
+    fom = 1 / [ sqrt( |cov(w0, wa)| ) ], where cov = F^-1, and cov(w0, wa) 
+    is the w0,wa 2x2 sub-matrix of the covmat.
+    
+    If twosigma=True, there is an additional factor of 1/4 that comes from 
     looking at the 95% (2-sigma) contours.
     """
     if cov == None: cov = np.linalg.inv(F)
@@ -61,7 +63,8 @@ def figure_of_merit(p1, p2, F, cov=None):
     c12 = cov[p1,p2]
     det = c11*c22 - c12**2.
     
-    fom = 0.25 / np.sqrt(det)
+    fom = 1. / np.sqrt(det)
+    if twosigma: fom *= 0.25
     return fom
 
 def ellipse_for_fisher_params(p1, p2, F, Finv=None):
