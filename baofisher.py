@@ -1217,10 +1217,11 @@ def interferometer_response(q, y, cosmo, expt):
         n_u[np.where(u < u_min)] = 1. / INF_NOISE
         n_u[np.where(u > u_max)] = 1. / INF_NOISE
     
-    # FOV cut-off (DISABLED)
-    #l = 3e8 / (nu * 1e6) # Wavelength (m)
-    #u_fov = 1. / np.sqrt(expt['fov'])
-    #n_u[np.where(u < u_fov)] = 1. / INF_NOISE
+    # FOV cut-off (disabled for cylinders)
+    if 'cyl' not in expt['mode']:
+        l = 3e8 / (nu * 1e6) # Wavelength (m)
+        u_fov = 1. / np.sqrt(expt['fov'])
+        n_u[np.where(u < u_fov)] = 1. / INF_NOISE
     
     # Interferometer multiplicity factor, /I/
     I = 4./9. * expt['fov'] / n_u
