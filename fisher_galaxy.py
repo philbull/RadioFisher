@@ -12,7 +12,7 @@ import copy
 
 RSD_FUNCTION = 'not kaiser'
 
-def Csignal_galaxy(q, y, cosmo):
+def Csignal_galaxy(q, y, cosmo, expt):
     """
     Get (q,y)-dependent factors of the signal covariance matrix for a galaxy 
     redshift survey.
@@ -34,8 +34,15 @@ def Csignal_galaxy(q, y, cosmo):
         sigma_nl2_eff = (c['D'] * c['sigma_nl'])**2. * (1. - u2 + u2*(1.+c['f'])**2.)
         Frsd = (c['bgal'] + c['f']*u2)**2. * np.exp(-0.5 * k**2. * sigma_nl2_eff)
     
+    # Photometric redshift error (see e.g. Zhan & Knox 2006)
+    if 'sigma_z0' in expt.keys():
+        sigma_z = expt['sigma_z0'] * c['rnu'] / (1. + c['z']) # r_nu = C (1+z)^2 / H
+        Fphot = np.exp(-(sigma_z * kperp)**2.)
+    else:
+        Fphot = 1.
+    
     # Construct signal covariance and return
-    cs = Frsd * (1. + c['A'] * c['fbao'](k)) * c['D']**2. * c['pk_nobao'](k)
+    cs = Fphot * Frsd * (1. + c['A'] * c['fbao'](k)) * c['D']**2. * c['pk_nobao'](k)
     cs *= c['aperp']**2. * c['apar']
     return cs
 

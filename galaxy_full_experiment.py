@@ -21,21 +21,66 @@ size = comm.Get_size()
 # Set-up experiment parameters
 ################################################################################
 
+SURVEY = 'euclid'
+#SURVEY = 'ska'
+#SURVEY = 'lsst'
+
 # Load cosmology and experimental settings
 cosmo = experiments.cosmo
 expt = {
-    'fsky':     0.350,  # Euclid has: 0.364, 15,000 deg^2
+    'fsky':     1.0,    # Survey area, as fraction of the sky
     'kmin':     1e-4,   # Seo & Eisenstein say: shouldn't make much difference...
-    'k_nl0':    0.14,  # 0.1 # Non-linear scale at z=0 (effective kmax)
+    'k_nl0':    0.14,   # 0.1 # Non-linear scale at z=0 (effective kmax)
+    #'sigma_z0': 0.03,  # LSST: photom. z error (leave unset for spectro)
     'use':      experiments.USE
 }
 
 # Load number densities and redshift bins
-zmin, zmax, n_opt, n_ref, n_pess = np.genfromtxt("euclid_nz.dat").T
-ngal = np.array([n_opt, n_ref, n_pess]) * cosmo['h']**3. # Rescale to Mpc^-3 units
 
-# Choose which survey to run
-names = ["EuclidOpt", "EuclidRef", "EuclidPess"]
+# EUCLID
+if SURVEY == 'euclid':
+    expt['fsky'] = 0.364 # 15,000 deg^2
+    #expt['fsky'] = 0.350 # DETF Stage IV reference
+    
+    zmin, zmax, n_opt, n_ref, n_pess = np.genfromtxt("euclid_nz.dat").T
+    ngal = np.array([n_opt, n_ref, n_pess]) * cosmo['h']**3. # Rescale to Mpc^-3 units
+    names = ["EuclidOpt", "EuclidRef", "EuclidPess"]
+    #names = ["EuclidOpt", "EuclidRef_BAOonly", "EuclidPess"]
+
+
+# SKA HI
+if SURVEY == 'ska':
+    expt['fsky'] = 0.727 # 30,000 deg^2
+    
+    # dz = 0.1
+    zmin7, zmax7, ngal7 = np.genfromtxt("ska_hi_nz_7.dat").T
+    zmin100, zmax100, ngal100 = np.genfromtxt("ska_hi_nz_100.dat").T
+    zmin150, zmax150, ngal150 = np.genfromtxt("ska_hi_nz_150.dat").T
+    
+    # dz = 0.2
+    #zmin7, zmax7, ngal7 = np.genfromtxt("ska_hi_nz_dz02_7.dat").T
+    #zmin100, zmax100, ngal100 = np.genfromtxt("ska_hi_nz_dz02_100.dat").T
+    #zmin150, zmax150, ngal150 = np.genfromtxt("ska_hi_nz_dz02_150.dat").T
+    
+    # Collect n(z) and zmin/zmax info
+    ngal = np.array([ngal7, ngal100, ngal150])
+    zmins = [zmin7, zmin100, zmin150]
+    zmaxs = [zmax7, zmax100, zmax150]
+    
+    names = ["SKAHI73", "SKAHI100", "SKAHI150"]
+    #names = ["SKAHI73_dz02", "SKAHI100_dz02",]
+    #names = ["SKAHI73_BAOonly", "SKAHI100_BAOonly", "SKAHI150"]
+
+
+# LSST
+if SURVEY == 'lsst':
+    expt['fsky'] = 0.436     # 18,000 deg^2
+    expt['sigma_z0'] = 0.003 #0.003  # Photometric z error
+    
+    zmin, zmax, nn = np.genfromtxt("lsst_nz.dat").T
+    ngal = np.array([nn,])
+    names = ["LSST",]
+
 
 # Take command-line argument for which survey to calculate, or set manually
 if len(sys.argv) > 1:
@@ -48,6 +93,11 @@ if myid == 0:
     print "="*50
 survey_name = names[k]
 root = "output/" + survey_name
+
+# Choose zmin, zmax array to use for variable-zmax SKA surveys
+if SURVEY == 'ska':
+    zmin = zmins[k]
+    zmax = zmaxs[k]
 
 # Define kbins (used for output)
 kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
