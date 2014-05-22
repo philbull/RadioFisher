@@ -10,7 +10,7 @@ import matplotlib.cm
 from units import *
 from mpi4py import MPI
 import experiments
-import os
+import os, sys
 import euclid
 
 USE_DETF_PLANCK_PRIOR = True
@@ -32,7 +32,11 @@ fac = [1e3 * HRS_MHZ, 1e3 * (D2RAD)**2., 1., 1e-4, 1., 1.] # Divide by this fact
 markers = ['o', 'D', 's']
 
 # Choose which parameter to plot
-j = 5
+if len(sys.argv) > 1:
+    j = int(sys.argv[1])
+else:
+    raise IndexError("Need to specify ID of parameter to plot.")
+
 
 # Experiments
 #names = ['exptS', 'iexptM', 'cexptL']
