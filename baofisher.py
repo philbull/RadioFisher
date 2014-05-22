@@ -1320,7 +1320,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
-    #if 'kfg_fac' in expt.keys(): kfg *= expt['kfg_fac']
+    if 'kfg_fac' in expt.keys(): kfg *= expt['kfg_fac']
     noise[np.where(kpar < kfg)] = INF_NOISE
     return noise
 
