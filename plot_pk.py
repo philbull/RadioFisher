@@ -18,7 +18,7 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ["cexptL",] # "EuclidRef", "iexptM", "exptS"]
+names = ["SKA1SURfull1",] # "EuclidRef", "iexptM", "exptS"]
 
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
 colours = ['#1619A1', '#CC0000', '#5B9C0A', '#990A9C'] # DETF/F/M/S
@@ -96,9 +96,11 @@ ax.axvline(khor_z(3.5), color='r', lw=5.)
 # Set limits
 ax.set_xscale('log')
 ax.set_yscale('log')
-ax.set_xlim((2e-3, 3e-2))
+##ax.set_xlim((2e-3, 3e-2))
+ax.set_xlim((2e-3, 8e-2))
 #ax.set_xlim((5e-4, 3e-2))
-ax.set_ylim((2e4, 1.5e5))
+##ax.set_ylim((2e4, 1.5e5))
+ax.set_ylim((1e4, 1.5e5))
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 ax.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)
@@ -107,7 +109,7 @@ ax.set_ylabel(r"$\mathrm{P}(k) \,[\mathrm{Mpc}^{3}]$", fontdict={'fontsize':'xx-
 
 # Set size
 P.tight_layout()
-P.gcf().set_size_inches(8.,6.)
+#P.gcf().set_size_inches(8.,6.)
 P.savefig('pub-pk-lowk.pdf', transparent=True)
 
 P.show()

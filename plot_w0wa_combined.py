@@ -16,14 +16,16 @@ import euclid
 
 FILENAME = "euclid_covmat.dat"
 
+fig_name = "pub-w0wa-combined.pdf"
+
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True # Marginalise over Omega_K
 MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
-names = ['EuclidRef', 'cexptL']
-labels = ['DETF IV + Planck', 'Facility + Planck']
+names = ['EuclidRef', 'cSKA1MIDfull2']
+labels = ['DETF IV + Planck', 'SKA1-MID Full (B2) + Planck']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -164,18 +166,19 @@ print "NOTE:", s3
 labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.93, 0.95])
+P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.95, 0.95], frameon=False)
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
-xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
-yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
-ax.xaxis.set_minor_locator(xminorLocator)
-ax.yaxis.set_minor_locator(yminorLocator)
+ax.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)
+ax.xaxis.set_major_locator( matplotlib.ticker.MultipleLocator(0.1) )
+ax.xaxis.set_minor_locator( matplotlib.ticker.MultipleLocator(0.05) )
+ax.yaxis.set_major_locator( matplotlib.ticker.MultipleLocator(0.2) )
+ax.yaxis.set_minor_locator( matplotlib.ticker.MultipleLocator(0.1) )
 
 ax.set_xlabel(r"$w_0$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_ylabel(r"$w_a$", fontdict={'fontsize':'xx-large'})
 
-ax.set_xlim((-1.21, -0.79))
+ax.set_xlim((-1.14, -0.79))
 ax.set_ylim((-0.5, 0.5))
 
 # Set size and save

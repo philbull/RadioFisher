@@ -178,8 +178,8 @@ P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'xx-l
 # Set every other label to be invisible
 # Decide to trim either even/odd labels for each plot on x/y-axis
 # -1: No labels, 0: Even labels, 1: Odd labels, 2: All labels
-row_step = [1, 0, 0, 0, 1, 2] # h, ode, ok, w0, wa, gamma
-col_step = [2, 1, 0, 0, 0, -1] # gamma, wa, w0, ok, ode, h
+row_step = [1, 0, 0, 0, 1, 0] # h, ode, ok, w0, wa, gamma
+col_step = [0, 1, 0, 0, 0, -1] # gamma, wa, w0, ok, ode, h
 
 for j in range(Nparam):
     for i in range(Nparam-j):

@@ -29,7 +29,7 @@ MARGINALISE_OMEGAB = True      # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True         # Marginalise over (w0, wa)
 
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Pathfinder'] #, 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Stage II'] #, 'Stage I']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
 
 colours = ['#BAE484', '#5B9C0A',   '#B1C9FD', '#1619A1',   '#F6ADAD', '#CC0000',

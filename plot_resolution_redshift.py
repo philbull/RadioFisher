@@ -69,11 +69,10 @@ kperp_min_sd = 2.*np.pi / np.sqrt(r**2. * Sarea)
 kperp_max_sd = 2.*np.pi * Ddish / (r * l) # 16.*np.log(2.) / 1.22
 kperp_max_sd2 = np.sqrt(16.*np.log(2.)) * Ddish / (r * l)
 
-# Fiducial value and plotting
+# Set-up plots
 fig = P.figure()
 ax2 = fig.add_subplot(211)
 ax = fig.add_subplot(212)
-
 
 # Interferom. transverse
 ax.plot(kperp_min_int, zz, lw=1.8, color='#1619A1')

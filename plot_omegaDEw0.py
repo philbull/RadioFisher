@@ -24,7 +24,7 @@ MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Pathfinder'] #, 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Stage II'] #, 'Stage I']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -172,7 +172,7 @@ ax2.yaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(0.2))
 labels = [labels[k] + " + Planck" for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-ax2.legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'large'})
+ax2.legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'large'}, frameon=False)
 
 """
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)

@@ -15,6 +15,7 @@ import os, copy
 import euclid
 
 fig_name = "pub-w0gamma.pdf"
+fig_name = "ska-w0gamma.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True # Marginalise over Omega_K
@@ -22,12 +23,11 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
-names = ['EuclidRef', 'cexptL'] #'iexptM'] #, 'exptS']
-labels = ['DETF IV + Planck', 'Facility + Planck']# 'Mature'] #, 'Snapshot']
+labels = ['DETF IV + Planck', 'Facility + Planck']
+names = ['EuclidRef', 'cexptL']
 
-
-#names = ['EuclidRef', 'SKAMID_PLUS'] #'SKAMID_PLUS']
-#labels = ['DETF IV + Planck', 'SKA1MID + Planck']
+#labels = ['Euclid ref. gal. surv.', 'SKA1-MID 21cm IM']
+#names = ['EuclidRef', 'SKA1MIDbase1']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -154,11 +154,15 @@ print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
 # Plot datapoints for other theories
 ax.plot(0.68, -0.8, 'kD') # DGP
 ax.plot(0.4, -0.99, 'kD') # f(r)
+ax.plot(0.48, -1.22, 'kD') # Minimal massive bigravity, arXiv:1404.4061
 
 P.annotate("DGP", xy=(0.68, -0.8), xytext=(0., -20.), fontsize='large', 
                        textcoords='offset points', ha='center', va='center')
 
 P.annotate("f(R)", xy=(0.4, -0.99), xytext=(0., -20.), fontsize='large', 
+                       textcoords='offset points', ha='center', va='center')
+
+P.annotate("Mass. Bigrav.", xy=(0.48, -1.22), xytext=(0., 20.), fontsize='large', 
                        textcoords='offset points', ha='center', va='center')
 
 ################################################################################
@@ -176,7 +180,8 @@ print "NOTE:", s3
 labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.5, 0.95])
+#P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.5, 0.95], frameon=False)
+P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.52, 0.95], frameon=False)
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=15.)
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
@@ -188,7 +193,11 @@ ax.set_xlabel(r"$\gamma$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_ylabel(r"$w_0$", fontdict={'fontsize':'xx-large'})
 
 ax.set_xlim((0.32, 0.72))
-ax.set_ylim((-1.22, -0.73))
+#ax.set_ylim((-1.22, -0.73))
+
+ax.set_ylim((-1.26, -0.7))
+
+P.figtext(0.56, 0.965, "Bull, Ferreira, Patel, Santos (2014)", fontdict={'size':14, 'style':'italic'})
 
 # Set size and save
 P.tight_layout()

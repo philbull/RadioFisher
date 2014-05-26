@@ -20,27 +20,14 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
-#names = ['EuclidRef', 'cexptL', 'iexptM']
-#labels = ['DETF IV', 'Facility', 'Mature']
 
-names = ['cexptL',]
-labels = ['Facility',]
+names = ["SKAHI73", 'EuclidRef'] # "SKAHI100_BAOonly"
+labels = ['SKA2 HI gal.', 'Euclid'] # 'SKA1 HI gal.'
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
             ['#5B9C0A', '#BAE484'],
             ['#FFB928', '#FFEA28'] ]
-
-"""
-names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 'cexptL_bao_vol', 'cexptL_bao_allap', 'cexptL_bao_all']
-labels = ['BAO only', 'BAO + RSD', 'BAO + P(k) shift', 'BAO + Volume', 'BAO + AP', 'All']
-colours = [ ['#CC0000', '#F09B9B'],
-            ['#1619A1', '#B1C9FD'],
-            ['#5B9C0A', '#BAE484'],
-            ['c', '#FFEA28'],
-            ['m', '#F09B9B'],
-            ['k', '#B1C9FD'] ]
-"""
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -95,7 +82,7 @@ for k in _k:
         transp = [1., 0.85]
         ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                     height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
-                    ec=colours[k][0], lw=1.3, alpha=transp[kk]) for kk in [1,0]]
+                    ec=colours[k][0], lw=1.3, alpha=0.85) for kk in [1,]]
         for e in ellipses: ax.add_patch(e)
     
         # Centroid
@@ -122,5 +109,5 @@ ax.yaxis.set_major_locator(ymajorLocator)
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
-P.savefig("pub-fz-bz.pdf", transparent=True)
+P.savefig("ska-fs8-bs8.pdf", transparent=True)
 P.show()

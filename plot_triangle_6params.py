@@ -23,7 +23,7 @@ colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'] ]
 if MARGINALISE_OVER_W0WA:
     names = ['EuclidRef', 'cexptL', 'iexptM']
-    labels = ['DETF IV + Planck', 'Facility + Planck', 'Pathfinder + Planck']
+    labels = ['DETF IV + Planck', 'Facility + Planck', 'Stage II + Planck']
     colours.append(['#5B9C0A', '#BAE484']) # Green
 else:
     names = ['EuclidRef', 'cexptL', 'cexptL']

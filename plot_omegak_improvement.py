@@ -19,18 +19,23 @@ cosmo = experiments.cosmo
 nsig = 1.5 # No. of sigma to plot out to
 aspect = 1. #1.7 # Aspect ratio of range (w = aspect * h)
 
-#param1 = "omegak"
-#label1 = "\Omega_K"
-#fid1 = 0.
-#fig_name = "pub-ok-improvement.pdf"
+#TYPE = 'omegak'
+TYPE = 'gamma'
+#TYPE = 'FOM'
 
-param1 = "gamma"
-label1 = "\gamma"
-fid1 = cosmo['gamma']
-fig_name = "pub-gamma-improvement.pdf"
-
-#param1 = "fom"
-#fig_name = "pub-fom-improvement.pdf"
+if TYPE == 'omegak':
+    param1 = "omegak"
+    label1 = "\Omega_K"
+    fid1 = 0.
+    fig_name = "pub-ok-improvement.pdf"
+elif TYPE == 'gamma':
+    param1 = "gamma"
+    label1 = "\gamma"
+    fid1 = cosmo['gamma']
+    fig_name = "pub-gamma-improvement.pdf"
+else:
+    param1 = "fom"
+    fig_name = "pub-fom-improvement.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_GAMMA = True # Marginalise over gamma
@@ -40,7 +45,7 @@ MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True # Marginalise over (w0, wa)
 
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
-labels = ['DETF IV', 'Facility', 'Pathfinder'] #, 'Snapshot']
+labels = ['DETF IV', 'Facility', 'Stage II'] #, 'Stage I']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
@@ -75,23 +80,11 @@ for k in _k:
         F, lbls = baofisher.combined_fisher_matrix( F_list[:l],
                                                     expand=zfns, names=pnames,
                                                     exclude=excl )
-        
-        # Add Planck prior
-        #Fpl = euclid.add_detf_planck_prior(F, lbls, info=False)
-        #Fpl = euclid.add_planck_prior(F, lbls, info=False)
-        if USE_DETF_PLANCK_PRIOR:
-            # DETF Planck prior
-            print "*** Using DETF Planck prior ***"
-            l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-            F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-            Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-        else:
-            # Euclid Planck prior
-            print "*** Using Euclid (Mukherjee) Planck prior ***"
-            l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-            Fe = euclid.planck_prior_full
-            F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-            Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+        # DETF Planck prior
+        print "*** Using DETF Planck prior ***"
+        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
         
         # Decide whether to fix various parameters
         fixed_params = []
@@ -140,13 +133,13 @@ print "NOTE:", s3
 print "NOTE:", s4
 
 # Axis ticks and labels
-ax.legend(prop={'size':'x-large'}, bbox_to_anchor=[0.94, 0.35])
+ax.legend(prop={'size':'x-large'}, bbox_to_anchor=[0.96, 0.30], frameon=False)
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 ax.set_xlim((0.25, 2.55))
 ax.set_xlabel("$z_\mathrm{max}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 if param1 == 'fom':
     ax.set_ylabel("$\mathrm{FOM}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-    ax.set_ylim((-0.5, 90.))
+    ax.set_ylim((-0.5, 460.))
 elif param1=='omegak':
     ax.set_ylabel("$[\sigma({%s})]^{-1}$" % label1, fontdict={'fontsize':'xx-large'}, 
                   labelpad=15.)
@@ -154,7 +147,7 @@ elif param1=='omegak':
 else:
     ax.set_ylabel("$[\sigma({%s})]^{-1}$" % label1, fontdict={'fontsize':'xx-large'}, 
                   labelpad=15.)
-    ax.set_ylim((-0.5, 37.))
+    ax.set_ylim((-0.5, 50.))
 
 # Set size and save
 P.tight_layout()

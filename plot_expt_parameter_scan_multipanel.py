@@ -22,7 +22,7 @@ snames = ['ttot', 'Sarea', 'epsilon_fg', 'omega_HI_0', 'kfg_fac', 'sigma_nl']
 slabels = ['$t_\mathrm{tot} [10^3 \mathrm{hrs}]$',
            '$S_\mathrm{area} [10^3 \mathrm{deg}^2]$', 
            '$\epsilon_\mathrm{FG}$',
-           '$\Omega_\mathrm{HI} / 10^{-4}$',
+           '$\Omega_{\mathrm{HI},0} / 10^{-4}$',
            '$k_\mathrm{FG} / k_{\mathrm{FG}, 0}$',
            '$\sigma_\mathrm{NL} \, [\mathrm{Mpc}]$']
 logscale = [False, False, True, False, False, False]
@@ -159,8 +159,8 @@ if j == 5: ax.set_xlim((1.4, 14.5))
 if j == 0: ax.set_ylim((0., 1.02))
 if j == 1: ax.set_ylim((0., 1.05))
 if j == 2: ax.set_ylim((7e-3, 1.5))
-if j == 3: ax.set_ylim((1e-3, 2.02))
-if j == 4: ax.set_ylim((0.6, 1.02))
+if j == 3: ax.set_ylim((3e-3, 1.2))
+if j == 4: ax.set_ylim((0.775, 1.01))
 if j == 5: ax.set_ylim((0.2, 1.05))
 
 if j == 2: ax.set_xscale('log')

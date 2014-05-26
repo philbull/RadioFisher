@@ -21,8 +21,6 @@ colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
 labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
-
-# FIXME
 #names = ['cexptL',]
 #colours = ['#1619A1',]
 #labels = ['Facility',]

@@ -88,6 +88,8 @@ majorLocator = matplotlib.ticker.MultipleLocator(1)
 P.gca().xaxis.set_major_locator(majorLocator)
 P.gca().yaxis.set_major_locator(majorLocator)
 
+P.gca().tick_params(axis='both', which='major', labelsize=22, size=8., width=1.5, pad=8.)
+
 
 # Axis label font size
 fontsize = 18.

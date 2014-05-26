@@ -77,6 +77,9 @@ P.errorbar([0.609, 1.219], [0.97, 0.94], yerr=[0.36, 0.28], marker='^', ls='none
            lw=1.5, capthick=1.5, label="HST / Rao (2005)")
 
 
+# GBT (Masui 2013), arXiv:1208.0331
+P.errorbar([0.8,], [0.6,], [0.15,], marker='+', ls='none', markeredgecolor='none', color='#FF9800', lw=2.5, capsize=5., capthick=2.5, markersize=0., label="GBTxWiggleZ / Masui (2013)", zorder=10)
+
 
 # ALFALFA (Martin et al. 2010)
 P.errorbar([0.,], [0.43,], [0.03,], marker='s', ls='none', markeredgecolor='none', color='#CC0000',  lw=1.5, capthick=1.5, label="ALFALFA / Martin (2010)")
@@ -88,33 +91,43 @@ P.errorbar([0.24,], [0.91,], [0.42,], marker='v', ls='none', markeredgecolor='no
 P.errorbar([0.,], [0.35,], [0.04,], marker='^', ls='none', markeredgecolor='none', color='#CC0000', lw=1.5, capthick=1.5, markersize=8., label="HIPASS / Zwaan (2005)")
 
 
-
 # Simulations
 # Sim. (Khandai 2011), http://arxiv.org/abs/1012.1880 (N.B. new value in published vers.!)
-P.errorbar([0.8,], [1.03,], [0.28,], marker='s', ls='none', markeredgecolor='none', color='#5B9C0A', lw=1.5, capthick=1.5, markersize=6., label="Sim. / Khandai (2011)")
+P.errorbar([0.83,], [1.03,], [0.28,], marker='s', ls='none', markeredgecolor='none', color='#5B9C0A', lw=1.5, capthick=1.5, markersize=6., label="Sim. / Khandai (2011)")
 
+# Duffy et al. (arXiv:1107.3720)
+P.errorbar([0., 1., 2.], [0.1389, 0.2515, 0.3773], np.zeros(3), marker='D', ls='none', markeredgecolor='none', color='#5B9C0A', lw=0.1, capthick=0., markersize=8., label="Sim. / Duffy (2012)")
 
 # Zero line
-P.axhline(0., ls='dotted', color='k', lw=1.5)
+#P.axhline(0., ls='dotted', color='k', lw=1.5)
 
 P.xlim((-0.08, 5.))
-P.ylim((-0.19, 1.55))
+P.ylim((0., 1.55))
 P.ylabel("$\Omega_\mathrm{HI}(z) / 10^{-3}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-P.xlabel("$z$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
+P.xlabel("$z$", fontdict={'fontsize':'xx-large'}, labelpad=8.)
 
-P.legend(loc='lower right', prop={'size':11}, ncol=2)
+# Move subplot and legend
+# pos = [[x0, y0], [x1, y1]]
+l0 = 0.16
+b0 = 0.3
+ww = 0.8
+hh = 0.65
+P.gca().set_position([l0, b0, ww, hh])
+
+leg = P.legend(prop={'size':12}, ncol=2, bbox_to_anchor=[0.97, -0.15])
+leg.get_frame().set_linewidth(0.)
 
 # Bias
 #P.subplot(212)
 #P.plot(z, bHI, 'k-', lw=1.5)
 
 P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
-P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5)
+P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)
 #P.gca().set_position([0.15, 0.15, 0.8, 0.65])
 
 
 # Set size and save
-P.tight_layout()
-P.gcf().set_size_inches(8.,6.)
+#P.tight_layout()
+P.gcf().set_size_inches(8.,7.)
 P.savefig("pub-omegaHI-evol.pdf", transparent=True)
 P.show()

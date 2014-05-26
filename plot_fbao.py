@@ -19,7 +19,7 @@ cosmo = experiments.cosmo
 names = ["EuclidRef", "cexptL", "iexptM", "exptS"]
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Pathfinder', 'FirstGen']
+labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
 
 # Get f_bao(k) function
 cosmo_fns = baofisher.background_evolution_splines(cosmo)

@@ -20,7 +20,7 @@ cosmo = experiments.cosmo
 if not PLOT_DIFFERENT_MEASURES:
     names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
     colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-    labels = ['DETF IV', 'Facility', 'Pathfinder', 'FirstGen']
+    labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
     linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 else:
     names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 
@@ -134,7 +134,7 @@ P.figtext(0.5, 0.02, "$z$", fontdict={'size':'xx-large'})
 
 
 # Legend
-P.legend(bbox_to_anchor=[0.93,-0.04])
+P.legend(bbox_to_anchor=[0.93,-0.04], frameon=False)
 
 # Set size
 P.gcf().set_size_inches(10., 7.)

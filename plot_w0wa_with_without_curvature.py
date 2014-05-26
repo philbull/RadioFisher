@@ -133,7 +133,7 @@ print "NOTE:", s3
 labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'x-large'}, bbox_to_anchor=[0.95, 0.96])
+P.gcf().legend((l for l in lines), (name for name in labels), loc='upper right', prop={'size':'x-large'}, bbox_to_anchor=[0.95, 0.96], frameon=False)
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 ax.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)

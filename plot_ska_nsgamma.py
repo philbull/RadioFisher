@@ -11,11 +11,14 @@ import matplotlib.ticker
 from units import *
 from mpi4py import MPI
 import experiments
-import os
+import os, copy
 import euclid
 
-fig_name = "pub-w0wa-okmarg.pdf"
-#fig_name = "pub-w0wa-okfixed.pdf"
+fig_name = "ska-nsgamma-both.pdf"
+fig_name = "ska-nsgamma-both-band2.pdf"
+fig_name = "ska-w0wa-combined-SUR.pdf"
+fig_name = "ska-w0wa-combined-MID.pdf"
+#fig_name = "ska-w0wa-combined-MID-B2.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True # Marginalise over Omega_K
@@ -23,28 +26,18 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
-names = ['EuclidRef', 'cexptL', 'yCHIME'] #'iexptM'] #, 'exptS']
-labels = ['DETF IV + Planck', 'Facility + Planck', 'Pathfinder + Planck'] #, 'Snapshot']
 
+names = ['EuclidRef', 'cSKA1MIDfull1'] #'SKA1SURfull1',]# 'cSKA1MIDfull1']
+labels = ['Euclid', 'SKA1-MID (B1)'] #'SKA1-SUR (B1)',]# 'SKA1-MID (B1)']
 
-names = ['yCHIME', 'yCHIME_nocut',] #'iexptM'] #, 'exptS']
-labels = ['CHIME', 'CHIME Nocut',] #, 'Snapshot']
-
-
-#names = ['EuclidRef', 'iexptO', 'cexptL', 'iexptM']
-#labels = ['DETF IV', 'Optimal', 'Facility', 'Pathfinder']
-
-#names = ['cSKA1MID', 'SKAMIDdishonly', 'SKAMIDionly5k'] #, 'exptS'] # 'EuclidRef',
-#labels = ['SKA1-MID (190 dish) Combined', 'SKA1-MID (190 dish) Dish-only', 'SKA1-MID (190 dish) Interferom.-only'] #, 'Snapshot'] # 'DETF IV'
-
-#names = ['EuclidRef', 'EuclidRefLINEAR', 'EuclidRefLINEAR2'] #, 'exptS']
-#labels = ['DETF IV', 'DETF IV L', 'DETF IV L2'] #, 'Snapshot']
-#names = ['cexptL_Sarea2k', 'cexptL_Sarea5k', 'cexptL_Sarea10k', 'cexptL_Sarea15k', 'cexptL_Sarea20k', 'cexptL_Sarea30k', 'cexptL_Sarea25k', 'cexptL_Sarea1k']
+#names = ['EuclidRef', 'cSKA1MIDfull2']
+#labels = ['Euclid', 'SKA1-MID (B2)']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
-            ['#5B9C0A', '#BAE484'],
-            ['#FFB928', '#FFEA28'], ]
+            ['#6B6B6B', '#BDBDBD'] ]
+#            ['#5B9C0A', '#BAE484'],
+#            ['#FFB928', '#FFEA28'] ]
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -53,9 +46,6 @@ ax = fig.add_subplot(111)
 _k = range(len(names))[::-1]
 for k in _k:
     root = "output/" + names[k]
-    
-    print ">"*50
-    print "We're doing", names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -69,14 +59,17 @@ for k in _k:
     
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
+    zfns = ['b_HI', ]
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
+    if 'Euclid' in names[k]:
+        F1 = F; lbl1 = copy.deepcopy(lbls)
+    else:
+        F2 = F; lbl2 = copy.deepcopy(lbls)
+    
     # Add Planck prior
-    #Fpl = euclid.add_detf_planck_prior(F, lbls, info=False)
-    #Fpl = euclid.add_planck_prior(F, lbls, info=False)
     if USE_DETF_PLANCK_PRIOR:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
@@ -105,8 +98,8 @@ for k in _k:
     #ph = lbls.index('h')
     #Fpl[ph, ph] += 1./(0.012)**2.
     
-    # Get indices of w0, wa
-    pw0 = lbls.index('w0'); pwa = lbls.index('wa'); pA = lbls.index('A')
+    # Get indices of ns, gamma
+    pns = lbls.index('n_s'); pgam = lbls.index('gamma')
     
     print "-"*50
     print names[k]
@@ -115,28 +108,55 @@ for k in _k:
     # Invert matrix
     cov_pl = np.linalg.inv(Fpl)
     
-    # Calculate FOM
-    fom = baofisher.figure_of_merit(pw0, pwa, None, cov=cov_pl)
-    print "%s: FOM = %3.2f, sig(A) = %3.3f" % (names[k], fom, np.sqrt(cov_pl[pA,pA]))
-    print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
-    print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
-    pnl = lbls.index('sigma_NL')
-    print "1D sigma(sigma_NL) = %3.4f" % np.sqrt(cov_pl[pnl,pnl])
+    # Print 1D marginals
+    print "1D sigma(n_s) = %3.4f" % np.sqrt(cov_pl[pns,pns])
+    print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
     
-    x = experiments.cosmo['w0']
-    y = experiments.cosmo['wa']
+    x = experiments.cosmo['gamma']
+    y = experiments.cosmo['ns']
     
-    # Plot contours for w0, wa; omega_k free
+    # Plot contours for gamma, w0
     transp = [1., 0.85]
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
+    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pns, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
                 ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
     for e in ellipses: ax.add_patch(e)
     
     # Centroid
-    ax.plot(x, y, 'kx')
-    print "\nDONE\n"
+    ax.plot(x, y, 'ko')
+
+
+################################################################################
+# Add combined constraint for Facility + Euclid
+
+# Relabel galaxy bias from Euclid and sum Facility + Euclid
+for i in range(len(lbl1)):
+    if "b_HI" in lbl1[i]: lbl1[i] = "gal%s" % lbl1[i]
+Fc, lbls = baofisher.add_fisher_matrices(F1, F2, lbl1, lbl2, expand=True)
+
+print lbls
+
+# Add Planck prior
+l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+Fc, lbls = baofisher.add_fisher_matrices(Fc, F_detf, lbls, l2, expand=True)
+cov_pl = np.linalg.inv(Fc)
+
+# Plot contours for gamma, w0
+transp = [1., 0.95]
+w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pns, None, Finv=cov_pl)
+ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
+            height=alpha[kk]*h, angle=ang, fc=colours[-1][kk], 
+            ec=colours[-1][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
+for e in ellipses: ax.add_patch(e)
+labels += ['Combined']
+
+print "\nCOMBINED"
+pns = lbls.index('n_s'); pgam = lbls.index('gamma')
+print "1D sigma(ns) = %3.4f" % np.sqrt(cov_pl[pns,pns])
+print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
+################################################################################
 
 
 # Report on what options were used
@@ -152,37 +172,22 @@ print "NOTE:", s3
 labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'medium'}, bbox_to_anchor=[0.95, 0.95])
+P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.96, 0.95], frameon=False)
 
-ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
+ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=15.)
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
 yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
 ax.xaxis.set_minor_locator(xminorLocator)
 ax.yaxis.set_minor_locator(yminorLocator)
 
-ax.set_xlabel(r"$w_0$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-ax.set_ylabel(r"$w_a$", fontdict={'fontsize':'xx-large'})
+ax.set_xlabel(r"$\gamma$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
+ax.set_ylabel(r"$n_s$", fontdict={'fontsize':'xx-large'})
 
-
-ax.set_xlim((-1.75, -0.25))
-ax.set_ylim((-2.1, 2.1))
-
-if MARGINALISE_CURVATURE:
-    ax.set_xlim((-1.25, -0.75))
-    ax.set_ylim((-0.9, 0.9))
-else:
-    ax.set_xlim((-1.25, -0.75))
-    ax.set_ylim((-0.9, 0.9))
-
-
-# FIXME
-#ax.set_xlim((-1.45, -0.5))
-#ax.set_ylim((-1., 1.5))
-
+ax.set_xlim((0.43, 0.67))
+ax.set_ylim((0.950, 0.976))
 
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
-##P.savefig(fig_name, transparent=True)
-#P.savefig("mario-w0wa-SKAMID.pdf", transparent=True)
+P.savefig(fig_name, transparent=True)
 P.show()

@@ -15,10 +15,11 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
-colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
-linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
+names = ["SKAHI100", "SKAHI73", 'EuclidRef']
+labels = ['SKA1 HI gal.', 'SKA2 HI gal.', 'Euclid']
+colours = ['#1619A1', '#CC0000', '#FFB928', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
+linestyle = [[1,0], [1, 0], [1, 0],]
+marker = ['o', 'D', 's',]
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -69,17 +70,19 @@ for k in range(len(names)):
     # Identify functions of z
     pDV = baofisher.indices_for_param_names(lbls, 'DV*')
     pFF = baofisher.indices_for_param_names(lbls, 'F*')
+    pfs8 = baofisher.indices_for_param_names(lbls, 'fs8*')
     
     DV = ((1.+zc)**2. * dAc**2. * C*zc / Hc)**(1./3.)
     Fz = (1.+zc) * dAc * Hc / C
+    fs8 = cosmo['sigma_8']*fc*Dc
     
-    indexes = [pFF, pDV]
-    fn_vals = [Fz, DV]
+    indexes = [pfs8, pFF]
+    fn_vals = [fs8, Fz]
     
     # Plot errors as fn. of redshift
     for jj in range(len(axes)):
         err = errs[indexes[jj]] / fn_vals[jj]
-        line = axes[jj].plot( zc, err, color=colours[k], lw=1.8, marker='o', 
+        line = axes[jj].plot( zc, err, color=colours[k], lw=1.8, marker=marker[k], 
                               label=labels[k] )
         line[0].set_dashes(linestyle[k])
         #axes[jj].set_ylabel(ax_lbls[jj], fontdict={'fontsize':'20'}, labelpad=10.)
@@ -91,7 +94,7 @@ for k in range(len(names)):
     
 
 # Subplot labels
-ax_lbls = ["$\sigma_F/F$", "$\sigma_{D_V}/D_V$"]
+ax_lbls = ["$\sigma_{f \sigma_8}/ f\sigma_8$", "$\sigma_F/F$"]
 ymax = [0.055, 0.055]
 
 # Move subplots
@@ -111,7 +114,7 @@ for i in range(len(axes)):
     axes[i].tick_params(axis='both', which='major', labelsize=20.)
     
     # Set axis limits
-    axes[i].set_xlim((0.25, 2.2))
+    axes[i].set_xlim((-0.1, 2.1))
     axes[i].set_ylim((0., ymax[i]))
     
     # Add label to panel
@@ -122,36 +125,15 @@ for i in range(len(axes)):
     axes[i].set_ylabel(ax_lbls[i], labelpad=15., fontdict={'fontsize':'xx-large'})
     
     # Set tick locations
-    ymajorLocator = matplotlib.ticker.MultipleLocator(0.02)
-    yminorLocator = matplotlib.ticker.MultipleLocator(0.01)
-    axes[i].yaxis.set_major_locator(ymajorLocator)
-    axes[i].yaxis.set_minor_locator(yminorLocator)
-    
-    """
-    # Fix ticks
-    if j==1:
-        axes[i].yaxis.tick_right()
-        axes[i].yaxis.set_label_position("right")
-    if i%2 == 1:
-        for tick in axes[i].xaxis.get_major_ticks():
-            tick.label1.set_visible(False)
-    if i % 2 == 1: j += 1
-    
-    # Hide alternating ticks
-    kk = 0
-    for tick in axes[i].yaxis.get_major_ticks():
-        if kk%2==1:
-            tick.label1.set_visible(False)
-            tick.label2.set_visible(False)
-        kk += 1
-   """
+    axes[i].yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(0.02))
+    axes[i].yaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(0.01))
 
 # Manually add shared x label
 #P.figtext(0.5, 0.02, "$z$", fontdict={'size':'xx-large'})
 
-P.legend(prop={'size':'large'}, bbox_to_anchor=[0.96, 0.98], frameon=False)
+P.legend(prop={'size':'large'}, bbox_to_anchor=[0.68, 0.98], frameon=False)
 
 # Set size
 P.gcf().set_size_inches(8.4, 7.8)
-P.savefig('pub-lss-distances.pdf', transparent=True)
+P.savefig('ska-gal-rsd.pdf', transparent=True)
 P.show()

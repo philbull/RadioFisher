@@ -1,7 +1,8 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and plot P(k).
+Process EOS Fisher matrices and plot P(k) for "ideal" experiments.
 """
+
 import numpy as np
 import pylab as P
 import baofisher
@@ -15,16 +16,15 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
+names = ['EuclidRef', 'exptCV', 'exptCV2'] #'cexptL', 'iexptM', 'exptS']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
-linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
+labels = ['DETF IV', 'Ideal, $\epsilon_\mathrm{FG}=10^{-6}$', 'Ideal, $\epsilon_\mathrm{FG}=10^{-12}$'] #'Pathfinder', 'FirstGen']
+linestyle = [[1,0], [8, 4], [2, 4, 6, 4], [3, 4]]
+
 
 #names = ['EuclidRef', 'cexptLx', 'cexptLy', 'iexptOpt']
 #labels = ['Euclid', 'Fac. quadrature', 'Fac. min.', 'MEGA']
 
-names = ['yCHIME', 'yCHIME_nocut']
-labels = ['CHIME', 'CHIME nocut']
 
 # Get f_bao(k) function
 cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
@@ -88,7 +88,7 @@ for k in range(len(names)):
 
 P.xscale('log')
 P.yscale('log')
-P.xlim((1.5e-3, 3e0))
+P.xlim((1e-3, 1.5e0))
 P.ylim((9e-4, 1e1))
 P.legend(loc='lower left', prop={'size':'large'}, frameon=False)
 
@@ -100,7 +100,7 @@ P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'})
 
 P.tight_layout()
 # Set size
-P.gcf().set_size_inches(8.,6.)
-#P.savefig('pub-dlogp.pdf', transparent=True) # 100
+#P.gcf().set_size_inches(8.,6.)
+P.savefig('pub-dlogp-ideal.pdf', transparent=True) # 100
 
 P.show()
