@@ -48,10 +48,14 @@ To get started, check out the git repository and make sure you have Python 2.7
 and up-to-date versions of SciPy, NumPy, and matplotlib installed. You should 
 also download and compile CAMB. It also helps if you install mpi4py too; 
 although most of the Fisher forecasting code in baofisher.py doesn't need MPI, 
-the full_experiment.py frontend code does.
+the full_experiment.py frontend code does. Finally, in order to use some of the 
+existing experiment definitions, you’ll need to download the interferometer 
+baselines package* and unpack it in the array_config/ subdirectory.
+*[http://www.physics.ox.ac.uk/Users/bullp/radiofisher_array_config.tar.gz; 5 MB]
 
 Next, edit the CAMB_EXEC variable at the top of baofisher.py to point at the 
-directory where the CAMB executable resides (not the CAMB executable itself).
+directory where the CAMB executable resides (not the CAMB executable itself). 
+At the moment, you also need to create a subdirectory called output/.
 
 Now, to run your first forecast, call `mpirun -n 1 ./full_experiment.py 0`. This 
 will run a forecast for the first experiment listed in full_experiment.py using 
@@ -117,7 +121,8 @@ CITING THIS CODE
 If you use this code in a scientific work, please cite us! The relevant paper 
 is the following:
 
-Philip Bull, Pedro G. Ferreira, Prina Patel, and Mario Santos, arXiv:1405.1452 (2014).
+Philip Bull, Pedro G. Ferreira, Prina Patel, and Mario Santos, arXiv:1405.1452 
+(2014).
 
 PROBLEMS / BUGS
 ---------------
