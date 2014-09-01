@@ -47,7 +47,7 @@ def Csignal_galaxy(q, y, cosmo, expt):
     return cs
 
 
-def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns, 
+def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns, 
                           kbins=None, return_pk=False ):
     """
     Calculate Fisher matrix for a galaxy redshift survey.
@@ -60,7 +60,9 @@ def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns,
     
     ngal : float
         Mean number density of galaxies in this redshift bin.
-        
+    
+    bias : float
+        Linear bias in redshift bin.
     """
     # Copy, to make sure we don't modify input expt or cosmo
     cosmo = copy.deepcopy(cosmo)
@@ -73,7 +75,7 @@ def fisher_galaxy_survey( zmin, zmax, ngal, cosmo, expt, cosmo_fns,
     cosmo['r'] = rr(z); cosmo['rnu'] = C*(1.+z)**2. / HH(z) # Perp/par. dist. scales
     
     # Use effective bias parameter; setup n(z)
-    cosmo['bHI'] = cosmo['bgal'] = np.sqrt(1. + z)
+    cosmo['bHI'] = cosmo['bgal'] = bias
     cosmo['ngal'] = ngal
     
     # Calculate Vsurvey
