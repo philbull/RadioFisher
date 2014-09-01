@@ -3,14 +3,11 @@
 Calculate Fisher matrix and P(k) constraints for all redshift bins for a given 
 experiment.
 """
-
 import numpy as np
 import pylab as P
-import baofisher
-import matplotlib.patches
+import baofisher, experiments
 from units import *
 from mpi4py import MPI
-import experiments
 import sys
 
 comm = MPI.COMM_WORLD
@@ -25,73 +22,66 @@ size = comm.Get_size()
 e = experiments
 cosmo = experiments.cosmo
 
-#expts = [e.exptS, e.exptM, e.exptL]
-#names = ['exptS', 'iexptM', 'cexptL']
+# Label experiments with different settings
+EXPT_LABEL = "" #"_baoonly"
 
-"""
-expts = [ e.exptS, e.exptM, e.exptL, e.exptO, e.GBT, e.BINGO, e.WSRT, e.APERTIF, 
-          e.JVLA, e.ASKAP, e.KAT7, e.MeerKAT_band1, e.MeerKAT, e.SKA1MID,
-          e.SKA1SUR, e.SKA1SUR_band1, e.SKAMID_PLUS, e.SKAMID_PLUS_band1, 
-          e.SKASUR_PLUS, e.SKASUR_PLUS_band1, e.SKA1MID, e.SKA1MID ]
-
-names = ['exptS', 'iexptM', 'cexptL', 'iexptO', 'GBT', 'BINGO', 'WSRT', 'APERTIF', 
-         'JVLA', 'cASKAP', 'cKAT7', 'cMeerKAT_band1', 'cMeerKAT', 'cSKA1MID',
-         'SKA1SUR', 'SKA1SUR_band1', 'SKAMID_PLUS', 'SKAMID_PLUS_band1', 
-         'SKASUR_PLUS', 'SKASUR_PLUS_band1', 'SKAMIDdishonly', 'SKAMIDionly5k']
-"""
-
-#names = ['exptS_mnu02', 'iexptM_mnu02', 'cexptL_mnu02']
-
-#expts = [e.exptL, e.exptL, e.exptL, e.exptL, e.exptL, e.exptL, e.exptL, e.exptL]
-#names = ['cexptL_Sarea2k', 'cexptL_Sarea5k', 'cexptL_Sarea10k', 'cexptL_Sarea15k', 'cexptL_Sarea20k', 'cexptL_Sarea30k', 'cexptL_Sarea25k', 'cexptL_Sarea1k']
-
-#names = ['cexptL_bao',]
-#names = ['cexptL_bao_rsd',]
-#names = ['cexptL_bao_pkshift',]
-#names = ['cexptL_bao_vol',]
-#names = ['cexptL_bao_allap',]
-#names = ['cexptL_bao_all',]
-#expts = [e.exptL,]
-
-#expts[0]['use'] = {
-#  'f_rsd':             True,     # RSD constraint on f(z)
-#  'f_growthfactor':    False,    # D(z) constraint on f(z)
-#  'alpha_all':         False,     # Use all constraints on alpha_{perp,par}
-#  'alpha_volume':      True,
-#  'alpha_rsd_angle':   True, #False, #t
-#  'alpha_rsd_shift':   True, #False, #t
-#  'alpha_bao_shift':   True,
-#  'alpha_pk_shift':    True # True
-#}
-
-################################################################################
-
-expts = [ 
-  e.exptS, e.exptM, e.exptL, e.exptL, e.exptL,
-  e.GBT, e.Parkes, e.GMRT, e.WSRT, e.APERTIF,
-  e.VLBA, e.JVLA, e.JVLA, e.BINGO, e.BAOBAB32,
-  e.BAOBAB128, e.CHIME, e.AERA3, e.KAT7, e.KAT7, 
-  e.KAT7, e.MeerKATb1, e.MeerKATb1, e.MeerKATb1, e.MeerKATb2, 
-  e.MeerKATb2, e.MeerKATb2, e.ASKAP, e.SKA1MIDbase1, e.SKA1MIDbase1, 
-  e.SKA1MIDbase1, e.SKA1MIDbase2, e.SKA1MIDbase2, e.SKA1MIDbase2, e.SKA1MIDfull1, 
-  e.SKA1MIDfull1, e.SKA1MIDfull1, e.SKA1MIDfull2, e.SKA1MIDfull2, e.SKA1MIDfull2,
-  e.SKA1SURbase1, e.SKA1SURbase2, e.SKA1SURfull1, e.SKA1SURfull2,
-  e.exptOpt ]
-
-names = [
-  'exptS', 'iexptM', 'exptL', 'iexptL', 'cexptL',
-  'GBT', 'Parkes', 'GMRT', 'WSRT', 'APERTIF',
-  'VLBA', 'JVLA', 'iJVLA', 'BINGO', 'iBAOBAB32',
-  'iBAOBAB128', 'yCHIME', 'iAERA3', 'KAT7', 'iKAT7', 
-  'cKAT7', 'MeerKATb1', 'iMeerKATb1', 'cMeerKATb1', 'MeerKATb2', 
-  'iMeerKATb2', 'cMeerKATb2', 'ASKAP', 'SKA1MIDbase1', 'iSKA1MIDbase1', 
-  'cSKA1MIDbase1', 'SKA1MIDbase2', 'iSKA1MIDbase2', 'cSKA1MIDbase2', 'SKA1MIDfull1',
-  'iSKA1MIDfull1', 'cSKA1MIDfull1', 'SKA1MIDfull2', 'iSKA1MIDfull2', 'cSKA1MIDfull2',
-  'SKA1SURbase1', 'SKA1SURbase2', 'SKA1SURfull1', 'SKA1SURfull2',
-  'iexptOpt' ]
+expt_list = [
+    ( 'exptS',            e.exptS ),        # 0
+    ( 'iexptM',           e.exptM ),        # 1
+    ( 'exptL',            e.exptL ),        # 2
+    ( 'iexptL',           e.exptL ),        # 3
+    ( 'cexptL',           e.exptL ),        # 4
+    ( 'GBT',              e.GBT ),          # 5
+    ( 'Parkes',           e.Parkes ),       # 6
+    ( 'GMRT',             e.GMRT ),         # 7
+    ( 'WSRT',             e.WSRT ),         # 8
+    ( 'APERTIF',          e.APERTIF ),      # 9
+    ( 'VLBA',             e.VLBA ),         # 10
+    ( 'JVLA',             e.JVLA ),         # 11
+    ( 'iJVLA',            e.JVLA ),         # 12
+    ( 'BINGO',            e.BINGO ),        # 13
+    ( 'iBAOBAB32',        e.BAOBAB32 ),     # 14
+    ( 'iBAOBAB128',       e.BAOBAB128 ),    # 15
+    ( 'yCHIME',           e.CHIME ),        # 16
+    ( 'iAERA3',           e.AERA3 ),        # 17
+    ( 'iMFAA',            e.MFAA ),         # 18
+    ( 'yTIANLAIpath',     e.TIANLAIpath ),  # 19
+    ( 'yTIANLAI',         e.TIANLAI ),      # 20
+    ( 'yTIANLAIband2',    e.TIANLAIband2 ), # 21
+    ( 'FAST',             e.FAST ),         # 22
+    ( 'KAT7',             e.KAT7 ),         # 23
+    ( 'iKAT7',            e.KAT7 ),         # 24
+    ( 'cKAT7',            e.KAT7 ),         # 25
+    ( 'MeerKATb1',        e.MeerKATb1 ),    # 26
+    ( 'iMeerKATb1',       e.MeerKATb1 ),    # 27
+    ( 'cMeerKATb1',       e.MeerKATb1 ),    # 28
+    ( 'MeerKATb2',        e.MeerKATb2 ),    # 29
+    ( 'iMeerKATb2',       e.MeerKATb2 ),    # 30
+    ( 'cMeerKATb2',       e.MeerKATb2 ),    # 31
+    ( 'ASKAP',            e.ASKAP ),        # 32
+    ( 'SKA1MIDbase1',     e.SKA1MIDbase1 ), # 33
+    ( 'iSKA1MIDbase1',    e.SKA1MIDbase1 ), # 34
+    ( 'cSKA1MIDbase1',    e.SKA1MIDbase1 ), # 35
+    ( 'SKA1MIDbase2',     e.SKA1MIDbase2 ), # 36
+    ( 'iSKA1MIDbase2',    e.SKA1MIDbase2 ), # 37
+    ( 'cSKA1MIDbase2',    e.SKA1MIDbase2 ), # 38
+    ( 'SKA1MIDfull1',     e.SKA1MIDfull1 ), # 39
+    ( 'iSKA1MIDfull1',    e.SKA1MIDfull1 ), # 40
+    ( 'cSKA1MIDfull1',    e.SKA1MIDfull1 ), # 41
+    ( 'SKA1MIDfull2',     e.SKA1MIDfull2 ), # 42
+    ( 'iSKA1MIDfull2',    e.SKA1MIDfull2 ), # 43
+    ( 'cSKA1MIDfull2',    e.SKA1MIDfull2 ), # 44
+    ( 'fSKA1SURbase1',    e.SKA1SURbase1 ), # 45
+    ( 'fSKA1SURbase2',    e.SKA1SURbase2 ), # 46
+    ( 'fSKA1SURfull1',    e.SKA1SURfull1 ), # 47
+    ( 'fSKA1SURfull2',    e.SKA1SURfull2 ), # 48
+    ( 'exptCV',           e.exptCV ),       # 49
+    ( 'GBTHIM',           e.GBTHIM ),       # 50
+]
+names, expts = zip(*expt_list)
+names = list(names); expts = list(expts)
 
 ################################################################################
-
 
 # Take command-line argument for which survey to calculate, or set manually
 if len(sys.argv) > 1:
@@ -103,6 +93,8 @@ if len(sys.argv) > 1:
         pass
 else:
     raise IndexError("Need to specify ID for experiment.")
+
+names[k] += EXPT_LABEL
 if myid == 0:
     print "="*50
     print "Survey:", names[k]
@@ -114,6 +106,8 @@ expts[k]['mode'] = "dish"
 if names[k][0] == "i": expts[k]['mode'] = "interferom."
 if names[k][0] == "c": expts[k]['mode'] = "combined"
 if names[k][0] == "y": expts[k]['mode'] = "cylinder"
+if names[k][0] == "f": expts[k]['mode'] = "paf"
+if names[k][0] == "t": expts[k]['mode'] = "ipaf"
 
 expt = expts[k]
 if Sarea is None:    
@@ -132,12 +126,10 @@ zs, zc = baofisher.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
 
 # Define kbins (used for output)
 kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
+#kbins = np.logspace(np.log10(0.0001), np.log10(1.), 2) # FIXME
 
 # Neutrino mass
 cosmo['mnu'] = 0.
-#cosmo['mnu'] = 0.05
-#cosmo['mnu'] = 0.10
-#cosmo['mnu'] = 0.20
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
 cosmo_fns = baofisher.background_evolution_splines(cosmo)
