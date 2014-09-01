@@ -1248,9 +1248,6 @@ def dish_response(q, y, cosmo, expt):
     kperp = q / (c['aperp']*c['r'])
     kpar = y / (c['apar']*c['rnu'])
     
-    # Dish-mode multiplicity factor, /I/
-    I = 1. / (expt['Ndish'] * expt['Nbeam'])
-    
     # Define parallel/perp. beam scales
     l = 3e8 * (1. + c['z']) / (1e6 * expt['nu_line'])
     theta_fwhm = l / expt['Ddish']
@@ -1269,6 +1266,8 @@ def dish_response(q, y, cosmo, expt):
     B_tot[np.where(B_tot > EXP_OVERFLOW_VAL)] = EXP_OVERFLOW_VAL
     invbeam2 = np.exp(B_tot)
     
+    # Dish-mode multiplicity factor, /I/
+    I = 1. / (expt['Ndish'] * expt['Nbeam'])
     return I * invbeam2
 
 
@@ -1282,11 +1281,11 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     kperp = q / (c['aperp']*c['r'])
     kpar = y / (c['apar']*c['rnu'])
     
-    # Calculate noise properties
+    # Calculate noise properties (factor of 1/2 from assumed dual-pol. recv.)
     Vsurvey = expt['Sarea'] * expt['dnutot'] / expt['nu_line']
     Tsky = 60e3 * (300.*(1.+c['z'])/expt['nu_line'])**2.55 # Foreground sky signal (mK)
     Tsys = expt['Tinst'] + Tsky
-    noise = Tsys**2. * Vsurvey / (expt['ttot'] * expt['dnutot'])
+    noise = Tsys**2. * Vsurvey / (expt['ttot'] * expt['dnutot']) / 2.
     if cv: noise = 1. # Cosmic variance-limited calc.
     
     # Apply multiplicity/beam response for 
@@ -1298,9 +1297,17 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         # Cylinder mode
         print "\tCylinder (interferometer) mode."
         noise *= interferometer_response(q, y, cosmo, expt)
+    elif 'ipaf' in expt['mode']:
+        # Interferometer mode with PAF FOV (saturates below crit. freq.)
+        print "\tInterferometer mode (PAF)."
+        noise *= interferometer_response(q, y, cosmo, expt)
     elif 'dish' in expt['mode']:
         # Dish (autocorrelation) mode
         print "\tSingle-dish mode."
+        noise *= dish_response(q, y, cosmo, expt)
+    elif 'paf' in expt['mode']:
+        # Dish (autocorrelation) mode with PAF FOV (saturates below crit. freq.)
+        print "\tSingle-dish mode (PAF)."
         noise *= dish_response(q, y, cosmo, expt)
     elif 'comb' in expt['mode']:
         print "\tCombined interferometer + single-dish mode"
@@ -1316,7 +1323,14 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         noise *= 1./(1./r_int + 1./r_dish) # Adding in quadrature
     else:
         # Mode not recognised (safest just to raise an error)
-        raise ValueError("Experiment mode not recognised. Choose 'interferom', 'dish', or 'combined'.")
+        raise ValueError("Experiment mode not recognised. Choose 'interferom', 'dish', 'paf', or 'combined'.")
+        
+    # Deal with PAF beam saturation
+    if 'nu_crit' in expt.keys():
+        # Apply correction factor if PAF has freq. at which it "saturates",
+        # below which the FOV is fixed (i.e. beams overlap below this freq.).
+        nu = expt['nu_line'] / (1. + c['z'])
+        if nu <= expt['nu_crit']: I *= (expt['nu_crit'] / nu)**2.
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
@@ -1565,7 +1579,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     
     # Get analytic log-derivatives for new parameters
     deriv_sigma8 = (2. / c['sigma_8']) * cs / ctot
-    deriv_ns = np.log(k) * cs / ctot
+    deriv_ns = np.log(k / c['k_piv']) * cs / ctot
     deriv_Tb = (2. / c['Tb']) * cs / ctot if not galaxy_survey else 0.
     
     # Evaluate derivatives for (apar, aperp) parameters
