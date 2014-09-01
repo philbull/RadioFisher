@@ -1330,7 +1330,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         # Apply correction factor if PAF has freq. at which it "saturates",
         # below which the FOV is fixed (i.e. beams overlap below this freq.).
         nu = expt['nu_line'] / (1. + c['z'])
-        if nu <= expt['nu_crit']: I *= (expt['nu_crit'] / nu)**2.
+        if nu <= expt['nu_crit']: noise *= (expt['nu_crit'] / nu)**2.
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
