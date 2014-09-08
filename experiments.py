@@ -584,6 +584,93 @@ SKA1SURfull2 = {
     }
 SKA1SURfull2.update(SURVEY)
 
+
+########################################
+# SKA configurations from HI IM chapter
+########################################
+
+SKA0MID = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            127,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            20.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1420.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    }
+SKA0MID.update(SURVEY)
+
+SKA0SUR = {
+    'mode':             'paf',             # Interferometer or single dish
+    'Ndish':            48,                # No. of dishes
+    'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
+    'nu_crit':          1300.,             # PAF critical frequency
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            30.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1150.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    }
+SKA0SUR.update(SURVEY)
+
+SKA1MID900 = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            254,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            20.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1420.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    }
+SKA1MID900.update(SURVEY)
+
+SKA1MID350 = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            254,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            28.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1050.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    }
+SKA1MID350.update(SURVEY)
+
+SKA1SUR650 = {
+    'mode':             'paf',             # Interferometer or single dish
+    'Ndish':            96,                # No. of dishes
+    'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
+    'nu_crit':          1300.,             # PAF critical frequency
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            30.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1150.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    }
+SKA1SUR650.update(SURVEY)
+
+SKA1SUR350 = {
+    'mode':             'paf',             # Interferometer or single dish
+    'Ndish':            60,                # No. of dishes
+    'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
+    'nu_crit':          710.,              # PAF critical frequency
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Tinst':            50.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     900.,              # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    }
+SKA1SUR350.update(SURVEY)
+
+
 ##################
 
 SKAMID_PLUS = {
