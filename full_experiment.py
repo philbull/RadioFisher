@@ -81,8 +81,10 @@ expt_list = [
     ( 'SKA0SUR',          e.SKA0SUR ),      # 52
     ( 'SKA1MID900',       e.SKA1MID900 ),   # 53
     ( 'SKA1MID350',       e.SKA1MID350 ),   # 54
-    ( 'SKA1SUR650',       e.SKA1SUR650 ),   # 55
-    ( 'SKA1SUR350',       e.SKA1SUR350 )    # 56
+    ( 'iSKA1MID900',      e.SKA1MID900 ),   # 55
+    ( 'iSKA1MID350',      e.SKA1MID350 ),   # 56
+    ( 'SKA1SUR650',       e.SKA1SUR650 ),   # 57
+    ( 'SKA1SUR350',       e.SKA1SUR350 )    # 58
 ]
 names, expts = zip(*expt_list)
 names = list(names); expts = list(expts)

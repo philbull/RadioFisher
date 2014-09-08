@@ -625,7 +625,8 @@ SKA1MID900 = {
     'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
-    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30.dat" # Interferometer antenna density
     }
 SKA1MID900.update(SURVEY)
 
@@ -638,7 +639,8 @@ SKA1MID350 = {
     'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1050.,             # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
-    'Sarea':            5e3*(D2RAD)**2.    # Total survey area [radians^2]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30.dat" # Interferometer antenna density
     }
 SKA1MID350.update(SURVEY)
 
