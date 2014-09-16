@@ -22,7 +22,7 @@ colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
 # Survey binning and area
 #zbins = np.linspace(0., 2., 21) # dz = 0.1
 zbins = np.linspace(0., 2., 11) # dz = 0.2
-Sarea = 30e3 # deg^2
+Sarea = 5e3 #30e3 # deg^2
 
 ################################################################################
 # Calculate background redshift evolution
@@ -67,7 +67,7 @@ for j in range(len(idxs)):
     
     # Output n(z) [Mpc^-3]
     ii = np.where(nn > 0.) # Keep only bins with n > 0
-    np.savetxt("ska_hi_nz_dz02_%d.dat" % fluxes[i], np.column_stack((zmin[ii], zmax[ii], nn[ii])))
+    np.savetxt("ska_hi_nz_dz02_%d_%d.dat" % (fluxes[i], Sarea), np.column_stack((zmin[ii], zmax[ii], nn[ii])))
     
     for k in range(len(Nz)):
         print "%2.2f %5.1f %3.2e" % (zc[k], Nz[k] * 1e3, nn[k]) # z, (10^3 deg^2)^-1, Mpc^-3

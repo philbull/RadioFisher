@@ -15,16 +15,20 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
-colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
-linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
+names = ['SKA1MIDfull1', 'SKA1MIDfull2', 'fSKA1SURfull1', 'fSKA1SURfull2', 'EuclidRef']
+colours = ['#1619A1', '#1619A1', '#5B9C0A', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
+labels = ['SKA1-MID B1 IM', 'SKA1-MID B2 IM', 'SKA1-SUR B1 IM', 'SKA1-SUR B2 IM',
+          'Euclid']
+linestyle = [[], [8, 4], [], [8, 4], [], [], [2, 4, 6, 4], []]
+marker = ['o', 'D', 'o', 'D', 'o', 'D', 'o', 'D']
 
 #names = ['EuclidRef', 'cexptLx', 'cexptLy', 'iexptOpt']
 #labels = ['Euclid', 'Fac. quadrature', 'Fac. min.', 'MEGA']
 
-names = ['yCHIME', 'yCHIME_nocut']
-labels = ['CHIME', 'CHIME nocut']
+#names = ['EuclidRef', 'EuclidRef_BAOonly', 'SKA1SURfull2',] # 'BINGO', 'yCHIME', 'yTIANLAI', 'yTIANLAIband2', 'yTIANLAIpath']
+#labels = ['Euclid', 'Euclid_BAO', 'SKA1-SUR Full (B2)', 'BINGO', 'CHIME', 'TIANLAI (550 - 950)', 'TIANLAI (1000 - 1420)', 'TIANLAI Pathfinder']
+#colours = ['#1619A1', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000', 'c', 'm']
+#linestyle = [[1,0], [1,0], [1,0], [1,0], [1,0], [1,0], [1,0], [1,0]]
 
 # Get f_bao(k) function
 cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
@@ -101,6 +105,6 @@ P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'})
 P.tight_layout()
 # Set size
 P.gcf().set_size_inches(8.,6.)
-#P.savefig('pub-dlogp.pdf', transparent=True) # 100
+#P.savefig('ska-dlogp.pdf', transparent=True) # 100
 
 P.show()

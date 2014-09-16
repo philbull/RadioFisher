@@ -18,15 +18,21 @@ USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
 
 cosmo = experiments.cosmo
 
-names = ['EuclidRef', 'cexptL'] #, 'cexptL'] # 'cexptL'] #'iexptM'] #, 'exptS']
-labels = ['DETF IV + Planck', 'Facility + Planck'] # 'Facility + Planck + $H_0$'] #'Mature'] #, 'Snapshot']
-#names = ['cexptL', 'iexptM', 'exptS']
-#labels = ['Facility', 'Mature', 'Snapshot']
+names = ['EuclidRef', 'cexptL']
+labels = ['DETF IV + Planck', 'Facility + Planck']
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
             ['#6B6B6B', '#BDBDBD'],
             ['#5B9C0A', '#BAE484'],
             ['#FFB928', '#FFEA28'] ]
+
+# FIXME
+names = ['EuclidRef', 'EuclidRef_BAOonly']
+labels = ['Euclid (all)', 'Euclid (BAO only)']
+
+
+names = ['EuclidRef_full', 'EuclidRef_fix', 'gSKA2_full', 'SKA1MIDfull2_full']
+labels = ['Euclid', 'Euclid_nsfix', 'SKA2', 'SKA1-MID B2']
 
 scale_idx = 1 # Index of experiment to use as reference for setting the x,y scales
 nsigma = 4.1 # No. of sigma (of reference experiment 1D marginal) to plot out to
@@ -71,20 +77,15 @@ for k in _k:
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
-    # Apply Planck prior
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    
+    # Apply DETF Planck prior
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+    F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+    
+    #print "FIXME: Not applying Planck prior."
+    #Fpl = F # FIXME
     
     # Add Planck H_0 prior
     #if 'H_0' in labels[k]:
@@ -103,6 +104,11 @@ for k in _k:
     label = ["$h$", "$\Omega_\mathrm{DE}$", "$\Omega_K$", "$w_0$", "$w_a$", "$\gamma$"][::-1]
     
     fid = [ cosmo['h'], cosmo['omega_lambda_0'], 0., cosmo['w0'], cosmo['wa'], cosmo['gamma'] ][::-1]
+    
+    # FIXME
+    print names[k]
+    for pp in lbls:
+        print "%8s %5.5f" % ( pp, np.sqrt(cov_pl[lbls.index(pp), lbls.index(pp)]) )
     
     # Loop through rows, columns, repositioning plots
     # i is column, j is row
@@ -208,5 +214,6 @@ for p in params:
 
 # Set size and save
 P.gcf().set_size_inches(16.5,10.5)
-P.savefig('pub-6params-eos.pdf', dpi=100)
+#P.savefig('pub-6params-eos.pdf', dpi=100)
+#P.savefig('BINGO-6params-eos.pdf', dpi=100)
 P.show()

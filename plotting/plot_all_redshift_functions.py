@@ -18,17 +18,17 @@ PLOT_DIFFERENT_MEASURES = False
 cosmo = experiments.cosmo
 
 if not PLOT_DIFFERENT_MEASURES:
-    names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
-    colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-    labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
-    linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
+    names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS', 'cSKA1MIDbase1']
+    colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C', 'y'] # DETF/F/M/S
+    labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I', 'xxx']
+    linestyle = [[2, 4, 6, 4], [], [8, 4], [3, 4], [1,1]]
 else:
     names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 
              'cexptL_bao_vol', 'cexptL_bao_allap', 'cexptL_bao_all']
     labels = ['BAO only', 'BAO + RSD', 'BAO + P(k) shift', 'BAO + Volume', 
               'BAO + AP', 'All']
     colours = ['#1619A1', '#CC0000', '#5B9C0A', 'y', '#990A9C', 'c', 'm']
-    linestyle = [[1,0], [1,0], [8, 4], [2, 4],  [1,0], [8, 4], [3, 4]]
+    linestyle = [[], [], [8, 4], [2, 4],  [], [8, 4], [3, 4]]
 
 cosmo_fns = baofisher.background_evolution_splines(cosmo)
 #cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
@@ -54,15 +54,20 @@ for k in range(len(names)):
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    #zfns = ['A', 'b_HI', 'f', 'H', 'DA', 'aperp', 'apar']
-    zfns = ['A', 'bs8', 'fs8', 'H', 'DA', 'aperp', 'apar']
+    zfns = ['A', 'bs8', 'fs8', 'H', 'DA',]
     excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
-            'gamma', 'N_eff', 'pk*', 'f', 'b_HI']
+            'gamma', 'N_eff', 'pk*', 'f', 'b_HI', 'aperp', 'apar']
+    
+    # FIXME
+    zfns = ['H', 'DA',]
+    excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
+            'gamma', 'N_eff', 'pk*', 'f', 'b_HI', 'aperp', 'apar', 'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     cov = np.linalg.inv(F)
     errs = np.sqrt(np.diag(cov))
+    print lbls
     
     # Identify functions of z
     pA = baofisher.indices_for_param_names(lbls, 'A*')
@@ -75,21 +80,27 @@ for k in range(len(names)):
     fn_vals = [dAc/1e3, 1., Hc/1e2, cosmo['sigma_8']*fc*Dc]
     #fn_vals = [dAc/1e3, 1., Hc/1e2, fc]
     
+    # Output data
+    #print names[k]
+    #err = errs[indexes[0]] / fn_vals[0]
+    #for _i in range(err.size):
+    #    print "%3.3f %6.4e %6.4e" % (zc[_i], err[_i], fn_vals[0][_i]*1e3)
+    
     # Plot errors as fn. of redshift
     for jj in range(len(axes)):
         err = errs[indexes[jj]] / fn_vals[jj]
+        
         line = axes[jj].plot( zc, err, color=colours[k], lw=1.8, marker='o', 
                               label=labels[k] )
         line[0].set_dashes(linestyle[k])
     
-
 # Subplot labels
 ax_lbls = ["$\sigma_{D_A}/D_A$", "$\sigma_A/A$", "$\sigma_H/H$", "$\sigma_{f\sigma_8}/f\sigma_8$"]
 
 if PLOT_DIFFERENT_MEASURES:
     ymax = [0.18, 0.85, 0.11, 0.065]
 else:
-    ymax = [0.07, 0.85, 0.07, 0.05] #0.098]
+    ymax = [0.07, 0.85, 0.07, 0.05]
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]
@@ -139,5 +150,7 @@ P.legend(bbox_to_anchor=[0.93,-0.04], frameon=False)
 # Set size
 P.gcf().set_size_inches(10., 7.)
 if not PLOT_DIFFERENT_MEASURES:
-    P.savefig('pub-zfns.pdf', transparent=True)
+    pass
+    #P.savefig('pub-zfns.pdf', transparent=True)
+    #P.savefig('BINGO-zfns.pdf', transparent=True)
 P.show()

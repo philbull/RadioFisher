@@ -14,7 +14,7 @@ import experiments
 import os, copy
 import euclid
 
-fig_name = "pub-w0gamma.pdf"
+#fig_name = "pub-w0gamma.pdf"
 fig_name = "ska-w0gamma.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
@@ -26,8 +26,16 @@ cosmo = experiments.cosmo
 labels = ['DETF IV + Planck', 'Facility + Planck']
 names = ['EuclidRef', 'cexptL']
 
-#labels = ['Euclid ref. gal. surv.', 'SKA1-MID 21cm IM']
-#names = ['EuclidRef', 'SKA1MIDbase1']
+names = ['cSKA1MIDfull2', 'fSKA1SURfull2', 'EuclidRef']
+labels = ['SKA1-MID', 'SKA1-SUR', 'DETF IV gal. survey']
+
+
+
+
+names = ['EuclidRef', 'SKA1MIDfull1_15khrs',]
+labels = ['Euclid galaxy survey', 'SKA1 intensity mapping',]
+
+
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -56,43 +64,32 @@ for k in _k:
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI', ]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*', 'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
+    print lbls
     if 'Euclid' in names[k]:
         F1 = F; lbl1 = copy.deepcopy(lbls)
     else:
         F2 = F; lbl2 = copy.deepcopy(lbls)
     
-    # Add Planck prior
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    # Add DETF Planck prior
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+    F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
     fixed_params = []
     if not MARGINALISE_CURVATURE: fixed_params += ['omegak',]
     if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
     if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
+    #fixed_params += ['wa',]
     
     if len(fixed_params) > 0:
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
                      names=lbls, exclude=fixed_params )
-    
-    # Really hopeful H0 prior
-    #ph = lbls.index('h')
-    #Fpl[ph, ph] += 1./(0.012)**2.
     
     # Get indices of w0, wa
     pw0 = lbls.index('w0'); pgam = lbls.index('gamma')
@@ -122,6 +119,7 @@ for k in _k:
     # Centroid
     ax.plot(x, y, 'ko')
 
+
 ################################################################################
 # Add combined constraint for Facility + Euclid
 
@@ -150,6 +148,7 @@ pw0 = lbls.index('w0'); pgam = lbls.index('gamma')
 print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
 print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
 ################################################################################
+
 
 # Plot datapoints for other theories
 ax.plot(0.68, -0.8, 'kD') # DGP
@@ -193,15 +192,13 @@ ax.set_xlabel(r"$\gamma$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_ylabel(r"$w_0$", fontdict={'fontsize':'xx-large'})
 
 ax.set_xlim((0.32, 0.72))
-#ax.set_ylim((-1.22, -0.73))
-
 ax.set_ylim((-1.26, -0.7))
 
-P.figtext(0.56, 0.965, "Bull, Ferreira, Patel, Santos (2014)", fontdict={'size':14, 'style':'italic'})
+#P.figtext(0.56, 0.965, "Bull, Ferreira, Patel, Santos (2014)", fontdict={'size':14, 'style':'italic'})
 
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
-P.savefig(fig_name, transparent=True)
+##P.savefig(fig_name, transparent=True)
 #P.savefig("mario-w0gamma-SKA1MID.pdf", transparent=True)
 P.show()

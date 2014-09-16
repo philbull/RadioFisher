@@ -98,11 +98,19 @@ P.errorbar([0.83,], [1.03,], [0.28,], marker='s', ls='none', markeredgecolor='no
 # Duffy et al. (arXiv:1107.3720)
 P.errorbar([0., 1., 2.], [0.1389, 0.2515, 0.3773], np.zeros(3), marker='D', ls='none', markeredgecolor='none', color='#5B9C0A', lw=0.1, capthick=0., markersize=8., label="Sim. / Duffy (2012)")
 
+
+# Load Mario's new data
+zz, omegaHI, bHI, Tb = np.genfromtxt("santos_powerlaw_HI_model.dat").T
+P.plot(zz, omegaHI/1e-3, 'mo', ms=10.)
+
+
+
 # Zero line
 #P.axhline(0., ls='dotted', color='k', lw=1.5)
 
 P.xlim((-0.08, 5.))
 P.ylim((0., 1.55))
+#P.ylim((0.1, 3.))
 P.ylabel("$\Omega_\mathrm{HI}(z) / 10^{-3}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 P.xlabel("$z$", fontdict={'fontsize':'xx-large'}, labelpad=8.)
 
@@ -125,9 +133,10 @@ P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=
 P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)
 #P.gca().set_position([0.15, 0.15, 0.8, 0.65])
 
+#P.yscale('log')
 
 # Set size and save
 #P.tight_layout()
 P.gcf().set_size_inches(8.,7.)
-P.savefig("pub-omegaHI-evol.pdf", transparent=True)
+#P.savefig("pub-omegaHI-evol.pdf", transparent=True)
 P.show()

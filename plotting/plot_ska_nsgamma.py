@@ -14,10 +14,12 @@ import experiments
 import os, copy
 import euclid
 
-#fig_name = "ska-w0gamma.pdf"
-fig_name = "ska-w0gamma-both.pdf"
-fig_name = "ska-w0gamma-combined-SUR.pdf"
-fig_name = "ska-w0gamma-combined-MID.pdf"
+fig_name = "ska-nsgamma-both.pdf"
+fig_name = "ska-nsgamma-both-band2.pdf"
+fig_name = "ska-w0wa-combined-SUR.pdf"
+fig_name = "ska-w0wa-combined-MID.pdf"
+#fig_name = "ska-w0wa-combined-MID-B2.pdf"
+#fig_name = "BINGO-w0wa.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True # Marginalise over Omega_K
@@ -29,6 +31,11 @@ cosmo = experiments.cosmo
 names = ['EuclidRef', 'cSKA1MIDfull1'] #'SKA1SURfull1',]# 'cSKA1MIDfull1']
 labels = ['Euclid', 'SKA1-MID (B1)'] #'SKA1-SUR (B1)',]# 'SKA1-MID (B1)']
 
+#names = ['BINGO',]
+#labels = ['BINGO',]
+
+#names = ['EuclidRef', 'cSKA1MIDfull2']
+#labels = ['Euclid', 'SKA1-MID (B2)']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -95,8 +102,8 @@ for k in _k:
     #ph = lbls.index('h')
     #Fpl[ph, ph] += 1./(0.012)**2.
     
-    # Get indices of w0, wa
-    pw0 = lbls.index('w0'); pgam = lbls.index('gamma')
+    # Get indices of ns, gamma
+    pns = lbls.index('n_s'); pgam = lbls.index('gamma')
     
     print "-"*50
     print names[k]
@@ -106,15 +113,15 @@ for k in _k:
     cov_pl = np.linalg.inv(Fpl)
     
     # Print 1D marginals
-    print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
+    print "1D sigma(n_s) = %3.4f" % np.sqrt(cov_pl[pns,pns])
     print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
     
     x = experiments.cosmo['gamma']
-    y = experiments.cosmo['w0']
+    y = experiments.cosmo['ns']
     
     # Plot contours for gamma, w0
     transp = [1., 0.85]
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pw0, None, Finv=cov_pl)
+    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pns, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
                 ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
@@ -132,6 +139,8 @@ for i in range(len(lbl1)):
     if "b_HI" in lbl1[i]: lbl1[i] = "gal%s" % lbl1[i]
 Fc, lbls = baofisher.add_fisher_matrices(F1, F2, lbl1, lbl2, expand=True)
 
+print lbls
+
 # Add Planck prior
 l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
 F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
@@ -140,7 +149,7 @@ cov_pl = np.linalg.inv(Fc)
 
 # Plot contours for gamma, w0
 transp = [1., 0.95]
-w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pw0, None, Finv=cov_pl)
+w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pns, None, Finv=cov_pl)
 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
             height=alpha[kk]*h, angle=ang, fc=colours[-1][kk], 
             ec=colours[-1][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
@@ -148,27 +157,11 @@ for e in ellipses: ax.add_patch(e)
 labels += ['Combined']
 
 print "\nCOMBINED"
-pw0 = lbls.index('w0'); pgam = lbls.index('gamma')
-print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
+pns = lbls.index('n_s'); pgam = lbls.index('gamma')
+print "1D sigma(ns) = %3.4f" % np.sqrt(cov_pl[pns,pns])
 print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
 ################################################################################
 
-
-# Plot datapoints for other theories
-ax.plot(0.68, -0.8, 'kD') # DGP
-ax.plot(0.4, -0.99, 'kD') # f(r)
-ax.plot(0.48, -1.22, 'kD') # Minimal massive bigravity, arXiv:1404.4061
-
-P.annotate("DGP", xy=(0.68, -0.8), xytext=(0., -20.), fontsize='large', 
-                       textcoords='offset points', ha='center', va='center')
-
-P.annotate("f(R)", xy=(0.4, -0.99), xytext=(0., -20.), fontsize='large', 
-                       textcoords='offset points', ha='center', va='center')
-
-P.annotate("Mass. Bigrav.", xy=(0.48, -1.22), xytext=(0., -20.), fontsize='large', 
-                       textcoords='offset points', ha='center', va='center')
-
-################################################################################
 
 # Report on what options were used
 print "-"*50
@@ -192,16 +185,14 @@ ax.xaxis.set_minor_locator(xminorLocator)
 ax.yaxis.set_minor_locator(yminorLocator)
 
 ax.set_xlabel(r"$\gamma$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-ax.set_ylabel(r"$w_0$", fontdict={'fontsize':'xx-large'})
+ax.set_ylabel(r"$n_s$", fontdict={'fontsize':'xx-large'})
 
-ax.set_xlim((0.37, 0.72))
-#ax.set_ylim((-1.22, -0.73))
-
-ax.set_ylim((-1.36, -0.54))
+ax.set_xlim((0.43, 0.67))
+#ax.set_xlim((0.13, 0.97)) # BINGO
+ax.set_ylim((0.950, 0.976))
 
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
 P.savefig(fig_name, transparent=True)
-#P.savefig("mario-w0gamma-SKA1MID.pdf", transparent=True)
 P.show()

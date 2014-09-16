@@ -16,10 +16,10 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ["EuclidRef", "cexptL", "iexptM", "exptS"]
+names = ["gSKA2", ]
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
+labels = ['Full SKA (galaxy survey)', ]
 
 # Get f_bao(k) function
 cosmo_fns = baofisher.background_evolution_splines(cosmo)
@@ -28,7 +28,7 @@ fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 fig = P.figure()
-axes = [fig.add_subplot(411), fig.add_subplot(412), fig.add_subplot(413), fig.add_subplot(414)]
+axes = [fig.add_subplot(111), ]
 
 for k in range(len(names)):
     root = "output/" + names[k]
@@ -75,11 +75,11 @@ for k in range(len(names)):
     axes[k].set_ylim((-0.13, 0.13))
     #axes[k].set_ylim((-0.08, 0.08))
     
-    axes[k].text( 0.39, 0.09, labels[k], fontsize=14, 
+    axes[k].text( 0.105, 0.105, labels[k], fontsize=16, 
                   bbox={'facecolor':'white', 'alpha':1., 'edgecolor':'white',
                         'pad':15.} )
 
-
+"""
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]
 l0 = 0.15
@@ -88,7 +88,8 @@ ww = 0.75
 hh = 0.8 / 4.
 for i in range(len(names))[::-1]:
     axes[i].set_position([l0, b0 + hh*i, ww, hh])
-    
+"""
+
 # Resize labels/ticks
 for i in range(len(axes)):
     ax = axes[i]
@@ -101,8 +102,10 @@ for i in range(len(axes)):
 axes[0].set_xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'}, labelpad=10.)
 #ax.set_ylabel(r"$P(k)$", fontdict={'fontsize':'20'})
 
+P.tight_layout()
+
 # Set size
-P.gcf().set_size_inches(8.5,12.)
-#P.gcf().set_size_inches(8.5,10.)
-P.savefig('pub-fbao.pdf', transparent=True)
+#P.gcf().set_size_inches(8.5,12.)
+P.gcf().set_size_inches(8.4, 6.8)
+P.savefig('ska-fbao-ska2.pdf', transparent=True)
 P.show()

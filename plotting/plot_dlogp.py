@@ -4,10 +4,10 @@ Process EOS Fisher matrices and plot P(k).
 """
 import numpy as np
 import pylab as P
+from rfwrapper import rf
 import baofisher
 import matplotlib.patches
 import matplotlib.cm
-from units import *
 from mpi4py import MPI
 import experiments
 import os
@@ -15,16 +15,30 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ['cSKA1MIDfull1', 'cSKA1MIDfull2', 'SKA1SURfull1', 'SKA1SURfull2',
-         'SKAHI100', 'SKAHI73', 'EuclidRef']
-colours = ['#1619A1', '#1619A1', '#5B9C0A', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
-labels = ['SKA1-MID B1 IM', 'SKA1-MID B2 IM', 'SKA1-SUR B1 IM', 'SKA1-SUR B2 IM',
-          'SKA1 HI gal.', 'SKA2 HI gal.', 'Euclid']
-linestyle = [[1,0], [8, 4], [1,0], [8, 4], [1,0], [1, 0], [2, 4, 6, 4]]
-marker = ['o', 'D', 'o', 'D', 'o', 'D', 'o']
+names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
+colours = ['#CC0000', '#1619A1', 'y', '#5B9C0A', '#990A9C', 'c', 'm'] # DETF/F/M/S
+labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
+linestyle = [[2, 4, 6, 4], [], [8, 4], [8, 4], [3, 4], [], [], [], []]
 
 #names = ['EuclidRef', 'cexptLx', 'cexptLy', 'iexptOpt']
 #labels = ['Euclid', 'Fac. quadrature', 'Fac. min.', 'MEGA']
+
+#names = ['yCHIME', 'yCHIME_nocut']
+#labels = ['CHIME', 'CHIME nocut']
+
+names = ['testSKA1SURfull1', 'ftestSKA1SURfull1_fixedfov']
+labels = ['SKA1-SUR old', 'SKA1-SUR fixed FOV']
+
+names = ['fSKA1SURfull1', 'fSKA1SURfull2', 'SKA1SURfull2', 'SKA1MIDfull1', 'SKA1MIDfull2', 'BOSS']
+labels = ['SKA1-SUR Full B1', 'SKA1-SUR Full B2 Fixed FOV', 'SKA1-SUR Full B2', 'SKA1-MID Full B1', 'SKA1-MID Full B2', 'BOSS']
+
+names = ['FAST', 'FAST4yr', 'fSKA1SURfull1', 'EuclidRef', 'yCHIME']
+labels = ['FAST 10k hrs', 'FAST 4yr', 'SKA1-SUR Full B1', 'Euclid', 'CHIME']
+linestyle = [[], [], [], [], [], [], []]
+
+
+names = ['EuclidRef']
+labels = ['Euclid']
 
 
 # Get f_bao(k) function
@@ -67,12 +81,24 @@ for k in range(len(names)):
     pw0 = baofisher.indexes_for_sampled_fns(11, zc.size, zfns)
     pwa = baofisher.indexes_for_sampled_fns(12, zc.size, zfns)
     
+    #for jj in range(kc.size):
+    #    print "%5.5e %5.5e" % (kc[jj], cov[jj])
+    
     print "-"*50
     print names[k]
-    #print cov
     print lbls[pw0], 1. / np.sqrt(F[pw0,pw0])
     print lbls[pwa], 1. / np.sqrt(F[pwa,pwa])
     
+    """
+    # Output dP/P
+    print "-"*50
+    print names[k]
+    for jj in range(zc.size):
+        if zc[jj] == 1.:
+            cov = [np.sqrt(1. / np.diag(F_list[jj])[lbls.index(lbl)]) for lbl in lbls if "pk" in lbl]
+            for _k in range(kc.size):
+                print "%5.5e %5.5e" % (kc[_k], cov[_k])
+    """
     """
     if k == 0:
         # Plot shaded region
@@ -81,12 +107,14 @@ for k in range(len(names)):
         # Plot errorbars
         P.plot(kc, cov, color=colours[k], label=labels[k], lw=2.2, ls=linestyle[k])
     """
-    line = P.plot(kc, cov, color=colours[k], label=labels[k], lw=2.4)
+    #line = P.plot(kc, cov, color=colours[k], label=labels[k], lw=1.8, marker='.')#lw=2.4)
+    line = P.plot(kc/0.7, cov, color=colours[k], label=labels[k], lw=1.8, marker='.')#lw=2.4)
     
-    # Set custom linestyle    
+    # Set custom linestyle
+    print linestyle[k]
     line[0].set_dashes(linestyle[k])
 
-
+#exit()
 P.xscale('log')
 P.yscale('log')
 P.xlim((1.5e-3, 3e0))
@@ -96,12 +124,12 @@ P.legend(loc='lower left', prop={'size':'large'}, frameon=False)
 P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5)
 
-P.xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'})
+P.xlabel(r"$k \,[h \mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'})
 P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'})
 
 P.tight_layout()
 # Set size
 P.gcf().set_size_inches(8.,6.)
-P.savefig('ska-dlogp.pdf', transparent=True) # 100
+#P.savefig('pub-dlogp.pdf', transparent=True) # 100
 
 P.show()

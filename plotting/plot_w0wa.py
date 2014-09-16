@@ -30,6 +30,11 @@ labels = ['DETF IV + Planck', 'Facility + Planck', 'Pathfinder + Planck'] #, 'Sn
 names = ['yCHIME', 'yCHIME_nocut',] #'iexptM'] #, 'exptS']
 labels = ['CHIME', 'CHIME Nocut',] #, 'Snapshot']
 
+names = ['cSKA1MIDfull1', 'cSKA1MIDfull2', 'fSKA1SURfull1', 'fSKA1SURfull2', 'BOSS']
+labels = ['SKA1-MID B1', 'SKA1-MID B2', 'SKA1-SUR B1', 'SKA1-SUR B2', 'BOSS']
+
+names = ['EuclidRef_full', 'EuclidRef_fix', 'gSKA2_full', 'SKA1MIDfull2_full']
+labels = ['Euclid', 'Euclid_nsfix', 'SKA2', 'SKA1-MID B2']
 
 #names = ['EuclidRef', 'iexptO', 'cexptL', 'iexptM']
 #labels = ['DETF IV', 'Optimal', 'Facility', 'Pathfinder']
@@ -44,6 +49,9 @@ labels = ['CHIME', 'CHIME Nocut',] #, 'Snapshot']
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
             ['#5B9C0A', '#BAE484'],
+            ['#FFB928', '#FFEA28'],
+            ['#FFB928', '#FFEA28'],
+            ['#FFB928', '#FFEA28'],
             ['#FFB928', '#FFEA28'], ]
 
 # Fiducial value and plotting
@@ -66,14 +74,28 @@ for k in _k:
     # Load Fisher matrices as fn. of z
     Nbins = zc.size
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
+    #F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in np.where(zc>0.5)[0]]
+    #Nbins = np.where(zc > 0.5)[0].size
+    #if Nbins == 0: continue
     
     # EOS FISHER MATRIX
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
-    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
+    #excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
+    excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*', 'fs8', 'bs8']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
+    #np.savetxt("fisher_%s_gammaz.dat"%names[k], F, header=" ".join(lbls))
+    #np.savetxt("fisher_%s_zcut05.dat"%names[k], F, header=" ".join(lbls))
+    #np.savetxt("fisher_%s_zbins.dat"%names[k], zc[zc > 0.5])
+    
+    pok = lbls.index('omegak')
+    pns = lbls.index('n_s')
+    print "\t*** ok:", F[pok,pok], 1./np.sqrt(F[pok,pok])
+    print "\t*** ns:", F[pns,pns], 1./np.sqrt(F[pns,pns])
+    print "\t*** ok-ns:", F[pns,pok]
+    
     # Add Planck prior
     #Fpl = euclid.add_detf_planck_prior(F, lbls, info=False)
     #Fpl = euclid.add_planck_prior(F, lbls, info=False)
@@ -152,7 +174,7 @@ print "NOTE:", s3
 labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
 
-P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'medium'}, bbox_to_anchor=[0.95, 0.95])
+P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'x-large'}, bbox_to_anchor=[0.93, 0.95], frameon=False)
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
@@ -176,8 +198,8 @@ else:
 
 
 # FIXME
-#ax.set_xlim((-1.45, -0.5))
-#ax.set_ylim((-1., 1.5))
+ax.set_xlim((-1.15, -0.85))
+ax.set_ylim((-0.5, 0.5))
 
 
 # Set size and save
@@ -185,4 +207,5 @@ P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
 ##P.savefig(fig_name, transparent=True)
 #P.savefig("mario-w0wa-SKAMID.pdf", transparent=True)
+#P.savefig("ska-w0wa.pdf", transparent=True)
 P.show()

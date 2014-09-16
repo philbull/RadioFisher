@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Plot 2D constraints on (w0, wa).
+Plot 2D constraints on (w0, wa), with a low-z survey added in for good measure.
 """
 import numpy as np
 import pylab as P
@@ -14,11 +14,7 @@ import experiments
 import os, copy
 import euclid
 
-fig_name = "ska-nsgamma-both.pdf"
-fig_name = "ska-nsgamma-both-band2.pdf"
-fig_name = "ska-w0wa-combined-SUR.pdf"
-fig_name = "ska-w0wa-combined-MID.pdf"
-#fig_name = "ska-w0wa-combined-MID-B2.pdf"
+fig_name = "ska-w0wa-inclSKA1gal.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True # Marginalise over Omega_K
@@ -27,17 +23,59 @@ MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = experiments.cosmo
 
-names = ['EuclidRef', 'cSKA1MIDfull1'] #'SKA1SURfull1',]# 'cSKA1MIDfull1']
-labels = ['Euclid', 'SKA1-MID (B1)'] #'SKA1-SUR (B1)',]# 'SKA1-MID (B1)']
+names = ['EuclidRef', 'SKA1SURfull1', 'cSKA1MIDfull1']
+labels = ['Euclid', 'SKA1-SUR (B1)', 'SKA1-MID (B1)']
 
-#names = ['EuclidRef', 'cSKA1MIDfull2']
-#labels = ['Euclid', 'SKA1-MID (B2)']
+names = ['EuclidRef', 'cSKA1MIDfull2']
+labels = ['Euclid', 'SKA1-MID (B2)']
 
-colours = [ ['#CC0000', '#F09B9B'],
-            ['#1619A1', '#B1C9FD'],
+#names = ["SKAHI73", "EuclidRef", 'SKA1SURfull2', 'SKA1SURfull1']
+#labels = ['SKA2 HI gal.', 'Euclid', 'SKA1-SUR (B1)', 'SKA1-SUR (B2)']
+
+names = ["SKAHI73", "EuclidRef", 'SKA1SURfull2', 'SKA1SURfull1', 'cSKA1MIDfull2', 'cSKA1MIDfull1']
+labels = ['SKA2 HI gal.', 'Euclid', 'SKA1-SUR (B2)', 'SKA1-SUR (B1)', 'SKA1-MID (B2)', 'SKA1-MID (B1)']
+
+colours = [ ['#5B9C0A', '#BAE484'], 
+            ['#990A9C', '#F4BAF5'], 
+            ['#1619A1', '#B1C9FD'], 
+            ['#CC0000', '#F09B9B'], 
+            ['#FFB928', '#FFEA28'],
+            ['#6B6B6B', '#BDBDBD'],
+            ['#5B9C0A', '#BAE484'],
             ['#6B6B6B', '#BDBDBD'] ]
 #            ['#5B9C0A', '#BAE484'],
 #            ['#FFB928', '#FFEA28'] ]
+
+
+################################################################################
+# Load low-z galaxy survey Fisher matrix
+
+root = "output/" + "SKAHI100"
+
+# Load cosmo fns.
+dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
+zc, Hc, dAc, Dc, fc = dat
+zs, Hs, dAs, Ds, fs = np.genfromtxt(root+"-cosmofns-smooth.dat").T
+kc = np.genfromtxt(root+"-fisher-kc.dat").T
+
+# Load Fisher matrices as fn. of z
+Nbins = zc.size
+F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
+
+# EOS FISHER MATRIX
+pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+zfns = ['b_HI', ]
+excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
+F_lowz, lbls_lowz = baofisher.combined_fisher_matrix( F_list,
+                                                      expand=zfns, names=pnames,
+                                                      exclude=excl )
+
+# Relabel galaxy bias from low-z survey
+for i in range(len(lbls_lowz)):
+    if "b_HI" in lbls_lowz[i]: lbls_lowz[i] = "lowz%s" % lbls_lowz[i]
+
+################################################################################
+
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -64,10 +102,10 @@ for k in _k:
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
-    if 'Euclid' in names[k]:
-        F1 = F; lbl1 = copy.deepcopy(lbls)
-    else:
-        F2 = F; lbl2 = copy.deepcopy(lbls)
+    
+    # Relabel galaxy bias from low-z survey and sum current survey + low-z
+    F, lbls = baofisher.add_fisher_matrices(F_lowz, F, lbls_lowz, lbls, expand=True)
+    print lbls
     
     # Add Planck prior
     if USE_DETF_PLANCK_PRIOR:
@@ -84,6 +122,10 @@ for k in _k:
         F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
         Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
     
+    print l2
+    print F_detf
+    exit()
+    
     # Decide whether to fix various parameters
     fixed_params = []
     if not MARGINALISE_CURVATURE: fixed_params += ['omegak',]
@@ -94,12 +136,8 @@ for k in _k:
         Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
                      names=lbls, exclude=fixed_params )
     
-    # Really hopeful H0 prior
-    #ph = lbls.index('h')
-    #Fpl[ph, ph] += 1./(0.012)**2.
-    
-    # Get indices of ns, gamma
-    pns = lbls.index('n_s'); pgam = lbls.index('gamma')
+    # Get indices of w0, wa
+    pw0 = lbls.index('w0'); pwa = lbls.index('wa')
     
     print "-"*50
     print names[k]
@@ -109,15 +147,15 @@ for k in _k:
     cov_pl = np.linalg.inv(Fpl)
     
     # Print 1D marginals
-    print "1D sigma(n_s) = %3.4f" % np.sqrt(cov_pl[pns,pns])
-    print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
+    print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
+    print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
     
-    x = experiments.cosmo['gamma']
-    y = experiments.cosmo['ns']
+    x = experiments.cosmo['w0']
+    y = experiments.cosmo['wa']
     
     # Plot contours for gamma, w0
     transp = [1., 0.85]
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pns, None, Finv=cov_pl)
+    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
                 ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
@@ -126,7 +164,9 @@ for k in _k:
     # Centroid
     ax.plot(x, y, 'ko')
 
+P.figtext(0.18, 0.22, "Combined w. Planck + SKA1 gal.", fontsize=15)
 
+"""
 ################################################################################
 # Add combined constraint for Facility + Euclid
 
@@ -135,7 +175,6 @@ for i in range(len(lbl1)):
     if "b_HI" in lbl1[i]: lbl1[i] = "gal%s" % lbl1[i]
 Fc, lbls = baofisher.add_fisher_matrices(F1, F2, lbl1, lbl2, expand=True)
 
-print lbls
 
 # Add Planck prior
 l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
@@ -145,7 +184,7 @@ cov_pl = np.linalg.inv(Fc)
 
 # Plot contours for gamma, w0
 transp = [1., 0.95]
-w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pgam, pns, None, Finv=cov_pl)
+w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
             height=alpha[kk]*h, angle=ang, fc=colours[-1][kk], 
             ec=colours[-1][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
@@ -153,11 +192,11 @@ for e in ellipses: ax.add_patch(e)
 labels += ['Combined']
 
 print "\nCOMBINED"
-pns = lbls.index('n_s'); pgam = lbls.index('gamma')
-print "1D sigma(ns) = %3.4f" % np.sqrt(cov_pl[pns,pns])
-print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pgam,pgam])
+pw0 = lbls.index('w0'); pwa = lbls.index('wa')
+print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
+print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
 ################################################################################
-
+"""
 
 # Report on what options were used
 print "-"*50
@@ -171,7 +210,6 @@ print "NOTE:", s3
 # Legend
 labels = [labels[k] for k in range(len(labels))]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in range(len(labels))]
-
 P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=[0.96, 0.95], frameon=False)
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=15.)
@@ -180,14 +218,16 @@ yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
 ax.xaxis.set_minor_locator(xminorLocator)
 ax.yaxis.set_minor_locator(yminorLocator)
 
-ax.set_xlabel(r"$\gamma$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-ax.set_ylabel(r"$n_s$", fontdict={'fontsize':'xx-large'})
+ax.set_xlabel(r"$w_0$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
+ax.set_ylabel(r"$w_a$", fontdict={'fontsize':'xx-large'})
 
-ax.set_xlim((0.43, 0.67))
-ax.set_ylim((0.950, 0.976))
+ax.set_xlim((-1.21, -0.79))
+ax.set_ylim((-0.6, 0.6))
 
 # Set size and save
 P.tight_layout()
 P.gcf().set_size_inches(8.,6.)
+
 P.savefig(fig_name, transparent=True)
+#P.savefig(fig_name, transparent=False)
 P.show()

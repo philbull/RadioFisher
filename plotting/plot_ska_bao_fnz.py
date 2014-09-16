@@ -15,10 +15,10 @@ import euclid
 
 cosmo = experiments.cosmo
 
-CUR_K = 2
+CUR_K = 3
 
-names = ["SKAHI73", "EuclidRef", "SKAHI100",] # "SKAHI73", 'EuclidRef']
-labels = ['SKA2 HI gal.', 'Euclid', 'SKA1 HI gal.']
+names = ["SKAHI73", "EuclidRef", "SKAHI100", 'fSKA1SURfull1'] # "SKAHI73", 'EuclidRef']
+labels = ['SKA2 HI gal.', 'Euclid', 'SKA1 HI gal.', 'SKA1-SUR Full B1']
 colours = ['#1619A1', '#CC0000', '#FFB928', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
 linestyle = [[1,0], [1, 0], [1, 0],]
 marker = ['o', 'D', 's',]
@@ -67,11 +67,12 @@ for k in [CUR_K,]:
         
         print j, zc[j], (zc[j] < 1.9)
         
-        if zc[j] < 1.9:
+        if zc[j] < 3.: #1.9:
             P.errorbar( x, y, yerr=err, color=colours[k], ls='none', 
                           lw=1., capthick=1., label=names[k], ms='.' )
             
-            if j % 2 == 0:
+            #if j % 2 == 0:
+            if j % 1 == 0:
                 P.annotate( "%3.2f<z<%3.2f"%(zc[j]-0.05, zc[j]+0.05), 
                           xy=(4e-1, 0.18*zc[j]*10.), xytext=(0., 0.), 
                           fontsize='small', textcoords='offset points', 
@@ -79,7 +80,8 @@ for k in [CUR_K,]:
                           
         P.xscale('log')
         P.xlim((1.8e-2, 6e-1))
-        P.ylim((-0.5, 3.8))
+        ##P.ylim((-0.5, 3.8))
+        P.ylim((-0.5, 4.8))
         #axes[k].set_title(labels[k], fontsize='x-large')
         
     #P.text(0.5, 1.03, labels[k], horizontalalignment='center', fontsize=19, 
@@ -124,7 +126,7 @@ P.text(0.7, 0.9,'$1.75 < z < 1.85$', horizontalalignment='center',
 """
 P.tight_layout()
 
-P.savefig('ska-bao-%s.pdf' % names[k], transparent=True)
+#P.savefig('ska-bao-%s.pdf' % names[k], transparent=True)
 
 P.show()
 exit()

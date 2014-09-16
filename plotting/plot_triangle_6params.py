@@ -67,34 +67,17 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    # Actually, (aperp, apar) are (D_A, H)
-    #pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    #zfns = [1,]
-    #excl_names = ['Tb', 'f', 'aperp', 'apar', 'gamma']
-    #if 'N_eff' in pnames: excl_names += ['N_eff',]
-    #excl = [pnames.index(p) for p in excl_names]
-    #excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI', ]
     excl = ['Tb', 'f', 'aperp', 'apar', 'fs8', 'bs8', 'DA', 'H', 'gamma', 'N_eff', 'pk*']
     F, lbls = baofisher.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
-    
-    # Apply Planck prior
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    # Apply DETF Planck prior
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+    F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     if 'Planck only' in labels[k]:
         # Just do Planck, on its own
@@ -112,10 +95,6 @@ for k in _k:
     Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], names=lbls,
                                      exclude=['omegak',] )
     
-    # Add Planck H_0 prior
-    #ph = lbls.index('h')
-    #Fpl[ph, ph] += 1./(0.012)**2.
-    
     # Invert matrices
     cov_pl = np.linalg.inv(Fpl)
     
@@ -124,13 +103,11 @@ for k in _k:
     params_lbls.append(lbls)
     
     # Set which parameters are going into the triangle plot
-    #params = ['h', 'omegak', 'omegaDE', 'w0', 'wa', 'n_s', 'omega_b']
-    #label = ["$h$", "$\Omega_\mathrm{K}$", "$\Omega_\mathrm{DE}$", "$w_0$", "$w_a$", "$n_s$"]
     params = ['h', 'omega_b', 'omegaDE', 'n_s', 'sigma8'][::-1]
     label = ["$h$", "$\omega_b$", "$\Omega_\mathrm{DE}$", "$n_s$", "$\sigma_8$"][::-1]
-    
-    fid = [ cosmo['h'], cosmo['omega_b_0']*cosmo['h']**2., cosmo['omega_lambda_0'], cosmo['ns'], cosmo['sigma_8'] ][::-1]
-    
+    fid = [ cosmo['h'], cosmo['omega_b_0']*cosmo['h']**2., 
+            cosmo['omega_lambda_0'], cosmo['ns'], cosmo['sigma_8'] ][::-1]
+        
     # Loop through rows, columns, repositioning plots
     # i is column, j is row
     for j in range(Nparam):
@@ -147,8 +124,8 @@ for k in _k:
             
             # Fiducial values
             ii = Nparam - i - 1
-            x = fid[ii] #experiments.cosmo['w0']
-            y = fid[j] #experiments.cosmo['wa']
+            x = fid[ii]
+            y = fid[j]
             p1 = lbls.index(params[ii])
             p2 = lbls.index(params[j])
             
@@ -228,21 +205,8 @@ for j in range(Nparam):
             if i == 0 and col_step[j] == -1: tick.label1.set_visible(False)
             tick.label1.set_fontsize(fontsize)
             ii += 1
-"""
-fontsize = 20
-for tick in ax.xaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
-for tick in ax.yaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
-
-xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
-yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
-ax.xaxis.set_minor_locator(xminorLocator)
-ax.yaxis.set_minor_locator(yminorLocator)
-"""
 
 params = ['h', 'omega_b', 'omegaDE', 'n_s', 'sigma8']
-
 
 print [names[kk] for kk in _k]
 for p in params:

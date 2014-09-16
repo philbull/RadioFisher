@@ -18,7 +18,7 @@ import euclid
 
 cosmo = experiments.cosmo
 
-names = ["SKA1SURfull1",] # "EuclidRef", "iexptM", "exptS"]
+names = ["fSKA1SURfull1",] # "EuclidRef", "iexptM", "exptS"]
 
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
 colours = ['#1619A1', '#CC0000', '#5B9C0A', '#990A9C'] # DETF/F/M/S
@@ -110,6 +110,7 @@ ax.set_ylabel(r"$\mathrm{P}(k) \,[\mathrm{Mpc}^{3}]$", fontdict={'fontsize':'xx-
 # Set size
 P.tight_layout()
 #P.gcf().set_size_inches(8.,6.)
-P.savefig('pub-pk-lowk.pdf', transparent=True)
+#P.savefig('pub-pk-lowk.pdf', transparent=True)
+P.savefig('ska-pk-lowk.png', transparent=True)
 
 P.show()

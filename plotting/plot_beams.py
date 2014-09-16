@@ -37,6 +37,13 @@ colours = ['#5B9C0A', '#990A9C', '#1619A1', '#CC0000', '#FAE300', 'c']
 linestyle = ['solid', 'dashdot', 'dashed', 'solid', 'solid', 'dotted']
 lws = [1.2, 1.8, 1.8, 2.1]
 
+# FIXME
+expts = [ e.SKA1MIDfull1, e.SKA1MIDfull1, ]
+labels = ['SKA1-MID Full B1 (Int.)', 'SKA1-MID Full B1 (Dish)']
+mode = ['i', 's']
+colours = ['#1619A1', '#CC0000', '#FAE300', 'c']
+linestyle = ['solid', 'solid', 'dashed', 'solid', 'solid', 'dotted']
+lws = [2.1, 2.1]
 
 # Set cosmo values at fixed redshift
 cosmo = experiments.cosmo
@@ -163,5 +170,6 @@ ax2.set_position([0.15, 0.75, 0.8, 0.2])
 # Set size
 #P.gcf().set_size_inches(8.5, 7.)
 #P.savefig("pub-beams-%2.2f.pdf" % z, dpi=100)
-P.savefig("pub-beams.pdf", dpi=100)
+#P.savefig("pub-beams.pdf", dpi=100)
+P.savefig("pub-beams-ska.pdf", dpi=100)
 P.show()

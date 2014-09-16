@@ -16,7 +16,8 @@ import euclid
 
 cosmo = experiments.cosmo
 
-fig_name = "pub-ok.pdf"
+#fig_name = "pub-ok.pdf"
+fig_name = "ska-omegak.png"
 
 param1 = "omegak"
 label1 = "$\Omega_K$"
@@ -31,6 +32,11 @@ MARGINALISE_W0WA = True         # Marginalise over (w0, wa)
 names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
 labels = ['DETF IV', 'Facility', 'Stage II'] #, 'Stage I']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
+
+
+names = [ 'fSKA1SURfull2', 'gSKA2', 'EuclidRef', ] #'iMFAA']
+labels = ['SKA1-SUR (IM)', 'Full SKA (gal.)', 'Euclid (gal.)',]
+
 
 colours = ['#BAE484', '#5B9C0A',   '#B1C9FD', '#1619A1',   '#F6ADAD', '#CC0000',
            '#FFB928', '#FFEA28']
