@@ -562,44 +562,57 @@ def background_evolution_splines(cosmo, zmax=10., nsamples=500):
     f = scipy.interpolate.interp1d(_z, _f, kind='linear', bounds_error=False)
     return H, r, D, f
 
-def Tb(z, cosmo, formula='chang'):
+def Tb(z, cosmo, formula='powerlaw'):
     """
     Brightness temperature Tb(z), in mK. Several different expressions for the 
     21cm line brightness temperature are available:
     
      * 'santos': obtained using a simple power-law fit to Mario's data.
        (Best-fit Tb: 0.1376)
+     * 'powerlaw': simple power-law fit to Mario's updated data (powerlaw M_HI 
+       function with alpha=0.6) (Default)
      * 'hall': from Hall, Bonvin, and Challinor.
-     * 'chang': from Chang et al. (Default)
+     * 'chang': from Chang et al.
     """
     omegaHI = omega_HI(z, cosmo)
     if formula == 'santos':
         Tb = 0.1376 * (1. + 1.44*z - 0.277*z**2.)
+    elif formula == 'powerlaw':
+        Tb = 5.5919e-02 + 2.3242e-01*z - 2.4136e-02*z**2.
     elif formula == 'chang':
         Tb = 0.3 * (omegaHI/1e-3) * np.sqrt(0.29*(1.+z)**3.)
         Tb *= np.sqrt((1.+z)/2.5)
         Tb /= np.sqrt(cosmo['omega_M_0']*(1.+z)**3. + cosmo['omega_lambda_0'])
     else:
-        # Hall et al.
+        # From Hall et al.
         om = cosmo['omega_M_0']; ol = cosmo['omega_lambda_0']
         ok = 1. - om - ol
         E = np.sqrt(om*(1.+z)**3. + ok*(1.+z)**2. + ol)
         Tb = 188. * cosmo['h'] * omegaHI * (1.+z)**2. / E
     return Tb
 
-def bias_HI(z, cosmo):
+def bias_HI(z, cosmo, formula='powerlaw'):
     """
-    b_HI(z), obtained using a simple power-law fit to Mario's data.
-    (Best-fit b_HI: 0.702)
+    b_HI(z), obtained using a simple polynomial fit to Mario's data.
+    Default: 'powerlaw'
     """
-    return cosmo['bHI0'] * (1. + 3.80e-1*z + 6.7e-2*z**2.)
+    if formula == 'old':
+        return cosmo['bHI0'] * (1. + 3.80e-1*z + 6.7e-2*z**2.)
+    else:
+        return (cosmo['bHI0'] / 0.677105) \
+             * (6.6655e-01 + 1.7765e-01*z + 5.0223e-02*z**2.)
 
-def omega_HI(z, cosmo):
+def omega_HI(z, cosmo, formula='powerlaw'):
     """
-    Omega_HI(z), obtained using a simple power-law fit to Mario's data.
-    (Best-fit omega_HI_0: 9.395e-04)
+    Omega_HI(z), obtained using a simple polynomial fit to Mario's data.
+    Default: 'powerlaw'
     """
-    return cosmo['omega_HI_0'] * (1. + 4.77e-2*z - 3.72e-2*z**2.)
+    if formula == 'old':
+        # Old formula, a polynomial fit to Mario's old data
+        return cosmo['omega_HI_0'] * (1. + 4.77e-2*z - 3.72e-2*z**2.)
+    else:
+        return (cosmo['omega_HI_0'] / 0.000486) \
+             * (4.8304e-04 + 3.8856e-04*z - 6.5119e-05*z**2.)
 
 def omegaM_z(z, cosmo):
     """

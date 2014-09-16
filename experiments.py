@@ -8,7 +8,7 @@ cosmo = {
     'omega_M_0':        0.316,
     'omega_lambda_0':   0.684,
     'omega_b_0':        0.049,
-    'omega_HI_0':       6.50e-4,
+    'omega_HI_0':       4.86e-4, #6.50e-4,
     'N_eff':            3.046,
     'h':                0.67,
     'ns':               0.962,
@@ -21,7 +21,7 @@ cosmo = {
     'k_piv':            0.05, # n_s
     'aperp':            1.,
     'apar':             1.,
-    'bHI0':             0.702,
+    'bHI0':             0.677, #0.702,
     'A':                1.,
     'sigma_nl':         7.,
     'beta_1':           0.,         # Scale-dependent bias (k^1 term coeff. [Mpc])
