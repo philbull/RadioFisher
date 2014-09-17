@@ -391,20 +391,20 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
     
     Returns a dict of effective experimental parameters for the bin.
     """
-    # Override Sarea if kwarg specified
-    if Sarea is not None: expt_in['Sarea'] = Sarea
-    
     # Check to see if experiment is made up of overlapping instruments
     # Returns the original expt dict if no overlap is defined
     if 'overlap' in expt_in.keys():
         expt1, expt2 = expt_in['overlap']
     else:
+        if Sarea is not None: expt_in['Sarea'] = Sarea # Override Sarea
         return expt_in
     
     # Copy everything over from expt_in
     expt = {}
     for key in expt_in.keys():
         if key is not 'overlap': expt[key] = expt_in[key]
+    
+    if Sarea is not None: expt['Sarea'] = Sarea # Override Sarea
     
     # If no low/high is specified, just return extended freq. range (useful for 
     # redshift binning)
