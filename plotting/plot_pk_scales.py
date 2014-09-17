@@ -35,7 +35,7 @@ P.subplot(111)
 
 for k in ids:
     for s in sarea:
-        root = "../output/%s_nofg_%d" % (names[k], s)
+        root = "output/%s_nofg_%d" % (names[k], s)
         
         try:
             # Load cosmo fns.

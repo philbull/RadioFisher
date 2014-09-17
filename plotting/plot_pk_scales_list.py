@@ -33,7 +33,7 @@ except:
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "../output/%s_nofg_%d" % (names[k], sarea[k])
+    root = "output/%s_nofg_%d" % (names[k], sarea[k])
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

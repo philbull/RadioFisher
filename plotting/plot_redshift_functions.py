@@ -34,7 +34,7 @@ ax1 = fig.add_subplot(211)
 ax2 = fig.add_subplot(212)
 
 for k in range(len(names)):
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

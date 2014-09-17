@@ -36,7 +36,7 @@ labels = names
 P.subplot(111)
 
 for k in [2,]: #range(len(names)):
-    root = "../output/%s_nofg_%d" % (names[k], sarea)
+    root = "output/%s_nofg_%d" % (names[k], sarea)
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

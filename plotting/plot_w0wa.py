@@ -60,7 +60,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names))[::-1]
 for k in _k:
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
     
     print ">"*50
     print "We're doing", names[k]

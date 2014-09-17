@@ -43,18 +43,18 @@ axes = [fig.add_subplot(221), fig.add_subplot(222), fig.add_subplot(223),
 for j in range(4):
     for k in range(len(names)):
         # Load array of values for varied parameter
-        fname_vals = "../output/%s_%s_values.txt" % (names[k], snames[j])
+        fname_vals = "output/%s_%s_values.txt" % (names[k], snames[j])
         param_values_expt = np.genfromtxt(fname_vals).T
         
         # Load cosmo fns.
-        mainroot = "../output/%s_%s" % (names[k], snames[j])
+        mainroot = "output/%s_%s" % (names[k], snames[j])
         dat = np.atleast_2d( np.genfromtxt(mainroot+"-cosmofns-zc.dat") ).T
         zc, Hc, dAc, Dc, fc = dat
         
         # Loop through values of varying parameter
         fom_values_expt = []
         for v in range(param_values_expt.size):
-            root = "../output/%s_%s_%d" % (names[k], snames[j], v)
+            root = "output/%s_%s_%d" % (names[k], snames[j], v)
 
             # Load Fisher matrices as fn. of z
             Nbins = zc.size

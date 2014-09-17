@@ -21,7 +21,7 @@ names = ["MeerKAT", "SKA1mid", "SKA1MK"]
 colours = ['r', 'g', 'b']
 
 k = 0
-root = "../output/" + names[k]
+root = "output/" + names[k]
 
 # Fiducial value and plotting
 x = rf.experiments.cosmo['omega_lambda_0']; y = rf.experiments.cosmo['omega_k_0']

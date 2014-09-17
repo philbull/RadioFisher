@@ -30,7 +30,7 @@ fig = P.figure()
 axes = [fig.add_subplot(311), fig.add_subplot(312), fig.add_subplot(313),]
 
 for k in range(len(names)):
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

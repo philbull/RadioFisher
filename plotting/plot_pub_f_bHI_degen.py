@@ -18,7 +18,7 @@ cosmo = rf.experiments.cosmo
 
 # Choose experiment to process
 name = "SKA1MK"
-root = "../output/" + name
+root = "output/" + name
 
 
 ################################################################################

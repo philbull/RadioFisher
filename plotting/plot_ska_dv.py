@@ -107,7 +107,7 @@ dv_wigglez = [83./1716., 100./2221., 86./2516.]
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

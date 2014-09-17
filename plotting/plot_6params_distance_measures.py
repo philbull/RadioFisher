@@ -64,7 +64,7 @@ params_1d = []; params_lbls = []
 # Loop though rf.experiments.
 _k = range(len(names))[::-1] # Reverse order of rf.experiments.
 for k in _k:
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
     
     print "-"*50
     print names[k]

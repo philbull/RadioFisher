@@ -31,7 +31,7 @@ ax3 = fig.add_subplot(223) # w0 - wa
 #ax4 = P.subplot(224)
 
 for k in range(len(names)):
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

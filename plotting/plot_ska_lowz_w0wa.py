@@ -50,7 +50,7 @@ colours = [ ['#5B9C0A', '#BAE484'],
 ################################################################################
 # Load low-z galaxy survey Fisher matrix
 
-root = "../output/" + "SKAHI100"
+root = "output/" + "SKAHI100"
 
 # Load cosmo fns.
 dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -83,7 +83,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names))[::-1]
 for k in _k:
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

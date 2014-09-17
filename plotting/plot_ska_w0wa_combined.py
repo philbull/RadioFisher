@@ -40,7 +40,7 @@ labels = ['SKA1-SUR  (gal.)', 'SKA1-MID B1 (IM)', 'Euclid (gal.)', 'Full SKA (ga
 # Load BOSS
 ################################################################################
 
-root = "../output/" + 'BOSS_baoonly'
+root = "output/" + 'BOSS_baoonly'
 zc = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T[0]
 F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(zc.size)]
 
@@ -62,7 +62,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names)) #[::-1]
 for k in _k:
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T

@@ -2,15 +2,12 @@
 """
 Process EOS Fisher matrices and plot P(k).
 """
-
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
-#from mpi4py import MPI
-
 import os
 import euclid
 
@@ -22,11 +19,9 @@ labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
 
-
-names = ['SKA1MIDfull2', 'iSKA1MIDfull2_1000', 'fSKA1SURfull2'] #, 'fSKA1SURfull2',]
+names = ['SKA1MIDfull2', 'fSKA1SURfull2', 'fSKA1LOW'] #, 'fSKA1SURfull2',]
 colours = ['#1619A1', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
-labels = ['SKA1-MID B2 SD', 'SKA1-MID B2 Int.', 'SKA1-SUR B2 PAF']
-
+labels = ['SKA1-MID B2 SD', 'SKA1-SUR B2 PAF', 'SKA1-LOW']
 
 
 # Get f_bao(k) function
@@ -36,8 +31,8 @@ fbao = cosmo['fbao']
 # Fiducial value and plotting
 P.subplot(111)
 
-for k in [1,]: #range(len(names)):
-    root = "../output/" + names[k]
+for k in [2,]: #range(len(names)):
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -114,6 +109,6 @@ P.tight_layout()
 # Set size
 P.gcf().set_size_inches(8.,6.)
 #P.savefig('pub-dlogp-fnz.pdf', transparent=True) # 100
-P.savefig("pkz_%s.pdf" % names[k], transparent=True)
+#P.savefig("pkz_%s.pdf" % names[k], transparent=True)
 
 P.show()

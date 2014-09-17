@@ -39,7 +39,7 @@ Nexpt = len(names)
 m = 0
 _k = range(len(names))
 for k in _k:
-    root = "../output/" + names[k]
+    root = "output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
