@@ -131,7 +131,7 @@ else:
     root = "output/" + survey_name
 
 # Define redshift bins
-expt_zbins = rf.overlapping_expts(expt, Sarea=Sarea)
+expt_zbins = rf.overlapping_expts(expt)
 #zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.1)
 #zs, zc = rf.zbins_const_dr(expt_zbins, cosmo, bins=14)
 zs, zc =  rf.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
@@ -206,7 +206,7 @@ for i in range(zs.size-1):
     print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
     
     # Calculate effective experimental params. in the case of overlapping expts.
-    expt_eff = rf.overlapping_expts(expt, zs[i], zs[i+1], Sarea=Sarea)
+    expt_eff = rf.overlapping_expts(expt, zs[i], zs[i+1], Sarea=Sarea*(D2RAD)**2.)
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
