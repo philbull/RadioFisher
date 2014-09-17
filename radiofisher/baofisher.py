@@ -2234,7 +2234,8 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     
     # Load n(u) interpolation function, if needed
     if ( 'int' in expt['mode'] or 'cyl' in expt['mode'] or 
-         'comb' in expt['mode']) and 'n(x)' in expt.keys():
+         'comb' in expt['mode'] or 'ipaf' in expt['mode']) \
+        and 'n(x)' in expt.keys():
         expt['n(x)_file'] = expt['n(x)']
         expt['n(x)'] = load_interferom_file(expt['n(x)'])
     
