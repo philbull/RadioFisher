@@ -672,6 +672,21 @@ SKA1SUR350 = {
     }
 SKA1SUR350.update(SURVEY)
 
+SKA1LOW = {
+    'mode':             'paf',             # Interferometer or single dish
+    'Ndish':            911,               # No. of dishes
+    'Nbeam':            3,                 # No. of beams (for multi-pixel detectors)
+    'nu_crit':          0.,                # PAF critical frequency
+    'Ddish':            35.,               # Single dish diameter [m]
+    'Tinst':            106.*(1e3),        # System temp. [mK]
+    'survey_dnutot':    100.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     350.,              # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            1e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKALOW_190_dec30.dat" # Interferometer antenna density
+    }
+SKA1LOW.update(SURVEY)
+
 
 ##################
 
