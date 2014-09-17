@@ -86,7 +86,7 @@ expt_list = [
     ( 'iSKA1MID350',      e.SKA1MID350 ),   # 56
     ( 'fSKA1SUR650',      e.SKA1SUR650 ),   # 57
     ( 'fSKA1SUR350',      e.SKA1SUR350 ),   # 58
-    ( 'fSKA1LOW',         e.SKA1LOW ),      # 59
+    ( 'tSKA1LOW',         e.SKA1LOW ),      # 59
     ( 'SKAMID_PLUS',      e.SKAMID_PLUS ),  # 60
     ( 'SKAMID_PLUS2',     e.SKAMID_PLUS2 )  # 61
 ]
