@@ -404,8 +404,6 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
     for key in expt_in.keys():
         if key is not 'overlap': expt[key] = expt_in[key]
     
-    if Sarea is not None: expt['Sarea'] = Sarea # Override Sarea
-    
     # If no low/high is specified, just return extended freq. range (useful for 
     # redshift binning)
     nu1 = [expt1['survey_numax'] - expt1['survey_dnutot'], expt1['survey_numax']]
@@ -414,6 +412,7 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
         expt['survey_numax'] = np.max((expt1['survey_numax'], expt2['survey_numax']))
         expt['survey_dnutot'] = expt['survey_numax'] - np.min((nu1, nu2))
         expt['nu_line'] = expt1['nu_line']
+        if Sarea is not None: expt['Sarea'] = Sarea # Override Sarea
         return expt
         
     # Calculate bin min/max freqs.
@@ -444,6 +443,7 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
     # Establish common parameters
     expt['ttot'] = expt1['ttot']
     expt['Sarea'] = expt1['Sarea']
+    if Sarea is not None: expt['Sarea'] = Sarea # Override Sarea
     expt['nu_line'] = expt1['nu_line']
     expt['epsilon_fg'] = expt1['epsilon_fg']
     expt['use'] = expt1['use']
