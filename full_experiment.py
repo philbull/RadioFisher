@@ -206,11 +206,11 @@ for i in range(zs.size-1):
     print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
     
     # Calculate effective experimental params. in the case of overlapping expts.
-    expt_eff =  rf.overlapping_expts(expt, zs[i], zs[i+1], Sarea=Sarea)
+    expt_eff = rf.overlapping_expts(expt, zs[i], zs[i+1], Sarea=Sarea)
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
-    F_pk, kc, binning_info, paramnames =  rf.fisher( 
+    F_pk, kc, binning_info, paramnames = rf.fisher( 
                                          zs[i], zs[i+1], cosmo, expt_eff, 
                                          cosmo_fns=cosmo_fns,
                                          transfer_fn=transfer_fn,
@@ -222,8 +222,8 @@ for i in range(zs.size-1):
     
     # Expand Fisher matrix with EOS parameters
     ##F_eos =  rf.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
-    F_eos, paramnames =  rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
-                                                  names=paramnames, exclude=[])
+    F_eos, paramnames = rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
+                                                names=paramnames, exclude=[])
     
     # Expand Fisher matrix for H(z), dA(z)
     # Replace aperp with dA(zi), using product rule. aperp(z) = dA(fid,z) / dA(z)
