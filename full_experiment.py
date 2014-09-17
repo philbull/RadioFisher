@@ -206,7 +206,7 @@ for i in range(zs.size-1):
     print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
     
     # Calculate effective experimental params. in the case of overlapping expts.
-    expt_eff =  rf.overlapping_expts(expt, zs[i], zs[i+1])
+    expt_eff =  rf.overlapping_expts(expt, zs[i], zs[i+1], Sarea=Sarea)
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
