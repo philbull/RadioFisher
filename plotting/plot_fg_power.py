@@ -2,11 +2,11 @@
 
 import numpy as np
 import pylab as P
-import baofisher
-import experiments
+from rfwrapper import rf
 
-cosmo = experiments.cosmo
-fg = experiments.foregrounds
+
+cosmo = rf.experiments.cosmo
+fg = rf.experiments.foregrounds
 
 """
     'A':     [57.0, 0.014, 700., 0.088],        # FG noise amplitude [mK^2]
@@ -25,7 +25,7 @@ z = nu_line/nu - 1.
 Tsky = 60e3 * (300./nu)**2.55 # Foreground sky signal (mK)
 
 # Brightness temp.
-Tb = baofisher.Tb(z, cosmo)
+Tb = rf.Tb(z, cosmo)
 
 # Foreground cov.
 lbl = ['Extragal. ptsrc.', 'Extragal. free-free', 'Gal. synch.', 'Gal. free-free']

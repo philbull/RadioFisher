@@ -4,8 +4,8 @@ Compare Omega_HI, b_HI, and T_b for different models.
 """
 import numpy as np
 import pylab as P
-import baofisher
-import experiments as e
+from rfwrapper import rf
+from radiofisher import experiments as e
 
 z = np.linspace(0., 5., 1000)
 
@@ -30,22 +30,22 @@ p_Tb = np.polyfit(zz, Tb, deg=2)
 
 # Omega_HI
 P.subplot(311)
-P.plot(z, baofisher.omega_HI(z, e.cosmo), 'r-', lw=1.5)
+P.plot(z, rf.omega_HI(z, e.cosmo), 'r-', lw=1.5)
 P.plot(zz, omegaHI, 'bo')
 P.plot(zz, poly(p_omegaHI[::-1], zz), 'g-')
 P.ylabel("$\Omega_{HI}(z)$")
 
 # b_HI
 P.subplot(312)
-P.plot(z, baofisher.bias_HI(z, e.cosmo), 'r-', lw=1.5)
+P.plot(z, rf.bias_HI(z, e.cosmo), 'r-', lw=1.5)
 P.plot(zz, bHI, 'bo')
 P.plot(zz, poly(p_bHI[::-1], zz), 'g-')
 P.ylabel("$b_{HI}(z)$")
 
 # T_b
 P.subplot(313)
-P.plot(z, baofisher.Tb(z, e.cosmo, formula='powerlaw'), 'r-', lw=1.5)
-P.plot(z, baofisher.Tb(z, e.cosmo, formula='santos'), 'b-', lw=1.5)
+P.plot(z, rf.Tb(z, e.cosmo, formula='powerlaw'), 'r-', lw=1.5)
+P.plot(z, rf.Tb(z, e.cosmo, formula='santos'), 'b-', lw=1.5)
 P.plot(zz, poly(p_Tb[::-1], zz), 'g-')
 P.plot(zz, Tb, 'bo')
 P.ylabel("$T_b(z)$")

@@ -4,13 +4,13 @@ Plot 2D constraints on (w0, wa).
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
@@ -21,7 +21,7 @@ MARGINALISE_CURVATURE = True # Marginalise over Omega_K
 MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 names = ['cexptL', 'cexptL', 'cexptL']
 labels = ['Flatness prior', 'Planck $H_0$ prior', 'No priors']
 
@@ -40,7 +40,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names))[::-1]
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -53,10 +53,10 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     print lbls
@@ -64,15 +64,15 @@ for k in _k:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     else:
         # Euclid Planck prior
         print "*** Using Euclid (Mukherjee) Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
         Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
     fixed_params = []
@@ -80,7 +80,7 @@ for k in _k:
     print ">>> Fixed:", fixed_params, labels[k]
     
     if len(fixed_params) > 0:
-        Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
+        Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], 
                      names=lbls, exclude=fixed_params )
     
     # H0 prior
@@ -100,17 +100,17 @@ for k in _k:
     cov_pl = np.linalg.inv(Fpl)
     
     # Calculate FOM
-    fom = baofisher.figure_of_merit(pw0, pwa, None, cov=cov_pl)
+    fom = rf.figure_of_merit(pw0, pwa, None, cov=cov_pl)
     print "%s: FOM = %3.2f, sig(A) = %3.3f" % (names[k], fom, np.sqrt(cov_pl[pA,pA]))
     print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
     print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
     
-    x = experiments.cosmo['w0']
-    y = experiments.cosmo['wa']
+    x = rf.experiments.cosmo['w0']
+    y = rf.experiments.cosmo['wa']
     
     # Plot contours for w0, wa
     transp = [1., 0.85]
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
                 ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]

@@ -6,19 +6,19 @@ plotting-friendly format.
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 # Choose experiment to process
 name = "SKA1MK"
-root = "output/" + name
+root = "../output/" + name
 
 
 ################################################################################
@@ -48,7 +48,7 @@ for i in range(Nbins):
     
     # Trim params we don't care about here
     # A(z), bHI(z), f(z), sig2, dA(z), H(z), [fNL], [omega_k_ng], [omega_DE_ng], pk
-    _F = baofisher.fisher_with_excluded_params(F_list[i], [6, 7, 8, 9])
+    _F = rf.fisher_with_excluded_params(F_list[i], [6, 7, 8, 9])
     
     # Expand fns. of z one-by-one for the current z bin. (Indices of fns. of z 
     # are given in reverse order, to make figuring out where they are in the 
@@ -57,13 +57,13 @@ for i in range(Nbins):
     zfns_b = [5, 4, 2, 1]
     FF = _F
     for idx in zfns_b:
-        FF = baofisher.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
+        FF = rf.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
     F_b += FF
 
 
 # Overlay error ellipses as a fn. of z
-p1 = baofisher.indexes_for_sampled_fns(1, zc.size, zfns_b) # y
-p2 = baofisher.indexes_for_sampled_fns(2, zc.size, zfns_b) # x
+p1 = rf.indexes_for_sampled_fns(1, zc.size, zfns_b) # y
+p2 = rf.indexes_for_sampled_fns(2, zc.size, zfns_b) # x
 x = 1.; y = 1.
 alpha = [1.52, 2.48, 3.44]
 
@@ -78,8 +78,8 @@ for i in range(len(p1)):
     #if i % 2 == 0: continue
     if zc[i] > ZMAX: continue
     zvals.append(zc[i])
-    a, b, ang = baofisher.ellipse_for_fisher_params(p1[i], p2[i], F_b)
-    a /= baofisher.bias_HI(zc[i], cosmo)
+    a, b, ang = rf.ellipse_for_fisher_params(p1[i], p2[i], F_b)
+    a /= rf.bias_HI(zc[i], cosmo)
     b /= fc[i]
     c = i*0.97 / float(Nused - 1) # Colour (must be 0 <= c <= 1)
     print c

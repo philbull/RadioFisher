@@ -4,17 +4,17 @@ Plot 1D constraints on a parameter.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 fig_name = "pub-ok.pdf"
 
@@ -45,7 +45,7 @@ Nexpt = len(names)
 m = 0
 _k = range(len(names))[::-1]
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -67,7 +67,7 @@ for k in _k:
     excl = [2,  6,7,8,  14]
     excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Add Planck prior
@@ -77,15 +77,15 @@ for k in _k:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     else:
         # Euclid Planck prior
         print "*** Using Euclid (Mukherjee) Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
         Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
     fixed_params = []
@@ -95,7 +95,7 @@ for k in _k:
     if not MARGINALISE_W0WA: fixed_params += ['w0', 'wa']
     
     if len(fixed_params) > 0:
-        Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
+        Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], 
                      names=lbls, exclude=[lbls.index(p) for p in fixed_params] )
     
     # Invert matrix

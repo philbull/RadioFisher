@@ -4,17 +4,17 @@ Plot 2D constraints on (w0, wa).
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ["cNEWexptL", "cNEW2exptL"] #"cexptL", "iexptM"] #, "exptS"]
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C', 'y']
@@ -31,7 +31,7 @@ colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
             ['#5B9C0A', '#BAE484'] ]
 
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(rf.experiments.cosmo, "camb/rf_matterpower.dat")
 H, r, D, f = cosmo_fns
 
 # Fiducial value and plotting
@@ -40,7 +40,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names))[::-1]
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -62,7 +62,7 @@ for k in _k:
     excl = [2,4,  6,7,8, 9,11,12,  14] # Want to see n_s and M_nu
     excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Add Planck prior
@@ -73,20 +73,20 @@ for k in _k:
     print "-"*50
     
     # Invert matrices
-    pns = baofisher.indexes_for_sampled_fns(3, zc.size, zfns)
-    pmnu = baofisher.indexes_for_sampled_fns(6, zc.size, zfns)
+    pns = rf.indexes_for_sampled_fns(3, zc.size, zfns)
+    pmnu = rf.indexes_for_sampled_fns(6, zc.size, zfns)
     cov_pl = np.linalg.inv(Fpl)
     
     print lbls[pns], lbls[pmnu]
     
-    fom = baofisher.figure_of_merit(pns, pmnu, None, cov=cov_pl)
+    fom = rf.figure_of_merit(pns, pmnu, None, cov=cov_pl)
     print "%s: FOM = %3.2f" % (names[k], fom)
     
-    x = experiments.cosmo['n']
-    y = 0.1 #experiments.cosmo['wa']
+    x = rf.experiments.cosmo['n']
+    y = 0.1 #rf.experiments.cosmo['wa']
     
     # Plot contours for n_s, Mnu
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pns, pmnu, None, Finv=cov_pl)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(pns, pmnu, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
                 ec=colours[k][0], lw=1.5, alpha=1.) for kk in [1,0]]

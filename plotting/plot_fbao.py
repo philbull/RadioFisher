@@ -5,16 +5,16 @@ Process EOS Fisher matrices and plot P(k).
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ["EuclidRef", "cexptL", "iexptM", "exptS"]
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
@@ -22,8 +22,8 @@ colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
 labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
 
 # Get f_bao(k) function
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo_fns = rf.background_evolution_splines(cosmo)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
@@ -31,7 +31,7 @@ fig = P.figure()
 axes = [fig.add_subplot(411), fig.add_subplot(412), fig.add_subplot(413), fig.add_subplot(414)]
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -44,10 +44,10 @@ for k in range(len(names)):
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'fs8', 'bs8', 'gamma', 'N_eff']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -57,7 +57,7 @@ for k in range(len(names)):
     pk = cosmo['pk_nobao'](kc) * (1. + fbao(kc))
     
     # Plot errorbars
-    yup, ydn = baofisher.fix_log_plot(pk, cov)
+    yup, ydn = rf.fix_log_plot(pk, cov)
     
     # Fix for PDF
     yup[np.where(yup > 1e1)] = 1e1

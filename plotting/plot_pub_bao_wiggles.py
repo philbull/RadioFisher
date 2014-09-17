@@ -5,8 +5,8 @@ Plot BAO wiggle function.
 
 import numpy as np
 import pylab as P
-import baofisher
-import experiments
+from rfwrapper import rf
+
 
 # Choose fiducial values for parameters (f(z) is defined later)
 fiducial = {
@@ -18,11 +18,11 @@ fiducial = {
 }
 
 # Load cosmology and experimental settings
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 # Precompute cosmological functions and derivs.
 camb_matterpower = "/home/phil/oslo/iswfunction/cosmomc/camb/testX_matterpower.dat"
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(cosmo, camb_matterpower)
+cosmo_fns, cosmo = rf.precompute_for_fisher(cosmo, camb_matterpower)
 H, r, D, f = cosmo_fns
 
 # Get wiggles function and smoooth P(k)

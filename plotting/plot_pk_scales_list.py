@@ -1,18 +1,18 @@
 #!/usr/bin/python
 """
 Plot P(k) constraints at a given scale, as a function of redshift (from a given 
-list of experiments/scales).
+list of rf.experiments.scales).
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
-import experiments
+
 import os, sys
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ['SKA1MIDfull1', 'iSKA1MIDfull1', 'fSKA1SURfull1', 'SKA1MIDfull2', 'fSKA1SURfull2']
 #labels = ['SKA1-MID Full B1 Auto.', 'SKA1-MID Full B1 Interferom.', 'SKA1-SUR Full B1 Auto.', 'SKA1-MID Full B2 Auto.', 'SKA1-SUR Full B2 Auto.']
@@ -33,7 +33,7 @@ except:
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/%s_nofg_%d" % (names[k], sarea[k])
+    root = "../output/%s_nofg_%d" % (names[k], sarea[k])
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -51,8 +51,8 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    ppk = baofisher.indices_for_param_names(pnames, 'pk*')
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
+    ppk = rf.indices_for_param_names(pnames, 'pk*')
     
     pk_err = np.zeros(len(F_list))
     for j in range(len(F_list))[::-1]:

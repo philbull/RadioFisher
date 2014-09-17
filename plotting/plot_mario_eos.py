@@ -5,16 +5,16 @@ Process EOS Fisher matrices and plot P(k).
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1", "SKAMID", "SKAMID_COMP", "iSKAMID", "iSKAMID_COMP", "SKA1_CV"]
 #names = ["xSKA", "xSKA_extended"]  #"SKA1"] # "SKA1"] # , "iSKAMID_COMP"]
@@ -24,7 +24,7 @@ names = ["exptL", "cexptL"] #["exptS", "iexptM",
 cols = ['r', 'g', 'c']
 colours = ['#22AD1A', '#3399FF', '#ED7624']
 
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(rf.experiments.cosmo, "camb/rf_matterpower.dat")
 H, r, D, f = cosmo_fns
 
 
@@ -33,7 +33,7 @@ fig = P.figure()
 ax = fig.add_subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -57,7 +57,7 @@ for k in range(len(names)):
     excl = [2,4,5, 6,7,8,  9, 14,] #15 # FLAT
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Add Planck prior
@@ -87,17 +87,17 @@ for k in range(len(names)):
     cov_pl = np.linalg.inv(Fpl)
     
     # Indices of fns. of z
-    pw0 = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
-    pwa = baofisher.indexes_for_sampled_fns(5, zc.size, zfns)
+    pw0 = rf.indexes_for_sampled_fns(4, zc.size, zfns)
+    pwa = rf.indexes_for_sampled_fns(5, zc.size, zfns)
     
     # Fiducial point
-    x = experiments.cosmo['w0']
-    y = experiments.cosmo['wa']
+    x = rf.experiments.cosmo['w0']
+    y = rf.experiments.cosmo['wa']
     if k == 0: ax.plot(x, y, 'kx', ms=10)
     
     """
     # omega_k, gamma fixed
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, cov, Finv=cov)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(pw0, pwa, cov, Finv=cov)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec=colours[k], 
                  lw=2.5, alpha=1.) for kk in range(0, 2)]
@@ -105,7 +105,7 @@ for k in range(len(names)):
     """
     
     # omega_k, gamma fixed, plus Planck prior
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, cov, Finv=cov_pl)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(pw0, pwa, cov, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec=colours[k], 
                  lw=2.5, alpha=1.) for kk in range(0, 2)]
@@ -113,7 +113,7 @@ for k in range(len(names)):
     
     """
     # Fix omega_k
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(px2[0], py2[0], F_eos2, Finv=Finv2)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(px2[0], py2[0], F_eos2, Finv=Finv2)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc=colours[k], ec=colours[k], 
                  lw=2., alpha=0.25) for kk in range(0, 2)]
@@ -122,7 +122,7 @@ for k in range(len(names)):
     
     """
     # Ellipse for Euclid (omega_k marginalised)
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params( 0, 1, None, 
+    w, h, ang, alpha = rf.ellipse_for_fisher_params( 0, 1, None, 
                                             Finv=euclid.cov_gamma_w_okmarg_ref )
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec='b', lw=2., 
@@ -131,7 +131,7 @@ for k in range(len(names)):
     """
 
 # Add error ellipse for Euclid (omega_k = 0)
-w, h, ang, alpha = baofisher.ellipse_for_fisher_params( 0, 1, None, 
+w, h, ang, alpha = rf.ellipse_for_fisher_params( 0, 1, None, 
                                         Finv=euclid.cov_w0_wa_fixed_gamma_ok_ref )
 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
              height=alpha[kk]*h, angle=ang, fc='m', ec='m', lw=2., 

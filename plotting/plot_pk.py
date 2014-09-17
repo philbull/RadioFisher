@@ -5,18 +5,18 @@ Process EOS Fisher matrices and plot P(k).
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import scipy.integrate
 import scipy.interpolate
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ["fSKA1SURfull1",] # "EuclidRef", "iexptM", "exptS"]
 
@@ -25,8 +25,8 @@ colours = ['#1619A1', '#CC0000', '#5B9C0A', '#990A9C'] # DETF/F/M/S
 labels = ['Facility', 'DETF IV', 'Mature', 'Snapshot']
 
 # Get f_bao(k) function
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo_fns = rf.background_evolution_splines(cosmo)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
@@ -34,7 +34,7 @@ fig = P.figure()
 ax = fig.add_subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -52,7 +52,7 @@ for k in range(len(names)):
              'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
     pnames += ["pk%d" % i for i in range(kc.size)]
     zfns = []; excl = []
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -62,7 +62,7 @@ for k in range(len(names)):
     pk = cosmo['pk_nobao'](kc) * (1. + fbao(kc))
     
     # Plot errorbars
-    yup, ydn = baofisher.fix_log_plot(pk, cov*pk)
+    yup, ydn = rf.fix_log_plot(pk, cov*pk)
     
     # Fix for PDF
     #yup[np.where(yup > 1e1)] = 1e1

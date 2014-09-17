@@ -4,16 +4,16 @@ Process EOS Fisher matrices and plot P(k).
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 CUR_K = 3
 
@@ -24,15 +24,15 @@ linestyle = [[1,0], [1, 0], [1, 0],]
 marker = ['o', 'D', 's',]
 
 # Get f_bao(k) function
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo_fns = rf.background_evolution_splines(cosmo)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 #axes = [P.subplot(111),]
 
 for k in [CUR_K,]:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -45,10 +45,10 @@ for k in [CUR_K,]:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    lbls = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    lbls = rf.load_param_names(root+"-fisher-full-0.dat")
     #zfns = ['b_HI',]
     #excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'fs8', 'bs8', 'gamma', 'N_eff']
-    #F, lbls = baofisher.combined_fisher_matrix( F_list,
+    #F, lbls = rf.combined_fisher_matrix( F_list,
     #                                            expand=zfns, names=pnames,
     #                                            exclude=excl )
     
@@ -91,7 +91,7 @@ for k in [CUR_K,]:
 
     
     # Plot errorbars
-    #yup, ydn = baofisher.fix_log_plot(pk, cov)
+    #yup, ydn = rf.fix_log_plot(pk, cov)
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]

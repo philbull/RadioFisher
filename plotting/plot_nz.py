@@ -8,9 +8,9 @@ import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
-import experiments
 
-cosmo = experiments.cosmo
+
+cosmo = rf.experiments.cosmo
 #colours = ['#CC0000', '#5B9C0A', '#1619A1',   '#990A9C', '#FAE300']
 
 # Load n(z) data

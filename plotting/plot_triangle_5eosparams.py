@@ -4,19 +4,19 @@ Make a triangle plot for EOS/dark energy params.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
 USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef', 'cexptL']
 labels = ['DETF IV + Planck', 'Facility + Planck']
@@ -51,10 +51,10 @@ b0 = 0.1
 # Prepare to save 1D marginals
 params_1d = []; params_lbls = []
 
-# Loop though experiments
-_k = range(len(names))[::-1] # Reverse order of experiments
+# Loop though rf.experiments.
+_k = range(len(names))[::-1] # Reverse order of rf.experiments.
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
     
     print "-"*50
     print names[k]
@@ -71,18 +71,18 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*', 'fs8', 'bs8']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
     # Apply DETF Planck prior
     print "*** Using DETF Planck prior ***"
     l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-    F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-    Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+    F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     #print "FIXME: Not applying Planck prior."
     #Fpl = F # FIXME
@@ -126,8 +126,8 @@ for k in _k:
             
             # Fiducial values
             ii = Nparam - i - 1
-            x = fid[ii] #experiments.cosmo['w0']
-            y = fid[j] #experiments.cosmo['wa']
+            x = fid[ii] #rf.experiments.cosmo['w0']
+            y = fid[j] #rf.experiments.cosmo['wa']
             p1 = lbls.index(params[ii])
             p2 = lbls.index(params[j])
             
@@ -138,7 +138,7 @@ for k in _k:
             if p1 != p2:
                 # Plot contours
                 _a = [1., 0.85] # Alpha for each contour
-                ww, hh, ang, alpha = baofisher.ellipse_for_fisher_params(
+                ww, hh, ang, alpha = rf.ellipse_for_fisher_params(
                                                       p1, p2, None, Finv=cov_pl)
                 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*ww, 
                             height=alpha[kk]*hh, angle=ang, fc=colours[k][kk], 

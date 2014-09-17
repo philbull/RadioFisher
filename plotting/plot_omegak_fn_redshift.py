@@ -4,17 +4,17 @@ Plot constraint on omega_K, allowing it to be free in each redshift bin
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 k = 2 # Which experiment to plot
 names = ["exptS", "iexptM", "cexptL"]
@@ -22,7 +22,7 @@ names = ["exptS", "iexptM", "cexptL"]
 colours = ['#5B9C0A', '#ED5F21', '#1619A1']
 labels = ['Snapshot', 'Mature', 'Behemoth']
 
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(rf.experiments.cosmo, "camb/rf_matterpower.dat")
 H, r, D, f = cosmo_fns
 
 # Fiducial value and plotting
@@ -31,7 +31,7 @@ ax = fig.add_subplot(111)
 m = 0
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -54,7 +54,7 @@ for k in range(len(names)):
     
     excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -67,7 +67,7 @@ for k in range(len(names)):
     print "-"*50
     
     # Invert matrices
-    pok = baofisher.indexes_for_sampled_fns(3, zc.size, [1,3]) # Updated zfns
+    pok = rf.indexes_for_sampled_fns(3, zc.size, [1,3]) # Updated zfns
     cov = np.linalg.inv(F)
     cov_pl = np.linalg.inv(Fpl)
     

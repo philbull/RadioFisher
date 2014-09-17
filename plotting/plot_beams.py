@@ -1,20 +1,20 @@
 #!/usr/bin/python
 """
-Plot transverse beams of experiments.
+Plot transverse beams of rf.experiments.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-e = experiments
-cosmo = experiments.cosmo
+e = rf.experiments.
+cosmo = rf.experiments.cosmo
 
 #expts = [ 
 #  e.exptS, e.exptM, e.exptL, e.exptL, e.exptL,
@@ -27,7 +27,7 @@ cosmo = experiments.cosmo
 #  e.SKA1MIDfull1, e.SKA1MIDfull1, e.SKA1MIDfull2, e.SKA1MIDfull2, e.SKA1MIDfull2,
 #  e.SKA1SURbase1, e.SKA1SURbase2, e.SKA1SURfull1, e.SKA1SURfull2 ]
 
-# FIXME: Which band to use for SKA experiments? Changes T_inst.
+# FIXME: Which band to use for SKA rf.experiments. Changes T_inst.
 expts = [ e.CHIME, e.MeerKATb1, e.SKA1MIDfull1, e.SKA1MIDfull1, ]
 labels = ['CHIME Full', 'MeerKAT B1', 'SKA1-MID Full B1 (Int.)', 'SKA1-MID Full B1 (Dish)']
 mode = ['c', 'i', 'i', 's']
@@ -46,8 +46,8 @@ linestyle = ['solid', 'solid', 'dashed', 'solid', 'solid', 'dotted']
 lws = [2.1, 2.1]
 
 # Set cosmo values at fixed redshift
-cosmo = experiments.cosmo
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
+cosmo = rf.experiments.cosmo
+cosmo_fns = rf.background_evolution_splines(cosmo)
 H, r, D, f = cosmo_fns
 
 z = 1. #2.55
@@ -88,13 +88,13 @@ for k in range(len(labels)):
         if ( 'int' in expt['mode'] or 'cyl' in expt['mode'] or 
              'comb' in expt['mode']) and 'n(x)' in expt.keys():
             expt['n(x)_file'] = expt['n(x)']
-            expt['n(x)'] = baofisher.load_interferom_file(expt['n(x)'])
+            expt['n(x)'] = rf.load_interferom_file(expt['n(x)'])
         
         # Transverse beam
-        noise *= baofisher.interferometer_response(q, y=np.zeros(q.shape), 
+        noise *= rf.interferometer_response(q, y=np.zeros(q.shape), 
                                                    cosmo=cosmo, expt=expt)
     else:
-        noise *= baofisher.dish_response(q, y=np.zeros(q.shape), 
+        noise *= rf.dish_response(q, y=np.zeros(q.shape), 
                                                    cosmo=cosmo, expt=expt)
     
     ax.plot( kperp, noise, color=colours[k], lw=lws[k], label=labels[k], 
@@ -102,13 +102,13 @@ for k in range(len(labels)):
 
 
 # Foregrounds
-#cfg = baofisher.Cfg(q, y=np.zeros(q.shape), cosmo=cosmo, expt=expt)
+#cfg = rf.Cfg(q, y=np.zeros(q.shape), cosmo=cosmo, expt=expt)
 #P.plot(kperp, cfg*1e8, 'k-')
 
 
 ############################
 # Get f_bao(k) function
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 kk = np.logspace(-4., 2., 1000)

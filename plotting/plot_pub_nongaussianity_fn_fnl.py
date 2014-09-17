@@ -4,8 +4,8 @@ Plot sigma(fNL) as a fn. of z, for different fiducial fNL
 """
 import numpy as np
 import pylab as P
-import experiments
-import baofisher
+
+from rfwrapper import rf
 
 # Load sigma(fNL) and z bins
 fNL = [0., 1., 10.]
@@ -25,9 +25,9 @@ col = ['r', 'b', 'y']
 name = ["f_NL = " + str(int(_fNL)) for _fNL in fNL]
 
 # Get bias as fn. of z
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 cosmo['bHI0'] = 0.702
-bias = baofisher.bias_HI(zc, cosmo)
+bias = rf.bias_HI(zc, cosmo)
 
 P.subplot(111)
 for i in range(len(fNL)):

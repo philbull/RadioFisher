@@ -4,11 +4,11 @@ Plot dP/P as a function of redshift for a given Sarea.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
-import experiments
+
 import os, sys
 
 try:
@@ -17,7 +17,7 @@ except:
     print "Error: Need to specify S_area, in whole degrees: int(sarea)"
     sys.exit(1)
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ['SKA1MIDfull1', 'iSKA1MIDfull1', 'fSKA1SURfull1'] #, 'fSKA1SURfull2',]
 #colours = ['#1619A1', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
@@ -29,14 +29,14 @@ colours = ['#1619A1', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000', 'c', '#ff6600'
 labels = names
 
 # Get f_bao(k) function
-#cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+#cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 #fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 P.subplot(111)
 
 for k in [2,]: #range(len(names)):
-    root = "output/%s_nofg_%d" % (names[k], sarea)
+    root = "../output/%s_nofg_%d" % (names[k], sarea)
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -54,8 +54,8 @@ for k in [2,]: #range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    ppk = baofisher.indices_for_param_names(pnames, 'pk*')
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
+    ppk = rf.indices_for_param_names(pnames, 'pk*')
     
     cmap = matplotlib.cm.Blues_r
     for j in range(len(F_list)):
@@ -74,7 +74,7 @@ for k in [2,]: #range(len(names)):
         line = P.plot(kc, cov, color=col, lw=2., alpha=1., label="z=%3.3f"%zc[j])
     
     # Plot the summed constraint (over all z)
-    F, lbls = baofisher.combined_fisher_matrix(F_list, expand=[], names=pnames, exclude=[])
+    F, lbls = rf.combined_fisher_matrix(F_list, expand=[], names=pnames, exclude=[])
     cov = np.sqrt(1. / np.diag(F)[ppk])
     #pk = cosmo['pk_nobao'](kc) * (1. + fbao(kc))
     

@@ -4,14 +4,14 @@ Plot P(k) constraints at a given scale, as a function of redshift.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
-import experiments
+
 import os, sys
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ['SKA1MIDfull', 'SKA1MIDfull2', 'iSKA1MIDfull1', 'iSKA1MIDfull2', 'fSKA1SURfull1', 'fSKA1SURfull2']
 names = ['SKA0MID', 'SKA0SUR', 'SKA1MID900', 'SKA1MID350', 'iSKA1MID900', 
@@ -35,7 +35,7 @@ P.subplot(111)
 
 for k in ids:
     for s in sarea:
-        root = "output/%s_nofg_%d" % (names[k], s)
+        root = "../output/%s_nofg_%d" % (names[k], s)
         
         try:
             # Load cosmo fns.
@@ -53,8 +53,8 @@ for k in ids:
         
         # EOS FISHER MATRIX
         # Actually, (aperp, apar) are (D_A, H)
-        pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-        ppk = baofisher.indices_for_param_names(pnames, 'pk*')
+        pnames = rf.load_param_names(root+"-fisher-full-0.dat")
+        ppk = rf.indices_for_param_names(pnames, 'pk*')
         
         pk_err = np.zeros(len(F_list))
         for j in range(len(F_list))[::-1]:

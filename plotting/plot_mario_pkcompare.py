@@ -5,16 +5,16 @@ Process EOS Fisher matrices and plot P(k).
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1", "SKAMID", "SKAMID_COMP", "iSKAMID", "iSKAMID_COMP", "SKA1_CV"]
 #names = ["SKA1", "SKAMID", "SKAMID_COMP", "iSKAMID", "iSKAMID_COMP"]
@@ -28,14 +28,14 @@ colours = ['#22AD1A', '#3399FF', '#ED7624']
 
 # Get f_bao(k) function
 print "(A) ----------------------------------"
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(rf.experiments.cosmo, "camb/rf_matterpower.dat")
 print "(B) ----------------------------------"
 fbao = cosmo['fbao']
 
 P.subplot(211)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -53,7 +53,7 @@ for k in range(len(names)):
              'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'fNL']
     pnames += ["pk%d" % i for i in range(kc.size)]
     zfns = [1,]
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=[2,4,5,6,7,8 ] )
     # Just do the simplest thing for P(k)

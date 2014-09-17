@@ -4,16 +4,16 @@ Plot dilation distance, D_V(z).
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['cSKA1MIDfull1', 'cSKA1MIDfull2', 'SKA1SURfull1', 'SKA1SURfull2',
          'SKAHI100',] # 'SKAHI73', 'EuclidRef', 'LSST']
@@ -107,7 +107,7 @@ dv_wigglez = [83./1716., 100./2221., 86./2516.]
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -126,12 +126,12 @@ for k in range(len(names)):
     #pnames += ["pk%d" % i for i in range(kc.size)]
     #zfns = [0,1,6,7,8]
     #excl = [2,4,5,  9,10,11,12,13,14] # Exclude all cosmo params
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     
     # Transform from D_A and H to D_V and F
     F_list_lss = []
     for i in range(Nbins):
-        Fnew, pnames_new = baofisher.transform_to_lss_distances(
+        Fnew, pnames_new = rf.transform_to_lss_distances(
                               zc[i], F_list[i], pnames, DA=dAc[i], H=Hc[i], 
                               rescale_da=1e3, rescale_h=1e2)
         F_list_lss.append(Fnew)
@@ -142,15 +142,15 @@ for k in range(len(names)):
     zfns = ['A', 'bs8', 'fs8', 'DV', 'F']
     excl = ['Tb', 'sigma8', 'n_s', 'omegak', 'omegaDE', 'w0', 'wa', 'h', 
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI',] #'fs8', 'bs8']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     cov = np.linalg.inv(F)
     errs = np.sqrt(np.diag(cov))
     
     # Identify functions of z
-    pDV = baofisher.indices_for_param_names(lbls, 'DV*')
-    pFF = baofisher.indices_for_param_names(lbls, 'F*')
+    pDV = rf.indices_for_param_names(lbls, 'DV*')
+    pFF = rf.indices_for_param_names(lbls, 'F*')
     
     DV = ((1.+zc)**2. * dAc**2. * C*zc / Hc)**(1./3.)
     Fz = (1.+zc) * dAc * Hc / C

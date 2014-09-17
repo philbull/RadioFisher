@@ -4,13 +4,13 @@ Make a triangle plot for a set of parameters.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
@@ -20,7 +20,7 @@ exit()
 USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
 MARGINALISE_OVER_W0WA = True # Whether to fix or marginalise over (w0, wa)
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef', 'cexptL', 'iexptM', 'iexptM'] #, 'exptS']
 labels = ['DETF IV', 'Facility', 'Mature', 'Planck'] #, 'Snapshot']
@@ -52,10 +52,10 @@ b0 = 0.1
 # Prepare to save 1D marginals
 params_1d = []; params_lbls = []
 
-# Loop though experiments
-_k = range(len(names))[::-1] # Reverse order of experiments
+# Loop though rf.experiments.
+_k = range(len(names))[::-1] # Reverse order of rf.experiments.
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
     
     print "-"*50
     print names[k]
@@ -83,7 +83,7 @@ for k in _k:
     #if "Euclid" not in names[k]: excl.append(15)
     excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -92,20 +92,20 @@ for k in _k:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     else:
         # Euclid Planck prior
         print "*** Using Euclid (Mukherjee) Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
         Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
     
     # FIXME: Use Planck prior alone
     if labels[k] == 'PPlanck':
         lbls = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F2 = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo)
+        F2 = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo)
         Fpl = np.eye(F2.shape[0]+1) * 1e2 #sigma8
         Fpl[:F2.shape[0],:F2.shape[0]] = F2
     elif labels[k] == 'Planck':
@@ -120,7 +120,7 @@ for k in _k:
     
     # Remove unwanted params
     fixed_params = ['w0', 'wa']
-    Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
+    Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], 
                      names=lbls, exclude=[lbls.index(p) for p in fixed_params] )
     
     # Invert matrices
@@ -151,8 +151,8 @@ for k in _k:
             
             # Fiducial values
             ii = Nparam - i - 1
-            x = fid[ii] #experiments.cosmo['w0']
-            y = fid[j] #experiments.cosmo['wa']
+            x = fid[ii] #rf.experiments.cosmo['w0']
+            y = fid[j] #rf.experiments.cosmo['wa']
             p1 = lbls.index(params[ii])
             p2 = lbls.index(params[j])
             
@@ -164,7 +164,7 @@ for k in _k:
                 # Plot contours
                 AAA = 1.
                 if labels[k] == 'PPlanck': AAA = 0.5
-                ww, hh, ang, alpha = baofisher.ellipse_for_fisher_params(
+                ww, hh, ang, alpha = rf.ellipse_for_fisher_params(
                                                       p1, p2, None, Finv=cov_pl)
                 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*ww, 
                             height=alpha[kk]*hh, angle=ang, fc=colours[k][kk], 

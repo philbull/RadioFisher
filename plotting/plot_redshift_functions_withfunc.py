@@ -4,12 +4,12 @@ Plot functions of redshift.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
@@ -18,7 +18,7 @@ import euclid
 #fn = 'H'
 fn = 'f'
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
@@ -26,15 +26,15 @@ labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
 
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
-#cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo_fns = rf.background_evolution_splines(cosmo)
+#cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 
 # Fiducial value and plotting
 fig = P.figure()
 ax1 = fig.add_subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -55,18 +55,18 @@ for k in range(len(names)):
     excl = [2,4,5,  9,10,11,12,13,14] # Exclude all cosmo params
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     cov = np.linalg.inv(F)
     
     # Get functions of z
     zfns = [0,1,3,4,5] # A, b_HI, f, DA, H
-    pA  = baofisher.indexes_for_sampled_fns(0, zc.size, zfns)
-    #pb  = baofisher.indexes_for_sampled_fns(1, zc.size, zfns)
-    pDA = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
-    pH  = baofisher.indexes_for_sampled_fns(5, zc.size, zfns)
-    pf  = baofisher.indexes_for_sampled_fns(3, zc.size, zfns)
+    pA  = rf.indexes_for_sampled_fns(0, zc.size, zfns)
+    #pb  = rf.indexes_for_sampled_fns(1, zc.size, zfns)
+    pDA = rf.indexes_for_sampled_fns(4, zc.size, zfns)
+    pH  = rf.indexes_for_sampled_fns(5, zc.size, zfns)
+    pf  = rf.indexes_for_sampled_fns(3, zc.size, zfns)
     
     if k == 0:
         print "DA:", [lbls[j] for j in pDA], "\n"

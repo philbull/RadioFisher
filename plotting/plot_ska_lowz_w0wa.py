@@ -4,13 +4,13 @@ Plot 2D constraints on (w0, wa), with a low-z survey added in for good measure.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os, copy
 import euclid
 
@@ -21,7 +21,7 @@ MARGINALISE_CURVATURE = True # Marginalise over Omega_K
 MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef', 'SKA1SURfull1', 'cSKA1MIDfull1']
 labels = ['Euclid', 'SKA1-SUR (B1)', 'SKA1-MID (B1)']
@@ -50,7 +50,7 @@ colours = [ ['#5B9C0A', '#BAE484'],
 ################################################################################
 # Load low-z galaxy survey Fisher matrix
 
-root = "output/" + "SKAHI100"
+root = "../output/" + "SKAHI100"
 
 # Load cosmo fns.
 dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -63,10 +63,10 @@ Nbins = zc.size
 F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
 
 # EOS FISHER MATRIX
-pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+pnames = rf.load_param_names(root+"-fisher-full-0.dat")
 zfns = ['b_HI', ]
 excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
-F_lowz, lbls_lowz = baofisher.combined_fisher_matrix( F_list,
+F_lowz, lbls_lowz = rf.combined_fisher_matrix( F_list,
                                                       expand=zfns, names=pnames,
                                                       exclude=excl )
 
@@ -83,7 +83,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names))[::-1]
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -96,15 +96,15 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI', ]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
     # Relabel galaxy bias from low-z survey and sum current survey + low-z
-    F, lbls = baofisher.add_fisher_matrices(F_lowz, F, lbls_lowz, lbls, expand=True)
+    F, lbls = rf.add_fisher_matrices(F_lowz, F, lbls_lowz, lbls, expand=True)
     print lbls
     
     # Add Planck prior
@@ -112,15 +112,15 @@ for k in _k:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     else:
         # Euclid Planck prior
         print "*** Using Euclid (Mukherjee) Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
         Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
     
     print l2
     print F_detf
@@ -133,7 +133,7 @@ for k in _k:
     if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
     
     if len(fixed_params) > 0:
-        Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
+        Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], 
                      names=lbls, exclude=fixed_params )
     
     # Get indices of w0, wa
@@ -150,12 +150,12 @@ for k in _k:
     print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
     print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
     
-    x = experiments.cosmo['w0']
-    y = experiments.cosmo['wa']
+    x = rf.experiments.cosmo['w0']
+    y = rf.experiments.cosmo['wa']
     
     # Plot contours for gamma, w0
     transp = [1., 0.85]
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                 height=alpha[kk]*h, angle=ang, fc=colours[k][kk], 
                 ec=colours[k][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
@@ -173,18 +173,18 @@ P.figtext(0.18, 0.22, "Combined w. Planck + SKA1 gal.", fontsize=15)
 # Relabel galaxy bias from Euclid and sum Facility + Euclid
 for i in range(len(lbl1)):
     if "b_HI" in lbl1[i]: lbl1[i] = "gal%s" % lbl1[i]
-Fc, lbls = baofisher.add_fisher_matrices(F1, F2, lbl1, lbl2, expand=True)
+Fc, lbls = rf.add_fisher_matrices(F1, F2, lbl1, lbl2, expand=True)
 
 
 # Add Planck prior
 l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-Fc, lbls = baofisher.add_fisher_matrices(Fc, F_detf, lbls, l2, expand=True)
+F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+Fc, lbls = rf.add_fisher_matrices(Fc, F_detf, lbls, l2, expand=True)
 cov_pl = np.linalg.inv(Fc)
 
 # Plot contours for gamma, w0
 transp = [1., 0.95]
-w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
+w, h, ang, alpha = rf.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
             height=alpha[kk]*h, angle=ang, fc=colours[-1][kk], 
             ec=colours[-1][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]

@@ -4,16 +4,16 @@ Plot functions of redshift for RSDs.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 fname = 'ska-rsd-fsigma8.pdf'
 
@@ -43,7 +43,7 @@ ms = [6., 6., 6., 6., 6., 6., 5., 5., 5.]
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -57,12 +57,12 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     #zfns = ['A', 'b_HI', 'f', 'H', 'DA', 'aperp', 'apar']
     zfns = ['A', 'bs8', 'fs8', 'H', 'DA', 'aperp', 'apar']
     excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     cov = np.linalg.inv(F)
@@ -72,10 +72,10 @@ for k in range(len(names)):
     #np.savetxt("fisher_%s_cosmofns.dat"%names[k], F, header=" ".join(lbls))
     
     # Identify functions of z
-    pA = baofisher.indices_for_param_names(lbls, 'A*')
-    pDA = baofisher.indices_for_param_names(lbls, 'DA*')
-    pH = baofisher.indices_for_param_names(lbls, 'H*')
-    pfs8 = baofisher.indices_for_param_names(lbls, 'fs8*')
+    pA = rf.indices_for_param_names(lbls, 'A*')
+    pDA = rf.indices_for_param_names(lbls, 'DA*')
+    pH = rf.indices_for_param_names(lbls, 'H*')
+    pfs8 = rf.indices_for_param_names(lbls, 'fs8*')
     
     #fn_vals = [dAc/1e3, 1., Hc/1e2, fc]
     

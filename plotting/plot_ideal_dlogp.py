@@ -1,20 +1,20 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and plot P(k) for "ideal" experiments.
+Process EOS Fisher matrices and plot P(k) for "ideal" rf.experiments.
 """
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef', 'exptCV', 'exptCV2'] #'cexptL', 'iexptM', 'exptS']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
@@ -27,14 +27,14 @@ linestyle = [[1,0], [8, 4], [2, 4, 6, 4], [3, 4]]
 
 
 # Get f_bao(k) function
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -48,9 +48,9 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = []; excl = []
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -63,8 +63,8 @@ for k in range(len(names)):
     cov[np.where(np.isnan(cov))] = 1e10
     cov[np.where(np.isinf(cov))] = 1e10
     
-    pw0 = baofisher.indexes_for_sampled_fns(11, zc.size, zfns)
-    pwa = baofisher.indexes_for_sampled_fns(12, zc.size, zfns)
+    pw0 = rf.indexes_for_sampled_fns(11, zc.size, zfns)
+    pwa = rf.indexes_for_sampled_fns(12, zc.size, zfns)
     
     print "-"*50
     print names[k]

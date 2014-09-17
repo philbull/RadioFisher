@@ -4,16 +4,16 @@ Process EOS Fisher matrices and plot P(k).
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['SKA1MIDfull1', 'SKA1MIDfull2', 'fSKA1SURfull1', 'fSKA1SURfull2', 'EuclidRef']
 colours = ['#1619A1', '#1619A1', '#5B9C0A', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
@@ -31,14 +31,14 @@ marker = ['o', 'D', 'o', 'D', 'o', 'D', 'o', 'D']
 #linestyle = [[1,0], [1,0], [1,0], [1,0], [1,0], [1,0], [1,0], [1,0]]
 
 # Get f_bao(k) function
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -52,9 +52,9 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = []; excl = []
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -67,8 +67,8 @@ for k in range(len(names)):
     cov[np.where(np.isnan(cov))] = 1e10
     cov[np.where(np.isinf(cov))] = 1e10
     
-    pw0 = baofisher.indexes_for_sampled_fns(11, zc.size, zfns)
-    pwa = baofisher.indexes_for_sampled_fns(12, zc.size, zfns)
+    pw0 = rf.indexes_for_sampled_fns(11, zc.size, zfns)
+    pwa = rf.indexes_for_sampled_fns(12, zc.size, zfns)
     
     print "-"*50
     print names[k]

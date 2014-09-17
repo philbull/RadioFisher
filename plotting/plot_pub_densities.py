@@ -1,19 +1,19 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and overplot results for several experiments
+Process EOS Fisher matrices and overplot results for several rf.experiments.
 """
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1mid", "SKA1MK", "iSKA1MK", "aSKA1MK", "SKA1MK_A0"]
 names = ["MeerKAT", "SKA1mid", "SKA1MK"]
@@ -21,10 +21,10 @@ names = ["MeerKAT", "SKA1mid", "SKA1MK"]
 colours = ['r', 'g', 'b']
 
 k = 0
-root = "output/" + names[k]
+root = "../output/" + names[k]
 
 # Fiducial value and plotting
-x = experiments.cosmo['omega_lambda_0']; y = experiments.cosmo['omega_k_0']
+x = rf.experiments.cosmo['omega_lambda_0']; y = rf.experiments.cosmo['omega_k_0']
 alpha = [1.52, 2.48, 3.44]
 
 # Load cosmo fns.
@@ -57,45 +57,45 @@ for i in range(Nbins):
     zfns_base = [2, ]
     FF = _F
     for idx in zfns_base:
-        FF = baofisher.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
+        FF = rf.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
     F_base += FF
     
     # b_HI(z), f(z), fix w_a
-    _F = baofisher.fisher_with_excluded_params(_F, [7,])
+    _F = rf.fisher_with_excluded_params(_F, [7,])
     zfns_fix_wa = [2, ]
     FF = _F
     for idx in zfns_fix_wa:
-        FF = baofisher.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
+        FF = rf.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
     F_wa += FF
     
     # b_HI(z), f(z), fix w_0, w_a
     _F = F_eos_list[i]
-    _F = baofisher.fisher_with_excluded_params(_F, [6, 7])
+    _F = rf.fisher_with_excluded_params(_F, [6, 7])
     zfns_fix_w0wa = [2, ]
     FF = _F
     for idx in zfns_fix_w0wa:
-        FF = baofisher.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
+        FF = rf.expand_matrix_for_sampled_fn(FF, idx, Nbins, i)
     F_w0wa += FF
     
 
 ax = P.subplot(111)
 
 # Overlay error ellipses as a fn. of z
-p1 = baofisher.indexes_for_sampled_fns(4, zc.size, zfns_base) # omega_k # y
-p2 = baofisher.indexes_for_sampled_fns(5, zc.size, zfns_base) # omega_de # x
+p1 = rf.indexes_for_sampled_fns(4, zc.size, zfns_base) # omega_k # y
+p2 = rf.indexes_for_sampled_fns(5, zc.size, zfns_base) # omega_de # x
 
 # 1D marginals
 cov = np.linalg.inv(F_wa)
 print "sigma(ok) =", np.sqrt(cov[p1,p1])
 print "sigma(oDE) =", np.sqrt(cov[p2,p2])
 
-y = experiments.cosmo['omega_k_0']
-x = experiments.cosmo['omega_lambda_0']
+y = rf.experiments.cosmo['omega_k_0']
+x = rf.experiments.cosmo['omega_lambda_0']
 
 Fs = [F_base, F_wa, F_w0wa]
 for i in range(len(Fs)):
     FF = Fs[i]
-    a, b, ang = baofisher.ellipse_for_fisher_params(p1, p2, FF)
+    a, b, ang = rf.ellipse_for_fisher_params(p1, p2, FF)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*b, 
                  height=alpha[kk]*a, angle=ang, fc='none', ec=colours[i], lw=2., alpha=0.85) for kk in range(0, 2)]
     for e in ellipses: ax.add_patch(e)

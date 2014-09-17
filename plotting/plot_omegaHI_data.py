@@ -2,8 +2,8 @@
 
 import numpy as np
 import pylab as P
-import baofisher
-from experiments import cosmo
+from rfwrapper import rf
+from rf.experiments.import cosmo
 
 def rho_c(z):
     """
@@ -14,8 +14,8 @@ def rho_c(z):
 
 z = np.linspace(-0.1, 5., 1000)
 
-oHI = baofisher.omega_HI(z, cosmo)
-bHI = baofisher.bias_HI(z, cosmo)
+oHI = rf.omega_HI(z, cosmo)
+bHI = rf.bias_HI(z, cosmo)
 
 # Load Prochaska & Wolfe data (10^8 Msun Mpc^-3)
 pw_zmin, pw_zmax, pw_rhoHI, pw_errp, pw_errm = np.genfromtxt("HI_evolution/prochaska_wolfe_rhoHI.dat").T

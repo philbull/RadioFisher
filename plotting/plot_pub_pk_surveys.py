@@ -4,7 +4,7 @@ Plot parameter 1D marginal constraints as a fn. of FG subtraction efficiency.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 
 nsurveys = 2 #5
 nbins = 14
@@ -31,7 +31,7 @@ for j in range(nsurveys):
         
         # FIXME: h^-1 units?
         #P.plot(k, pk)
-        #yup, ylow = baofisher.fix_log_plot(pkc, pkerr*pkc)
+        #yup, ylow = rf.fix_log_plot(pkc, pkerr*pkc)
         #P.errorbar(kc, pkc, yerr=[ylow, yup], marker='.', ls='none', color='r')
         
 

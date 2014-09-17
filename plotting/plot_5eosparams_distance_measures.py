@@ -4,19 +4,19 @@ Make a triangle plot for EOS/dark energy params.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
 USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 # FIXME
 names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 'cexptL_bao_vol', 'cexptL_bao_allap', 'cexptL_bao_all']
@@ -47,10 +47,10 @@ b0 = 0.1
 # Prepare to save 1D marginals
 params_1d = []; params_lbls = []
 
-# Loop though experiments
-_k = range(len(names))[::-1] # Reverse order of experiments
+# Loop though rf.experiments.
+_k = range(len(names))[::-1] # Reverse order of rf.experiments.
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
     
     print "-"*50
     print names[k]
@@ -76,7 +76,7 @@ for k in _k:
     excl = [2,  6,7,8, ] # 14
     excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Apply Planck prior
@@ -84,15 +84,15 @@ for k in _k:
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     else:
         # Euclid Planck prior
         print "*** Using Euclid (Mukherjee) Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
         Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
     
     # Add Planck H_0 prior
     #if 'H_0' in labels[k]:
@@ -128,8 +128,8 @@ for k in _k:
             
             # Fiducial values
             ii = Nparam - i - 1
-            x = fid[ii] #experiments.cosmo['w0']
-            y = fid[j] #experiments.cosmo['wa']
+            x = fid[ii] #rf.experiments.cosmo['w0']
+            y = fid[j] #rf.experiments.cosmo['wa']
             p1 = lbls.index(params[ii])
             p2 = lbls.index(params[j])
             
@@ -139,7 +139,7 @@ for k in _k:
             # Plot ellipse *or* 1D
             if p1 != p2:
                 # Plot contours
-                ww, hh, ang, alpha = baofisher.ellipse_for_fisher_params(
+                ww, hh, ang, alpha = rf.ellipse_for_fisher_params(
                                                       p1, p2, None, Finv=cov_pl)
                 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*ww, 
                             height=alpha[kk]*hh, angle=ang, fc='none', 

@@ -5,16 +5,16 @@ Process EOS Fisher matrices and plot P(k).
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1", "SKAMID", "SKAMID_COMP", "iSKAMID", "iSKAMID_COMP", "SKA1_CV"]
 #names = ["SKAMID_mnu01",] #"iSKAMID_mnu01"]
@@ -29,7 +29,7 @@ cols = ['r', 'g', 'c']
 
 colours = ['#22AD1A', '#3399FF', '#ED7624', 'y', 'c', 'm', 'k', '#cc33cc']
 
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(rf.experiments.cosmo, "camb/rf_matterpower.dat")
 H, r, D, f = cosmo_fns
 
 
@@ -38,7 +38,7 @@ fig = P.figure()
 ax = fig.add_subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -59,7 +59,7 @@ for k in range(len(names)):
     excl = [2, 6,7,8,  4]
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -73,8 +73,8 @@ for k in range(len(names)):
         if idxs_in_f[i] == -1: continue
         for j in range(len(idxs_in_f)):
             if idxs_in_f[j] == -1: continue
-            ii = baofisher.indexes_for_sampled_fns(idxs_in_f[i], zc.size, zfns)
-            jj = baofisher.indexes_for_sampled_fns(idxs_in_f[j], zc.size, zfns)
+            ii = rf.indexes_for_sampled_fns(idxs_in_f[i], zc.size, zfns)
+            jj = rf.indexes_for_sampled_fns(idxs_in_f[j], zc.size, zfns)
             Fpl[ii,jj] += euclid.planck_prior_full[i,j]
             #print ">>>", _names[i], _names[j], lbls[idxs_in_f[i]], lbls[idxs_in_f[j]]
     
@@ -87,15 +87,15 @@ for k in range(len(names)):
     print "-"*50
     
     # Indices of fns. of z
-    pmnu = baofisher.indexes_for_sampled_fns(10, zc.size, zfns)
-    pns  = baofisher.indexes_for_sampled_fns(3,  zc.size, zfns)
+    pmnu = rf.indexes_for_sampled_fns(10, zc.size, zfns)
+    pns  = rf.indexes_for_sampled_fns(3,  zc.size, zfns)
     
-    x = 0.15 #experiments.cosmo['mnu']
-    y = experiments.cosmo['n']
+    x = 0.15 #rf.experiments.cosmo['mnu']
+    y = rf.experiments.cosmo['n']
     
     """
     # Mnu, n_s
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pmnu, pns, cov, Finv=cov)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(pmnu, pns, cov, Finv=cov)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec=colours[k], 
                  lw=2.5, alpha=1.) for kk in range(0, 2)]
@@ -103,21 +103,21 @@ for k in range(len(names)):
     """
     
     # Mnu, n_s + Planck
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pmnu, pns, None, Finv=cov_pl)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(pmnu, pns, None, Finv=cov_pl)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec=colours[k+1], 
                  lw=2.5, alpha=1., ls='solid') for kk in range(0, 2)]
     for e in ellipses: ax.add_patch(e)
 
 """
-w, h, ang, alpha = baofisher.ellipse_for_fisher_params(0, 1, None, Finv=euclid.cov_mnu_ns_euclid_boss)
+w, h, ang, alpha = rf.ellipse_for_fisher_params(0, 1, None, Finv=euclid.cov_mnu_ns_euclid_boss)
 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
              height=alpha[kk]*h, angle=ang, fc='r', ec='r', 
              lw=2.5, alpha=0.2) for kk in range(0, 2)]
 for e in ellipses: ax.add_patch(e)
 """
 
-w, h, ang, alpha = baofisher.ellipse_for_fisher_params(0, 1, None, Finv=euclid.cov_mnu_ns_euclid_boss_planck)
+w, h, ang, alpha = rf.ellipse_for_fisher_params(0, 1, None, Finv=euclid.cov_mnu_ns_euclid_boss_planck)
 ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
              height=alpha[kk]*h, angle=ang, fc='r', ec='r', 
              lw=2.5, alpha=0.1) for kk in range(0, 2)]

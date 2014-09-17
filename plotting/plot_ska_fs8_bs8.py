@@ -4,13 +4,13 @@ Plot 2D constraints on f(z) and b_HI(z).
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
@@ -19,7 +19,7 @@ MARGINALISE_CURVATURE = True # Marginalise over Omega_K
 MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ["SKAHI73", 'EuclidRef'] # "SKAHI100_BAOonly"
 labels = ['SKA2 HI gal.', 'Euclid'] # 'SKA1 HI gal.'
@@ -35,7 +35,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names))[::-1]
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -48,16 +48,16 @@ for k in _k:
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
     
     # EOS FISHER MATRIX
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['A', 'bs8', 'fs8', 'DA', 'H', 'aperp', 'apar']
     excl = ['Tb', 'sigma8', 'n_s', 'omegak', 'omegaDE', 'w0', 'wa', 'h', 
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Get indices of f, b_HI
-    pf = baofisher.indices_for_param_names(lbls, 'fs8*')
-    pb = baofisher.indices_for_param_names(lbls, 'bs8*')
+    pf = rf.indices_for_param_names(lbls, 'fs8*')
+    pb = rf.indices_for_param_names(lbls, 'bs8*')
     
     for jj in pf:
         print jj, lbls[jj]
@@ -73,11 +73,11 @@ for k in _k:
         #if jj % 2 == 0: continue
         
         print jj, lbls[pb[jj]], lbls[pf[jj]]
-        x = baofisher.bias_HI(zc[jj], cosmo) * cosmo['sigma_8']
+        x = rf.bias_HI(zc[jj], cosmo) * cosmo['sigma_8']
         y = fc[jj] * cosmo['sigma_8']
         
         # Plot contours for w0, wa; omega_k free
-        w, h, ang, alpha = baofisher.ellipse_for_fisher_params(pb[jj], pf[jj], 
+        w, h, ang, alpha = rf.ellipse_for_fisher_params(pb[jj], pf[jj], 
                                                               None, Finv=cov_pl)
         transp = [1., 0.85]
         ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 

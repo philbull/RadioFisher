@@ -4,16 +4,16 @@ Plot f(z), for different bHI.
 """
 import numpy as np
 import pylab as P
-import experiments
-import baofisher
+
+from rfwrapper import rf
 
 # Load cosmology and experimental settings
-cosmo = experiments.cosmo
-expts = [experiments.exptA, experiments.exptB, experiments.exptC, experiments.exptD, experiments.exptE]
+cosmo = rf.experiments.cosmo
+expts = [rf.experiments.exptA, rf.experiments.exptB, rf.experiments.exptC, rf.experiments.exptD, rf.experiments.exptE]
 
 # Precompute cosmological functions and derivs.
 camb_matterpower = "/home/phil/oslo/iswfunction/cosmomc/camb/testX_matterpower.dat"
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(cosmo, camb_matterpower)
+cosmo_fns, cosmo = rf.precompute_for_fisher(cosmo, camb_matterpower)
 H, r, D, f = cosmo_fns
 
 # Load bHI values

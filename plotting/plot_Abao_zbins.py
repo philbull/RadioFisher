@@ -5,16 +5,16 @@ Plot A_BAO as a function of redshift.
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ["cL_dzbin", "cL_drbin", "cL_dnubin"]
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
@@ -25,14 +25,14 @@ linestyle = ['solid', 'dashed', 'dashdot']
 lw = [1.2, 2.1, 2.6]
 
 # Get f_bao(k) function
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(rf.experiments.cosmo, "camb/rf_matterpower.dat")
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -54,7 +54,7 @@ for k in range(len(names)):
     excl = [2,4,5,  9,10,11,12,13,14] # Exclude all cosmo params
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     cov = np.linalg.inv(F)
@@ -64,7 +64,7 @@ for k in range(len(names)):
     
     # Get functions of z
     zfns = [0,1,3,4,5]
-    pA  = baofisher.indexes_for_sampled_fns(0, zc.size, zfns)
+    pA  = rf.indexes_for_sampled_fns(0, zc.size, zfns)
     #print "A:", [lbls[j] for j in pA], "\n"
     
     # Plot errorbars

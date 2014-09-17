@@ -6,11 +6,11 @@ Mario's tHIbar_z code.
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
-import experiments
+
 import os
 
 root = "HI_evolution/"

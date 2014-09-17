@@ -5,19 +5,19 @@ interferometer cases.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 import scipy.integrate
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 #names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
 #labels = ['DETF IV + Planck', 'Facility + Planck', 'Mature + Planck'] #, 'Snapshot']
 
@@ -36,7 +36,7 @@ Sarea = 25e3 * (D2RAD)**2.
 
 
 # Get r(z)
-HH, rr, DD, ff = baofisher.background_evolution_splines(cosmo)
+HH, rr, DD, ff = rf.background_evolution_splines(cosmo)
 zz = np.linspace(0., 3., 1000)
 r = rr(zz)
 rnu = C*(1.+zz)**2. / HH(zz)
@@ -105,8 +105,8 @@ ax.set_xscale('log')
 
 ############################
 # Get f_bao(k) function
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo_fns = rf.background_evolution_splines(cosmo)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 kk = np.logspace(-4., 2., 1000)

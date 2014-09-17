@@ -1,20 +1,20 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and overplot results for several experiments
+Process EOS Fisher matrices and overplot results for several rf.experiments.
 """
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1mid", "SKA1MK", "iSKA1MK", "aSKA1MK", "SKA1MK_A0"]
 names = ["SKA1MK",] #["MeerKAT", "SKA1mid", "SKA1MK"]
@@ -22,7 +22,7 @@ names = ["SKA1MK",] #["MeerKAT", "SKA1mid", "SKA1MK"]
 colours = ['#22AD1A', '#3399FF', '#ED7624']
 
 # Fiducial value and plotting
-x = experiments.cosmo['omega_lambda_0']; y = experiments.cosmo['omega_k_0']
+x = rf.experiments.cosmo['omega_lambda_0']; y = rf.experiments.cosmo['omega_k_0']
 #alpha = [1.52, 2.48, 3.44]
 fig = P.figure()
 ax1 = fig.add_subplot(221) # ok - w0
@@ -31,7 +31,7 @@ ax3 = fig.add_subplot(223) # w0 - wa
 #ax4 = P.subplot(224)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -53,14 +53,14 @@ for k in range(len(names)):
     pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
              'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
     zfns = [1,]
-    F_eos, lbls = baofisher.combined_fisher_matrix( F_eos_list, 
+    F_eos, lbls = rf.combined_fisher_matrix( F_eos_list, 
                                                     exclude=[2,4,5,6,7,8,9,12], 
                                                     expand=zfns, names=pnames)
     # Overlay error ellipses as a fn. of z
-    p1 = baofisher.indexes_for_sampled_fns(4, zc.size, zfns) # w0 # y
-    #p2 = baofisher.indexes_for_sampled_fns(5, zc.size, zfns) # # x
-    p3 = baofisher.indexes_for_sampled_fns(5, zc.size, zfns) # h
-    p4 = baofisher.indexes_for_sampled_fns(6, zc.size, zfns) # gamma
+    p1 = rf.indexes_for_sampled_fns(4, zc.size, zfns) # w0 # y
+    #p2 = rf.indexes_for_sampled_fns(5, zc.size, zfns) # # x
+    p3 = rf.indexes_for_sampled_fns(5, zc.size, zfns) # h
+    p4 = rf.indexes_for_sampled_fns(6, zc.size, zfns) # gamma
     
     Finv = np.linalg.inv(F_eos) # Pre-invert, for efficiency
     i = 0
@@ -68,9 +68,9 @@ for k in range(len(names)):
     ##################################
     # w0 - h
     ##################################
-    x = experiments.cosmo['w0']
-    y = experiments.cosmo['h']
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(p1[i], p3[i], F_eos, Finv=Finv)
+    x = rf.experiments.cosmo['w0']
+    y = rf.experiments.cosmo['h']
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(p1[i], p3[i], F_eos, Finv=Finv)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec=colours[k], lw=2., alpha=0.85) for kk in range(0, 2)]
     for e in ellipses: ax1.add_patch(e)
@@ -79,9 +79,9 @@ for k in range(len(names)):
     ##################################
     # w0 - gamma
     ##################################
-    x = experiments.cosmo['w0']
-    y = experiments.cosmo['gamma']
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(p1[i], p4[i], F_eos, Finv=Finv)
+    x = rf.experiments.cosmo['w0']
+    y = rf.experiments.cosmo['gamma']
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(p1[i], p4[i], F_eos, Finv=Finv)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec=colours[k], lw=2., alpha=0.85) for kk in range(0, 2)]
     for e in ellipses: ax2.add_patch(e)
@@ -89,7 +89,7 @@ for k in range(len(names)):
     cov = np.linalg.inv( [ [F_eos[p1[i],p1[i]], F_eos[p1[i],p4[i]]], [F_eos[p1[i],p4[i]], F_eos[p4[i],p4[i]]] ] )
     
     # Error ellipse for Euclid
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(0, 1, euclid.cov_gamma_w_ref, Finv=euclid.cov_gamma_w_ref)
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(0, 1, euclid.cov_gamma_w_ref, Finv=euclid.cov_gamma_w_ref)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec='k', lw=2., alpha=0.85) for kk in range(0, 2)]
     for e in ellipses: ax2.add_patch(e)
@@ -124,9 +124,9 @@ for k in range(len(names)):
     ##################################
     # h - gamma
     ##################################
-    x = experiments.cosmo['h']
-    y = experiments.cosmo['gamma']
-    w, h, ang, alpha = baofisher.ellipse_for_fisher_params(p3[i], p4[i], F_eos, Finv=Finv)
+    x = rf.experiments.cosmo['h']
+    y = rf.experiments.cosmo['gamma']
+    w, h, ang, alpha = rf.ellipse_for_fisher_params(p3[i], p4[i], F_eos, Finv=Finv)
     ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
                  height=alpha[kk]*h, angle=ang, fc='none', ec=colours[k], lw=2., alpha=0.85) for kk in range(0, 2)]
     for e in ellipses: ax3.add_patch(e)

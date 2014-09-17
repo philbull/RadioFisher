@@ -4,16 +4,16 @@ Plot dP/P as a function of redshift, for a single k bin.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef_onebin', 'SKAHI100_onebin30k', 'SKAHI100_onebin', 'iSKA1MIDbase1_onebin', 'SKA1MIDbase1_onebin', 'iSKA1MIDfull1_onebin', 'SKA1MIDfull1_onebin', 'iSKA1MIDfull2_onebin', 'SKA1MIDfull2_onebin']
 colours = ['#990A9C', 'c', 'c', '#CC0000', '#CC0000', '#1619A1', '#1619A1', '#5B9C0A', '#5B9C0A'] # DETF/F/M/S
@@ -21,14 +21,14 @@ labels = ['Euclid', 'SKA1 HI gal. (30k)', 'SKA1 HI gal. (5k)', 'SKA1-MID (190) B
 linestyle = [ [1,0], [8, 4], [1,0], [8, 4], [1,0], [8, 4], [1,0], [8, 4], [1,0],]
 
 # Get f_bao(k) function
-#cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+#cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 #fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -42,7 +42,7 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     lbls = pnames
     
     dP = []

@@ -4,18 +4,18 @@ Plot figures of merit as function of experimental settings.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
 USE_DETF_PLANCK_PRIOR = True
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 # Define names of parameters being varied
 snames = ['ttot', 'Sarea', 'epsilon_fg', 'omega_HI_0']
@@ -43,18 +43,18 @@ axes = [fig.add_subplot(221), fig.add_subplot(222), fig.add_subplot(223),
 for j in range(4):
     for k in range(len(names)):
         # Load array of values for varied parameter
-        fname_vals = "output/%s_%s_values.txt" % (names[k], snames[j])
+        fname_vals = "../output/%s_%s_values.txt" % (names[k], snames[j])
         param_values_expt = np.genfromtxt(fname_vals).T
         
         # Load cosmo fns.
-        mainroot = "output/%s_%s" % (names[k], snames[j])
+        mainroot = "../output/%s_%s" % (names[k], snames[j])
         dat = np.atleast_2d( np.genfromtxt(mainroot+"-cosmofns-zc.dat") ).T
         zc, Hc, dAc, Dc, fc = dat
         
         # Loop through values of varying parameter
         fom_values_expt = []
         for v in range(param_values_expt.size):
-            root = "output/%s_%s_%d" % (names[k], snames[j], v)
+            root = "../output/%s_%s_%d" % (names[k], snames[j], v)
 
             # Load Fisher matrices as fn. of z
             Nbins = zc.size
@@ -62,12 +62,12 @@ for j in range(4):
             
             # EOS FISHER MATRIX
             # Actually, (aperp, apar) are (D_A, H)
-            pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+            pnames = rf.load_param_names(root+"-fisher-full-0.dat")
             zfns = [1,]
             excl = [2,   6,7,8,  14,]
             excl  += [i for i in range(len(pnames)) if "pk" in pnames[i]]
             
-            F, lbls = baofisher.combined_fisher_matrix( F_list,
+            F, lbls = rf.combined_fisher_matrix( F_list,
                                                         expand=zfns, names=pnames,
                                                         exclude=excl )
             # Add Planck prior
@@ -75,23 +75,23 @@ for j in range(4):
                 # DETF Planck prior
                 #print "*** Using DETF Planck prior ***"
                 l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-                F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", 
+                F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", 
                                                    cosmo, omegab=False)
-                Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+                Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
             else:
                 # Euclid Planck prior
                 #print "*** Using Euclid (Mukherjee) Planck prior ***"
                 l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
                 Fe = euclid.planck_prior_full
-                F_eucl = euclid.euclid_to_baofisher(Fe, cosmo)
-                Fpl, lbls = baofisher.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+                F_eucl = euclid.euclid_to_rf(Fe, cosmo)
+                Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
             
             # Get indices of w0, wa
             pw0 = lbls.index('w0'); pwa = lbls.index('wa'); pA = lbls.index('A')
             
             # Calculate FOM
             cov_pl = np.linalg.inv(Fpl)
-            fom = baofisher.figure_of_merit(pw0, pwa, None, cov=cov_pl)
+            fom = rf.figure_of_merit(pw0, pwa, None, cov=cov_pl)
             fom_values_expt.append(fom)
             #fom_values_expt.append(1./np.sqrt(cov_pl[pA,pA])) # FIXME
             print "%s: FOM = %3.2f, sig(A) = %3.3f" % (names[k], fom, 

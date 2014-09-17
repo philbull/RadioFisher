@@ -5,16 +5,16 @@ Process EOS Fisher matrices and plot P(k).
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 #names = ["GBT", "BINGO", "WSRT", "APERTIF", "JVLA", "ASKAP", "KAT7", "MeerKAT", "SKA1", "SKAMID", "SKAMID_COMP", "iSKAMID", "iSKAMID_COMP", "SKA1_CV"]
 #names = ["SKA1", "SKAMID", "SKAMID_COMP", "iSKAMID", "iSKAMID_COMP"]
@@ -25,7 +25,7 @@ cols = ['r', 'g', 'c']
 
 colours = ['#22AD1A', '#3399FF', '#ED7624']
 
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(experiments.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(rf.experiments.cosmo, "camb/rf_matterpower.dat")
 H, r, D, f = cosmo_fns
 
 
@@ -35,7 +35,7 @@ ax1 = fig.add_subplot(211)
 ax2 = fig.add_subplot(212)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -56,7 +56,7 @@ for k in range(len(names)):
     excl = [2,4,5,   9,10,11,12,13,14,15] #6,7,8 ]
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Fixed bias evol.
@@ -64,7 +64,7 @@ for k in range(len(names)):
     excl = [2,4,5,   9,10,11,12,13,14,15] #6,7,8 ]
     excl += [i for i in range(len(pnames)) if "pk" in pnames[i]]
     
-    F2, lbls2 = baofisher.combined_fisher_matrix( F_list,
+    F2, lbls2 = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     # Invert matrices
@@ -73,15 +73,15 @@ for k in range(len(names)):
     
     # Indices of fns. of z
     zfns = [1, 3,4,5] # Update after other params subtracted
-    pf  = baofisher.indexes_for_sampled_fns(3, zc.size, zfns)
-    pDA = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
-    pH  = baofisher.indexes_for_sampled_fns(5, zc.size, zfns)
+    pf  = rf.indexes_for_sampled_fns(3, zc.size, zfns)
+    pDA = rf.indexes_for_sampled_fns(4, zc.size, zfns)
+    pH  = rf.indexes_for_sampled_fns(5, zc.size, zfns)
     
     # Indices of fns. of z (bias fixed in z)
     zfns = [3,4,5] # Update after other params subtracted
-    pf2  = baofisher.indexes_for_sampled_fns(3, zc.size, zfns)
-    pDA2 = baofisher.indexes_for_sampled_fns(4, zc.size, zfns)
-    pH2  = baofisher.indexes_for_sampled_fns(5, zc.size, zfns)
+    pf2  = rf.indexes_for_sampled_fns(3, zc.size, zfns)
+    pDA2 = rf.indexes_for_sampled_fns(4, zc.size, zfns)
+    pH2  = rf.indexes_for_sampled_fns(5, zc.size, zfns)
     
     # SKA marginal errorbars
     err_f = np.sqrt( np.diag(cov)[pf] )

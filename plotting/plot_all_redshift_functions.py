@@ -4,18 +4,18 @@ Plot functions of redshift.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
 PLOT_DIFFERENT_MEASURES = False
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 if not PLOT_DIFFERENT_MEASURES:
     names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS', 'cSKA1MIDbase1']
@@ -30,8 +30,8 @@ else:
     colours = ['#1619A1', '#CC0000', '#5B9C0A', 'y', '#990A9C', 'c', 'm']
     linestyle = [[], [], [8, 4], [2, 4],  [], [8, 4], [3, 4]]
 
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
-#cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo_fns = rf.background_evolution_splines(cosmo)
+#cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -39,7 +39,7 @@ axes = [fig.add_subplot(221), fig.add_subplot(222), fig.add_subplot(223),
         fig.add_subplot(224)]
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -53,7 +53,7 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['A', 'bs8', 'fs8', 'H', 'DA',]
     excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI', 'aperp', 'apar']
@@ -62,7 +62,7 @@ for k in range(len(names)):
     zfns = ['H', 'DA',]
     excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI', 'aperp', 'apar', 'fs8', 'bs8']
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     cov = np.linalg.inv(F)
@@ -70,11 +70,11 @@ for k in range(len(names)):
     print lbls
     
     # Identify functions of z
-    pA = baofisher.indices_for_param_names(lbls, 'A*')
-    pDA = baofisher.indices_for_param_names(lbls, 'DA*')
-    pH = baofisher.indices_for_param_names(lbls, 'H*')
-    pf = baofisher.indices_for_param_names(lbls, 'fs8*')
-    #pf = baofisher.indices_for_param_names(lbls, 'f*')
+    pA = rf.indices_for_param_names(lbls, 'A*')
+    pDA = rf.indices_for_param_names(lbls, 'DA*')
+    pH = rf.indices_for_param_names(lbls, 'H*')
+    pf = rf.indices_for_param_names(lbls, 'fs8*')
+    #pf = rf.indices_for_param_names(lbls, 'f*')
     
     indexes = [pDA, pA, pH, pf]
     fn_vals = [dAc/1e3, 1., Hc/1e2, cosmo['sigma_8']*fc*Dc]

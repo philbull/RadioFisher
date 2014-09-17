@@ -6,9 +6,9 @@ import numpy as np
 import pylab as P
 import scipy.interpolate
 import scipy.integrate
-import baofisher
+from rfwrapper import rf
 from units import *
-import experiments as e
+as e
 import scipy.integrate
 
 dat = np.genfromtxt("SKA_HIdndzb.txt", skip_header=1).T
@@ -26,7 +26,7 @@ Sarea = 5e3 #30e3 # deg^2
 
 ################################################################################
 # Calculate background redshift evolution
-cosmo_fns = baofisher.background_evolution_splines(e.cosmo)
+cosmo_fns = rf.background_evolution_splines(e.cosmo)
 H, r, D, f = cosmo_fns
 
 def V(zmin, zmax):

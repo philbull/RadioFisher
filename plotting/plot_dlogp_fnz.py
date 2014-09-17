@@ -5,16 +5,16 @@ Process EOS Fisher matrices and plot P(k).
 
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 from units import *
 #from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
@@ -30,14 +30,14 @@ labels = ['SKA1-MID B2 SD', 'SKA1-MID B2 Int.', 'SKA1-SUR B2 PAF']
 
 
 # Get f_bao(k) function
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 P.subplot(111)
 
 for k in [1,]: #range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -51,8 +51,8 @@ for k in [1,]: #range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
-    ppk = baofisher.indices_for_param_names(pnames, 'pk*')
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
+    ppk = rf.indices_for_param_names(pnames, 'pk*')
     
     cmap = matplotlib.cm.Blues_r
     for j in range(len(F_list))[::-1]:
@@ -84,7 +84,7 @@ for k in [1,]: #range(len(names)):
                        arrowprops={'width':1.8, 'color':'#1619A1', 'shrink':0.07} )
     
     # Plot the summed constraint (over all z)
-    F, lbls = baofisher.combined_fisher_matrix(F_list, expand=[], names=pnames, exclude=[])
+    F, lbls = rf.combined_fisher_matrix(F_list, expand=[], names=pnames, exclude=[])
     cov = np.sqrt(1. / np.diag(F)[ppk])
     pk = cosmo['pk_nobao'](kc) * (1. + fbao(kc))
     

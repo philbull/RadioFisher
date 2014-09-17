@@ -1,15 +1,17 @@
 #!/usr/bin/python
-
+"""
+OBSOLETE
+"""
 import numpy as np
 import pylab as P
-import baofisher
-import experiments as e
+from rfwrapper import rf
+from radiofisher import experiments as e
 from units import *
 
 expt = e.SKAMID
 expt['Sarea'] /= 6.
 
-cosmo_fns, cosmo = baofisher.precompute_for_fisher(e.cosmo, "camb/baofisher_matterpower.dat")
+cosmo_fns, cosmo = rf.precompute_for_fisher(e.cosmo, "camb/rf_matterpower.dat")
 H, r, D, f = cosmo_fns
 
 z = np.linspace(1e-2, 3., 300)

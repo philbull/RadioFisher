@@ -4,17 +4,17 @@ Plot improvement in Omega_K or gamma as a function of z.
 """
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 from units import *
 from mpi4py import MPI
-import experiments
+
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 nsig = 1.5 # No. of sigma to plot out to
 aspect = 1. #1.7 # Aspect ratio of range (w = aspect * h)
@@ -55,7 +55,7 @@ ax = fig.add_subplot(111)
 
 _k = range(len(names))
 for k in _k:
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -74,17 +74,17 @@ for k in _k:
         
         # EOS FISHER MATRIX
         # Actually, (aperp, apar) are (D_A, H)
-        pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+        pnames = rf.load_param_names(root+"-fisher-full-0.dat")
         zfns = ['b_HI',]
         excl = ['Tb', 'f', 'H', 'DA', 'apar', 'aperp', 'pk*', 'N_eff', 'fs8', 'bs8']
-        F, lbls = baofisher.combined_fisher_matrix( F_list[:l],
+        F, lbls = rf.combined_fisher_matrix( F_list[:l],
                                                     expand=zfns, names=pnames,
                                                     exclude=excl )
         # DETF Planck prior
         print "*** Using DETF Planck prior ***"
         l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_baofisher("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = baofisher.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
+        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
         
         # Decide whether to fix various parameters
         fixed_params = []
@@ -95,7 +95,7 @@ for k in _k:
         if not MARGINALISE_W0WA: fixed_params += ['w0', 'wa']
         
         if len(fixed_params) > 0:
-            Fpl, lbls = baofisher.combined_fisher_matrix( [Fpl,], expand=[], 
+            Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], 
                          names=lbls, exclude=fixed_params )
         
         # Really hopeful H0 prior
@@ -108,7 +108,7 @@ for k in _k:
         # Plot improvement in chosen parameter
         if param1 == 'fom':
             p1 = lbls.index('w0'); p2 = lbls.index('wa')
-            _fom = baofisher.figure_of_merit(p1, p2, None, cov=cov_pl)
+            _fom = rf.figure_of_merit(p1, p2, None, cov=cov_pl)
         else:
             pp = lbls.index(param1)
             _fom = 1. / np.sqrt(cov_pl[pp, pp])

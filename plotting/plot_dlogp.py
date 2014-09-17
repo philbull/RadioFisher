@@ -5,15 +5,13 @@ Process EOS Fisher matrices and plot P(k).
 import numpy as np
 import pylab as P
 from rfwrapper import rf
-import baofisher
 import matplotlib.patches
 import matplotlib.cm
 from mpi4py import MPI
-import experiments
 import os
 import euclid
 
-cosmo = experiments.cosmo
+cosmo = rf.experiments.cosmo
 
 names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
 colours = ['#CC0000', '#1619A1', 'y', '#5B9C0A', '#990A9C', 'c', 'm'] # DETF/F/M/S
@@ -42,14 +40,14 @@ labels = ['Euclid']
 
 
 # Get f_bao(k) function
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
 fbao = cosmo['fbao']
 
 # Fiducial value and plotting
 P.subplot(111)
 
 for k in range(len(names)):
-    root = "output/" + names[k]
+    root = "../output/" + names[k]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -63,9 +61,9 @@ for k in range(len(names)):
     
     # EOS FISHER MATRIX
     # Actually, (aperp, apar) are (D_A, H)
-    pnames = baofisher.load_param_names(root+"-fisher-full-0.dat")
+    pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = []; excl = []
-    F, lbls = baofisher.combined_fisher_matrix( F_list,
+    F, lbls = rf.combined_fisher_matrix( F_list,
                                                 expand=zfns, names=pnames,
                                                 exclude=excl )
     
@@ -78,8 +76,8 @@ for k in range(len(names)):
     cov[np.where(np.isnan(cov))] = 1e10
     cov[np.where(np.isinf(cov))] = 1e10
     
-    pw0 = baofisher.indexes_for_sampled_fns(11, zc.size, zfns)
-    pwa = baofisher.indexes_for_sampled_fns(12, zc.size, zfns)
+    pw0 = rf.indexes_for_sampled_fns(11, zc.size, zfns)
+    pwa = rf.indexes_for_sampled_fns(12, zc.size, zfns)
     
     #for jj in range(kc.size):
     #    print "%5.5e %5.5e" % (kc[jj], cov[jj])
