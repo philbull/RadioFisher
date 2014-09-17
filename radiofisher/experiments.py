@@ -618,7 +618,7 @@ SKA0SUR.update(SURVEY)
 
 SKA1MID900 = {
     'mode':             'dish',            # Interferometer or single dish
-    'Ndish':            254,               # No. of dishes
+    'Ndish':            190,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            20.*(1e3),         # System temp. [mK]
@@ -632,7 +632,7 @@ SKA1MID900.update(SURVEY)
 
 SKA1MID350 = {
     'mode':             'dish',            # Interferometer or single dish
-    'Ndish':            254,               # No. of dishes
+    'Ndish':            190,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            28.*(1e3),         # System temp. [mK]
@@ -691,16 +691,17 @@ SKA1LOW.update(SURVEY)
 ##################
 
 SKAMID_PLUS = {
-    'overlap':          [SKA1MIDbase1, MeerKATb1],
+    'overlap':          [SKA1MID350, MeerKATb1],
     'Sarea':            1e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)':             "array_config/nx_SKAMREF2COMP_dec30.dat"
 }
 
 SKAMID_PLUS2 = {
-    'overlap':          [SKA1MIDbase2, MeerKATb2],
+    'overlap':          [SKA1MID900, MeerKATb2],
     'Sarea':            1e3*(D2RAD)**2.,  # Total survey area [radians^2]
     'n(x)':             "array_config/nx_SKAMREF2COMP_dec30.dat"
 }
+
 
 """
 # Surveys that are defined as overlap between two instruments
