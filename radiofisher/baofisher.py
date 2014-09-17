@@ -379,7 +379,7 @@ def load_interferom_file(fname):
                                             bounds_error=False, fill_value=1./INF_NOISE )
     return interp_nx
 
-def overlapping_expts(expt_in, zlow=None, zhigh=None):
+def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
     """
     Get "effective" experimental parameters in a redshift bin for two 
     experiments that are joined together.
@@ -391,6 +391,9 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None):
     
     Returns a dict of effective experimental parameters for the bin.
     """
+    # Override Sarea if kwarg specified
+    if Sarea is not None: expt_in['Sarea'] = Sarea
+    
     # Check to see if experiment is made up of overlapping instruments
     # Returns the original expt dict if no overlap is defined
     if 'overlap' in expt_in.keys():

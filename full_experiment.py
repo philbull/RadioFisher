@@ -131,9 +131,9 @@ else:
     root = "output/" + survey_name
 
 # Define redshift bins
-expt_zbins = rf.overlapping_expts(expt)
-#zs, zc =  rf.zbins_equal_spaced(expt_zbins, dz=0.1)
-#zs, zc =  rf.zbins_const_dr(expt_zbins, cosmo, bins=14)
+expt_zbins = rf.overlapping_expts(expt, Sarea=Sarea)
+#zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.1)
+#zs, zc = rf.zbins_const_dr(expt_zbins, cosmo, bins=14)
 zs, zc =  rf.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
 
 # Define kbins (used for output)
