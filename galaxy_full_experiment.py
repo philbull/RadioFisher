@@ -5,8 +5,7 @@ redshift survey.
 """
 import numpy as np
 import pylab as P
-import baofisher
-import fisher_galaxy
+import radiofisher as rf
 import matplotlib.patches
 from units import *
 from mpi4py import MPI
@@ -68,11 +67,11 @@ kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
 #kbins = np.logspace(np.log10(0.0001), np.log10(1.), 2) # FIXME
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
-cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk_gal.dat", comm=comm)
-#massive_nu_fn = baofisher.deriv_logpk_mnu(cosmo['mnu'], cosmo, "cache_mnu010", comm=comm)
-#transfer_fn = baofisher.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
-#Neff_fn = baofisher.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
+cosmo_fns = rf.background_evolution_splines(cosmo)
+cosmo = rf.load_power_spectrum(cosmo, "cache_pk_gal.dat", comm=comm)
+#massive_nu_fn = rf.deriv_logpk_mnu(cosmo['mnu'], cosmo, "cache_mnu010", comm=comm)
+#transfer_fn = rf.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
+#Neff_fn = rf.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
 
 H, r, D, f = cosmo_fns
 zc = 0.5 * (zmin + zmax)
@@ -100,7 +99,7 @@ if myid == 0:
     np.savetxt(root+"-cosmofns-smooth.dat", np.column_stack((zz, _H, _dA, _D, _f)) )
 
 # Precompute derivs for all processes
-eos_derivs = baofisher.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
+eos_derivs = rf.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
 
 
 ################################################################################
@@ -116,13 +115,13 @@ for i in range(zmin.size):
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
-    F_pk, kc, binning_info, paramnames = fisher_galaxy.fisher_galaxy_survey(
+    F_pk, kc, binning_info, paramnames =  rf.galaxy.fisher_galaxy_survey(
                                            zmin[i], zmax[i], expt['nz'][i], 
                                            expt['b'][i], cosmo, expt, cosmo_fns, 
                                            return_pk=True, kbins=kbins )
     # Expand Fisher matrix with EOS parameters
-    ##F_eos = baofisher.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
-    F_eos, paramnames = baofisher.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
+    ##F_eos = rf.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
+    F_eos, paramnames = rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
                                                    exclude=[], names=paramnames)
     # Expand Fisher matrix for H(z), dA(z)
     # Replace aperp with dA(zi), using product rule. aperp(z) = dA(fid,z) / dA(z)
