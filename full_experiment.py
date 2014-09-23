@@ -79,7 +79,7 @@ expt_list = [
     ( 'exptCV',           e.exptCV ),       # 49
     ( 'GBTHIM',           e.GBTHIM ),       # 50
     ( 'SKA0MID',          e.SKA0MID ),      # 51
-    ( 'SKA0SUR',          e.SKA0SUR ),      # 52
+    ( 'fSKA0SUR',         e.SKA0SUR ),      # 52
     ( 'SKA1MID900',       e.SKA1MID900 ),   # 53
     ( 'SKA1MID350',       e.SKA1MID350 ),   # 54
     ( 'iSKA1MID900',      e.SKA1MID900 ),   # 55
