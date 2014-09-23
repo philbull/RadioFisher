@@ -7,7 +7,7 @@ import numpy as np
 import pylab as P
 import radiofisher as rf
 from radiofisher import experiments
-from units import *
+from radiofisher.units import *
 from mpi4py import MPI
 import sys
 
@@ -86,7 +86,7 @@ expt_list = [
     ( 'iSKA1MID350',      e.SKA1MID350 ),   # 56
     ( 'fSKA1SUR650',      e.SKA1SUR650 ),   # 57
     ( 'fSKA1SUR350',      e.SKA1SUR350 ),   # 58
-    ( 'tSKA1LOW',         e.SKA1LOW ),      # 59
+    ( 'aSKA1LOW',         e.SKA1LOW ),      # 59
     ( 'SKAMID_PLUS',      e.SKAMID_PLUS ),  # 60
     ( 'SKAMID_PLUS2',     e.SKAMID_PLUS2 )  # 61
 ]
@@ -115,11 +115,12 @@ if myid == 0:
 # Tweak settings depending on chosen experiment
 cv_limited = False
 expts[k]['mode'] = "dish"
-if names[k][0] == "i": expts[k]['mode'] = "interferom."
+if names[k][0] == "i": expts[k]['mode'] = "idish"
 if names[k][0] == "c": expts[k]['mode'] = "combined"
-if names[k][0] == "y": expts[k]['mode'] = "cylinder"
+if names[k][0] == "y": expts[k]['mode'] = "icyl"
 if names[k][0] == "f": expts[k]['mode'] = "paf"
 if names[k][0] == "t": expts[k]['mode'] = "ipaf"
+if names[k][0] == "a": expts[k]['mode'] = "iaa"
 
 expt = expts[k]
 if Sarea is None:    
@@ -206,7 +207,8 @@ for i in range(zs.size-1):
     print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
     
     # Calculate effective experimental params. in the case of overlapping expts.
-    expt_eff = rf.overlapping_expts(expt, zs[i], zs[i+1], Sarea=Sarea*(D2RAD)**2.)
+    Sarea_rad = Sarea*(D2RAD)**2. if Sarea is not None else None
+    expt_eff = rf.overlapping_expts(expt, zs[i], zs[i+1], Sarea=Sarea_rad)
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
@@ -249,3 +251,4 @@ for i in range(zs.size-1):
     np.savetxt(root+"-rebin-Vfac-%d.dat" % i, np.array([binning_info['Vfac'],]) )
 
 comm.barrier()
+if myid == 0: print "Finished."

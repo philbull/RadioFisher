@@ -500,7 +500,6 @@ SKA1SURbase1 = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            60,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
-#    'paf_fov':          61.*(D2RAD)**2.,   # FOV of PAF at critical frequency
     'nu_crit':          710.,              # PAF critical frequency
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            50.*(1e3),         # System temp. [mK]
@@ -515,7 +514,6 @@ SKA1SURbase2 = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            60,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
-#    'paf_fov':          18.*(D2RAD)**2.,   # FOV of PAF at critical frequency
     'nu_crit':          1300.,             # PAF critical frequency
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            30.*(1e3),         # System temp. [mK]
@@ -556,7 +554,6 @@ SKA1MIDfull2.update(SURVEY)
 
 SKA1SURfull1 = {
     'mode':             'dish',            # Interferometer or single dish
-#    'paf_fov':          61.*(D2RAD)**2.,   # FOV of PAF at critical frequency
     'nu_crit':          710.,              # PAF critical frequency
     'Ndish':            96,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
@@ -571,7 +568,6 @@ SKA1SURfull1.update(SURVEY)
 
 SKA1SURfull2 = {
     'mode':             'dish',            # Interferometer or single dish
-#    'paf_fov':          18.*(D2RAD)**2.,   # FOV of PAF at critical frequency
     'nu_crit':          1300.,             # PAF critical frequency
     'Ndish':            96,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
@@ -593,6 +589,8 @@ SKA0MID = {
     'mode':             'dish',            # Interferometer or single dish
     'Ndish':            127,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'theta_b':          0.714*(D2RAD),     # Beam at critical frequency
+    'Aeff':             140.,              # Effective area at critical freq.
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            20.*(1e3),         # System temp. [mK]
     'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
@@ -607,6 +605,8 @@ SKA0SUR = {
     'Ndish':            48,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
     'nu_crit':          1300.,             # PAF critical frequency
+    'theta_b':          0.714*(D2RAD),     # Beam at critical frequency
+    'Aeff':             140.,              # Effective area at critical freq.
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            30.*(1e3),         # System temp. [mK]
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
@@ -621,6 +621,8 @@ SKA1MID900 = {
     'Ndish':            190,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            15.,               # Single dish diameter [m]
+    'theta_b':          0.714*(D2RAD),     # Beam at critical frequency
+    'Aeff':             140.,              # Effective area at critical freq.
     'Tinst':            20.*(1e3),         # System temp. [mK]
     'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1420.,             # Max. freq. of survey
@@ -635,6 +637,8 @@ SKA1MID350 = {
     'Ndish':            190,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            15.,               # Single dish diameter [m]
+    'theta_b':          1.334*(D2RAD),     # Beam at critical frequency
+    'Aeff':             140.,              # Effective area at critical freq.
     'Tinst':            28.*(1e3),         # System temp. [mK]
     'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     1050.,             # Max. freq. of survey
@@ -649,6 +653,8 @@ SKA1SUR650 = {
     'Ndish':            96,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
     'nu_crit':          1300.,             # PAF critical frequency
+    'theta_b':          0.714*(D2RAD),     # Beam at critical frequency
+    'Aeff':             140.,              # Effective area at critical freq.
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            30.*(1e3),         # System temp. [mK]
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
@@ -663,6 +669,8 @@ SKA1SUR350 = {
     'Ndish':            60,                # No. of dishes
     'Nbeam':            36,                # No. of beams (for multi-pixel detectors)
     'nu_crit':          710.,              # PAF critical frequency
+    'theta_b':          1.31*(D2RAD),      # Beam at critical frequency
+    'Aeff':             140.,              # Effective area at critical freq.
     'Ddish':            15.,               # Single dish diameter [m]
     'Tinst':            50.*(1e3),         # System temp. [mK]
     'survey_dnutot':    500.,              # Total bandwidth of *entire* survey [MHz]
@@ -673,10 +681,12 @@ SKA1SUR350 = {
 SKA1SUR350.update(SURVEY)
 
 SKA1LOW = {
-    'mode':             'paf',             # Interferometer or single dish
+    'mode':             'iaa',             # Interferometer or single dish
     'Ndish':            911,               # No. of dishes
     'Nbeam':            3,                 # No. of beams (for multi-pixel detectors)
-    'nu_crit':          0.,                # PAF critical frequency
+    'nu_crit':          110.,              # PAF critical frequency
+    'theta_b':          5.29*(D2RAD),      # Beam at critical frequency
+    'Aeff':             925.,              # Effective area at critical freq.
     'Ddish':            35.,               # Single dish diameter [m]
     'Tinst':            106.*(1e3),        # System temp. [mK]
     'survey_dnutot':    100.,              # Total bandwidth of *entire* survey [MHz]

@@ -1198,16 +1198,17 @@ def interferometer_response(q, y, cosmo, expt):
     kperp = q / (c['aperp']*c['r'])
     kpar = y / (c['apar']*c['rnu'])
     
-    # Mario's interferometer noise calculation
+    # Interferometer response calculation
     u = kperp * c['r'] / (2. * np.pi) # UV plane: |u| = d / lambda
     nu = expt['nu_line'] / (1. + c['z'])
     l = 3e8 / (nu * 1e6) # Wavelength (m)
+    Ddish = expt['Ddish']
+    
+    # Calculate FOV (180deg * theta for cylinder mode)
+    fov = np.pi * (l / Ddish) if 'cyl' in expt['mode'] else (l / Ddish)**2. 
     
     # Calculate interferometer baseline density, n(u)
-    use_nx = False
     if "n(x)" in expt.keys():
-        if expt['n(x)'] is not None: use_nx = True
-    if use_nx:
         # Rescale n(x) with freq.-dependence
         print "\tUsing user-specified baseline density, n(u)"
         x = u / nu  # x = u / (freq [MHz])
@@ -1216,21 +1217,16 @@ def interferometer_response(q, y, cosmo, expt):
     else:
         # Approximate expression for n(u), assuming uniform density in UV plane
         print "\tUsing uniform baseline density, n(u) ~ const."
-        u_min = expt['Dmin'] / l
-        u_max = expt['Dmax'] / l
+        u_min = expt['Dmin'] / l; u_max = expt['Dmax'] / l
         
-        # Sanity check: The physical area of the array must be greater than the 
-        # combined area of the dishes
+        # Sanity check: Physical area of array must be > combined area of dishes
         ff = expt['Ndish'] * (expt['Ddish'] / expt['Dmax'])**2. # Filling factor
         print "\tArray filling factor: %3.3f" % ff
         if ff > 1.:
-            raise ValueError("Filling factor is > 1; dishes are too big to fit in specified area (out to Dmax).")
+            raise ValueError( ("Filling factor is > 1; dishes are too big to "
+                               "fit in specified area (out to Dmax).") )
         
-        #n_u = (l*expt['Ndish']/expt['Dmax'])**2. / (2.*np.pi) * np.ones(u.shape)
-        #n_u[np.where(u < u_min)] = 1. / INF_NOISE
-        #n_u[np.where(u > u_max)] = 1. / INF_NOISE
-        
-        # New calc.
+        # Uniform density n(u)
         n_u = expt['Ndish']*(expt['Ndish'] - 1.) * l**2. * np.ones(u.shape) \
               / (2. * np.pi * (expt['Dmax']**2. - expt['Dmin']**2.) )
         n_u[np.where(u < u_min)] = 1. / INF_NOISE
@@ -1239,11 +1235,8 @@ def interferometer_response(q, y, cosmo, expt):
     # FOV cut-off (disabled for cylinders)
     if 'cyl' not in expt['mode']:
         l = 3e8 / (nu * 1e6) # Wavelength (m)
-        u_fov = 1. / np.sqrt(expt['fov'])
+        u_fov = 1. / np.sqrt(fov)
         n_u[np.where(u < u_fov)] = 1. / INF_NOISE
-    
-    # Interferometer multiplicity factor, /I/
-    I = 4./9. * expt['fov'] / n_u
     
     # Gaussian in parallel direction. Perp. direction already accounted for by 
     # n(u) factor in multiplicity (I)
@@ -1251,8 +1244,7 @@ def interferometer_response(q, y, cosmo, expt):
     B_par = (y/(c['rnu']*sigma_kpar))**2.
     B_par[np.where(B_par > EXP_OVERFLOW_VAL)] = EXP_OVERFLOW_VAL
     invbeam2 = np.exp(B_par)
-    
-    return I * invbeam2
+    return invbeam2 / n_u
 
 
 def dish_response(q, y, cosmo, expt):
@@ -1269,8 +1261,6 @@ def dish_response(q, y, cosmo, expt):
     theta_fwhm = l / expt['Ddish']
     sigma_kpar = np.sqrt(16.*np.log(2)) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
     sigma_kperp = np.sqrt(16.*np.log(2)) / (c['r'] * theta_fwhm)
-    #            np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
-    #             / (c['r'] * D0 * (1.+c['z']))
     
     # Sanity check: Require that Sarea > Nbeam * (beam)^2
     if (expt['Sarea'] < expt['Nbeam'] / (sigma_kperp * c['r'])**2.):
@@ -1281,10 +1271,7 @@ def dish_response(q, y, cosmo, expt):
     B_tot = (q/(c['r']*sigma_kperp))**2. + (y/(c['rnu']*sigma_kpar))**2.
     B_tot[np.where(B_tot > EXP_OVERFLOW_VAL)] = EXP_OVERFLOW_VAL
     invbeam2 = np.exp(B_tot)
-    
-    # Dish-mode multiplicity factor, /I/
-    I = 1. / (expt['Ndish'] * expt['Nbeam'])
-    return I * invbeam2
+    return invbeam2
 
 
 def Cnoise(q, y, cosmo, expt, cv=False):
@@ -1296,35 +1283,65 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     c = cosmo
     kperp = q / (c['aperp']*c['r'])
     kpar = y / (c['apar']*c['rnu'])
+    nu = expt['nu_line'] / (1. + c['z'])
+    l = 3e8 / (nu * 1e6) # Wavelength (m)
     
-    # Calculate noise properties (factor of 1/2 from assumed dual-pol. recv.)
+    # Number of receiver polarisation channels (default is two) and dish effic.
+    npol = expt['npol'] if 'npol' in expt.keys() else 2.
+    effic = expt['effic'] if 'effic' in expt.keys() else 1.
+    
+    # Calculate base noise properties
     Vsurvey = expt['Sarea'] * expt['dnutot'] / expt['nu_line']
-    Tsky = 60e3 * (300.*(1.+c['z'])/expt['nu_line'])**2.55 # Foreground sky signal (mK)
+    Tsky = 60e3 * (300.*(1.+c['z']) / expt['nu_line'])**2.55 # Temp. of sky (mK)
     Tsys = expt['Tinst'] + Tsky
-    noise = Tsys**2. * Vsurvey / (expt['ttot'] * expt['dnutot']) / 2.
+    noise = Tsys**2. * Vsurvey / (npol * expt['ttot'] * expt['dnutot'])
     if cv: noise = 1. # Cosmic variance-limited calc.
     
-    # Apply multiplicity/beam response for 
-    if 'int' in expt['mode']:
+    # Multiply noise by mode-specific factors
+    if expt['mode'][0] == 'i':
         # Interferometer mode
-        print "\tInterferometer mode."
+        print "\tInterferometer mode",
+        Aeff = effic * 0.25 * np.pi * expt['Ddish'] if 'Aeff' not in expt.keys() \
+               else expt['Aeff']
+        theta_b = l / expt['Ddish']
+        
+        # Choose specific mode
+        if 'cyl' in expt['mode']:
+            # Cylinder interferometer
+            print "(cylinder)"
+            raise NotImplementedError("Cylinders not implemented yet!")
+        elif 'paf' in expt['mode']:
+            # PAF interferometer
+            print "(PAF)"
+            theta_b = expt['theta_b']
+            theta_b *= (expt['nu_crit'] / nu) if nu > expt['nu_crit'] else 1.
+        elif 'aa' in expt['mode']:
+            # Aperture array interferometer
+            print "(aperture array)"
+            Aeff *= (expt['nu_crit'] / nu)**2. if nu > expt['nu_crit'] else 1.
+            theta_b = expt['theta_b'] * (expt['nu_crit'] / nu)
+        else:
+            # Standard dish interferometer
+            print "(dish)"
+        
         noise *= interferometer_response(q, y, cosmo, expt)
-    elif 'cyl' in expt['mode']:
-        # Cylinder mode
-        print "\tCylinder (interferometer) mode."
-        noise *= interferometer_response(q, y, cosmo, expt)
-    elif 'ipaf' in expt['mode']:
-        # Interferometer mode with PAF FOV (saturates below crit. freq.)
-        print "\tInterferometer mode (PAF)."
-        noise *= interferometer_response(q, y, cosmo, expt)
-    elif 'dish' in expt['mode']:
-        # Dish (autocorrelation) mode
-        print "\tSingle-dish mode."
+        noise *= l**4. / (expt['Nbeam'] * (Aeff * theta_b)**2.)
+    else:
+        # Autocorrelation mode
+        print "\tAutocorrelation mode",
+        
+        if 'paf' in expt['mode']:
+            # PAF autocorrelation mode
+            print "(PAF)"
+            noise *= 1. if nu > expt['nu_crit'] else (expt['nu_crit'] / nu)**2.
+        else:
+            # Standard dish autocorrelation mode 
+            print "(dish)"
+        
+        noise *= 1. / (effic**2. * expt['Ndish'] * expt['Nbeam'])
         noise *= dish_response(q, y, cosmo, expt)
-    elif 'paf' in expt['mode']:
-        # Dish (autocorrelation) mode with PAF FOV (saturates below crit. freq.)
-        print "\tSingle-dish mode (PAF)."
-        noise *= dish_response(q, y, cosmo, expt)
+    
+    """
     elif 'comb' in expt['mode']:
         print "\tCombined interferometer + single-dish mode"
         # Combined dish + interferom. mode
@@ -1332,25 +1349,18 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         # noise (*either* interferom. of single dish), rather than adding the 
         # inverse noise terms together. This is correct in the CV-limited 
         # regime, since it prevents double counting of photons, but is 
-        # pessimistic in the noise-dominated regime, since it throwws information away
+        # pessimistic in the noise-dominated regime, since it throws information away
         r_int = interferometer_response(q, y, cosmo, expt)
         r_dish = dish_response(q, y, cosmo, expt)
         #noise *= np.minimum(r_int, r_dish) # Taking the elementwise minimum
         noise *= 1./(1./r_int + 1./r_dish) # Adding in quadrature
-    else:
-        # Mode not recognised (safest just to raise an error)
-        raise ValueError("Experiment mode not recognised. Choose 'interferom', 'dish', 'paf', or 'combined'.")
-        
-    # Deal with PAF beam saturation
-    if 'nu_crit' in expt.keys():
-        # Apply correction factor if PAF has freq. at which it "saturates",
-        # below which the FOV is fixed (i.e. beams overlap below this freq.).
-        nu = expt['nu_line'] / (1. + c['z'])
-        if nu <= expt['nu_crit']: noise *= (expt['nu_crit'] / nu)**2.
+    """
+    # FIXME
+    if 'comb' in expt['mode']: raise NotImplementedError("Combined mode not implemented!")
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
-    if 'kfg_fac' in expt.keys(): kfg *= expt['kfg_fac']
+    kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
     noise[np.where(kpar < kfg)] = INF_NOISE
     return noise
 
@@ -2223,19 +2233,8 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     expt['dnutot'] = numax - numin
     z = 0.5 * (zmax + zmin)
     
-    # Calculate FOV (only used for interferom. mode)
-    # FOV in radians, with C = 3e8 m/s, freq = (nu [MHz])*1e6 Hz
-    nu = expt['nu_line'] / (1. + z)
-    l = 3e8 / (nu*1e6)
-    if 'cyl' in expt['mode']:
-        expt['fov'] = np.pi * (l / expt['Ddish']) # Cylinder mode, 180deg * theta
-    else:
-        expt['fov'] = (l / expt['Ddish'])**2.
-    
     # Load n(u) interpolation function, if needed
-    if ( 'int' in expt['mode'] or 'cyl' in expt['mode'] or 
-         'comb' in expt['mode'] or 'ipaf' in expt['mode']) \
-        and 'n(x)' in expt.keys():
+    if ( expt['mode'][0] == 'i') and 'n(x)' in expt.keys(): # FIXME: Fails for combined
         expt['n(x)_file'] = expt['n(x)']
         expt['n(x)'] = load_interferom_file(expt['n(x)'])
     
