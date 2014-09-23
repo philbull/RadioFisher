@@ -1301,7 +1301,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     if expt['mode'][0] == 'i':
         # Interferometer mode
         print "\tInterferometer mode",
-        Aeff = effic * 0.25 * np.pi * expt['Ddish'] if 'Aeff' not in expt.keys() \
+        Aeff = effic * 0.25 * np.pi * expt['Ddish']**2. if 'Aeff' not in expt.keys() \
                else expt['Aeff']
         theta_b = l / expt['Ddish']
         
