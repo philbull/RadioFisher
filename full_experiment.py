@@ -24,7 +24,8 @@ e = experiments
 cosmo = experiments.cosmo
 
 # Label experiments with different settings
-EXPT_LABEL = "" #"_baoonly"
+EXPT_LABEL = "_mg_Dz" #"_baoonly"
+#EXPT_LABEL = "_uls"
 
 expt_list = [
     ( 'exptS',            e.exptS ),        # 0
@@ -139,7 +140,7 @@ zs, zc =  rf.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
 
 # Define kbins (used for output)
 kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
-#kbins = np.logspace(np.log10(0.0001), np.log10(1.), 2) # FIXME
+##kbins = np.logspace(-4., 0., 81)
 
 # Neutrino mass
 cosmo['mnu'] = 0.
@@ -167,6 +168,10 @@ transfer_fn = None
 # Effective no. neutrinos, N_eff
 Neff_fn =  rf.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
 #Neff_fn = None
+
+# Optional additional parameters
+#switches = []
+switches = ['mg', 'sdbias']
 
 H, r, D, f = cosmo_fns
 
@@ -220,6 +225,7 @@ for i in range(zs.size-1):
                                          Neff_fn=Neff_fn,
                                          return_pk=True,
                                          cv_limited=cv_limited, 
+                                         switches=switches,
                                          kbins=kbins )
     
     # Expand Fisher matrix with EOS parameters

@@ -7,10 +7,10 @@ import numpy as np
 import pylab as P
 import radiofisher as rf
 import matplotlib.patches
-from units import *
+from radiofisher.units import *
 from mpi4py import MPI
-import experiments
-import experiments_galaxy as e
+import radiofisher.experiments as experiments
+import radiofisher.experiments_galaxy as e
 import sys
 
 comm = MPI.COMM_WORLD
@@ -24,7 +24,7 @@ size = comm.Get_size()
 cosmo = experiments.cosmo
 
 # Label experiments with different settings
-EXPT_LABEL = "" #"_baoonly"
+EXPT_LABEL = "_mg" #"_baoonly" #"_mg" #"_baoonly"
 
 expt_list = [
     ( 'EuclidOpt',          e.EuclidOpt ),      # 0
@@ -58,6 +58,9 @@ root = "output/" + survey_name
 e.load_expt(expt)
 zmin = expt['zmin']
 zmax = expt['zmax']
+
+#switches = []
+switches = ['mg', 'sdbias']
 
 
 ################################################################################
@@ -118,7 +121,8 @@ for i in range(zmin.size):
     F_pk, kc, binning_info, paramnames =  rf.galaxy.fisher_galaxy_survey(
                                            zmin[i], zmax[i], expt['nz'][i], 
                                            expt['b'][i], cosmo, expt, cosmo_fns, 
-                                           return_pk=True, kbins=kbins )
+                                           switches=switches, return_pk=True, 
+                                           kbins=kbins )
     # Expand Fisher matrix with EOS parameters
     ##F_eos = rf.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
     F_eos, paramnames = rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 

@@ -24,14 +24,16 @@ cosmo = {
     'bHI0':             0.677, #0.702,
     'A':                1.,
     'sigma_nl':         7.,
-    'beta_1':           0.,         # Scale-dependent bias (k^1 term coeff. [Mpc])
-    'beta_2':           0.          # Scale-dependent bias (k^2 term coeff. [Mpc^2])
+    'b_1':              0.,         # Scale-dependent bias (k^2 term coeff.)
+    'k0_bias':          0.1,        # Scale-dependent bias pivot scale [Mpc^-1]
+    'A_xi':             0.0,        # Modified gravity growth amplitude
+    'k_mg':             1e-2        # New modified gravity growth scale
 }
 
 # Define which measurements to include in forecasts
 USE = {
   'f_rsd':             True,     # RSD constraint on f(z)
-  'f_growthfactor':    False,    # D(z) constraint on f(z)
+  'f_growthfactor':    True, #FIXME   # D(z) constraint on f(z)
   'alpha_all':         True,     # Use all constraints on alpha_{perp,par}
   'alpha_volume':      False,
   'alpha_rsd_angle':   False, #t

@@ -48,7 +48,7 @@ def Csignal_galaxy(q, y, cosmo, expt):
 
 
 def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns, 
-                          kbins=None, return_pk=False ):
+                          switches=[], kbins=None, return_pk=False ):
     """
     Calculate Fisher matrix for a galaxy redshift survey.
     
@@ -63,6 +63,11 @@ def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns,
     
     bias : float
         Linear bias in redshift bin.
+    
+    switches : list, optional
+        List of additional parameters to include in the Fisher matrix. Options 
+        are 'sdbias' (scale-dep. bias parameter b_1), and 'mg' (modified 
+        gravity parameters gamma0, gamma1, eta0, eta1, alphaxi)
     """
     # Copy, to make sure we don't modify input expt or cosmo
     cosmo = copy.deepcopy(cosmo)
@@ -109,7 +114,8 @@ def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns,
     # Calculate derivatives and integrate
     derivs, paramnames = rf.fisher_integrands( kgrid, ugrid, cosmo, expt=expt, 
                                    massive_nu_fn=None, transfer_fn=None, 
-                                   galaxy_survey=True, cs_galaxy=Csignal_galaxy )
+                                   galaxy_survey=True, cs_galaxy=Csignal_galaxy,
+                                   switches=switches )
     Vfac = Vsurvey / (8. * np.pi**2.)
     F = Vfac * rf.integrate_fisher_elements(derivs, kgrid, ugrid)
     
@@ -142,7 +148,4 @@ def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns,
     # Return results
     if return_pk: return F_pk, kc, binning_info, paramnames
     return F, paramnames
-
-# FIXME:
-# * What about an angular cut-off? No beam on angular scales is currently defined.
-# * Sensitive to kmin? Probably not, get poor constraints there already. (Result: only slightly sensitive.)
+    

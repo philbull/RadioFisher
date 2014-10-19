@@ -18,6 +18,7 @@ import matplotlib.cm
 from units import *
 import uuid, os, sys, copy, md5
 import camb_wrapper as camb
+import mg_growth
 from tempfile import gettempdir
 
 # No. of samples in log space in each dimension. 300 seems stable for (AA).
@@ -36,7 +37,7 @@ RSD_FUNCTION = 'kaiser'
 
 # Location of CAMB fiducial P(k) file
 # NOTE: Currently expects CAMB P(k) needs to be at chosen z value (z=0 here).
-CAMB_MATTERPOWER = "/home/phil/oslo/iswfunction/cosmomc/camb/testX_matterpower.dat"
+#CAMB_MATTERPOWER = "/home/phil/oslo/iswfunction/cosmomc/camb/testX_matterpower.dat"
 CAMB_KMAX = 130. / 0.7 # Max. k for CAMB, in h Mpc^-1
 CAMB_EXEC = "/home/phil/oslo/bao21cm/camb" # Directory containing camb executable
 
@@ -523,6 +524,38 @@ def load_power_spectrum( cosmo, cachefile, kmax=CAMB_KMAX, comm=None,
     cosmo['k_in_min'] = np.min(k_in)
     return cosmo
 
+def fgrowth(cosmo, z):
+    """
+    Generalised form for the growth rate.
+    """
+    c = cosmo
+    Oma = c['omega_M_0'] * (1.+z)**3. / Ez(cosmo, z)**2.
+    a = 1. / (1. + z)
+    
+    # Modified gravity parameters
+    gamma = c['gamma'] if 'gamma0' not in c.keys() else c['gamma0'] + c['gamma1']*(1. - a)
+    eta = 0. if 'eta0' not in c.keys() else (c['eta0'] + c['eta1']*(1. - a))
+    f = Oma**gamma * (1. + eta)
+    return f
+
+def fgrowth_k(cosmo, z, k):
+    """
+    Generalised form for the scale-dependent growth rate.
+    """
+    f, D = mg_growth.growth_k(z, cosmo)
+    return f(k)
+
+def Ez(cosmo, z):
+    """
+    Dimensionless Hubble rate.
+    """
+    a = 1. / (1. + z)
+    w0 = cosmo['w0']; wa = cosmo['wa']
+    om = cosmo['omega_M_0']; ol = cosmo['omega_lambda_0']
+    ok = 1. - om - ol
+    omegaDE = ol * np.exp(3.*wa*(a - 1.)) / a**(3.*(1. + w0 + wa))
+    return np.sqrt( om * a**(-3.) + ok * a**(-2.) + omegaDE )
+
 def background_evolution_splines(cosmo, zmax=10., nsamples=500):
     """
     Get interpolation functions for background functions of redshift:
@@ -553,8 +586,7 @@ def background_evolution_splines(cosmo, zmax=10., nsamples=500):
     # Integrate linear growth rate to find linear growth factor, D(z)
     # N.B. D(z=0) = 1.
     a = 1. / (1. + _z)
-    Oma = cosmo['omega_M_0'] * (1.+_z)**3. * (100.*cosmo['h']/_H)**2.
-    _f = Oma**cosmo['gamma']
+    _f = fgrowth(cosmo, _z)
     _D = np.concatenate( ([0.,], scipy.integrate.cumtrapz(_f, np.log(a))) )
     _D = np.exp(_D)
     
@@ -1377,14 +1409,17 @@ def Csignal(q, y, cosmo, expt):
     k = np.sqrt(kpar**2. + kperp**2.)
     u2 = (kpar / k)**2.
     
+    # Linear growth function (including scale-dependence)
+    f = c['f'] # FIXME: assumes fiducial model is GR.
+    
     # RSD function (bias 'btot' already includes scale-dep. bias/non-Gaussianity)
     if RSD_FUNCTION == 'kaiser':
         # Pedro's notes, Eq. 7
-        Frsd = (c['btot'] + c['f']*u2)**2. * np.exp(-u2*(k*c['sigma_nl'])**2.)
+        Frsd = (c['btot'] + f*u2)**2. * np.exp(-u2*(k*c['sigma_nl'])**2.)
     else:
         # arXiv:0812.0419, Eq. 5
-        sigma_nl2_eff = (c['D'] * c['sigma_nl'])**2. * (1. - u2 + u2*(1.+c['f'])**2.)
-        Frsd = (c['btot'] + c['f']*u2)**2. * np.exp(-0.5 * k**2. * sigma_nl2_eff)
+        sigma_nl2_eff = (c['D'] * c['sigma_nl'])**2. * (1. - u2 + u2*(1.+f)**2.)
+        Frsd = (c['btot'] + f*u2)**2. * np.exp(-0.5 * k**2. * sigma_nl2_eff)
     
     # Construct signal covariance and return
     cs = Frsd * (1. + c['A'] * c['fbao'](k)) * c['D']**2. * c['pk_nobao'](k)
@@ -1446,10 +1481,11 @@ def n_IM(kgrid, ugrid, cosmo, expt):
 
 def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None, 
                        Neff_fn=None, transfer_fn=None, cv_limited=False,
-                       galaxy_survey=False, cs_galaxy=None ):
+                       switches=[], galaxy_survey=False, cs_galaxy=None ):
     """
     Return integrands over (k, u) for the Fisher matrix, for all parameters.
-    Order: ( A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [fNL], pk )
+    Order: ( A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [fNL], [b_1], 
+             [MG params], pk )
     """
     c = cosmo
     use = expt['use']
@@ -1466,10 +1502,13 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     k = np.sqrt( (aperp*q/r)**2. + (apar*y/rnu)**2. )
     u2 = y**2. / ( y**2. + (q * rnu/r * aperp/apar)**2. )
     
+    # Calculate linear growth rate
+    f = c['f'] # FIXME: Assumes fiducial model is GR
+    
     # Calculate bias (incl. non-Gaussianity, if requested)
     # FIXME: Should calculate bias only in the functions that need it 
     # (i.e. shouldn't be global)
-    s_k = 1. + c['beta_1'] * k + c['beta_2'] * k**2.
+    s_k = 1. + c['b_1'] * (k / c['k0_bias'])**2.
     if transfer_fn is None:
         b = c['btot'] = c['bHI'] * s_k
     else:
@@ -1531,23 +1570,23 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # Calculate derivatives of the RSD function we are using
     # (Ignores scale-dep. of bias in drsd_sk; that's included later)
     if RSD_FUNCTION == 'kaiser':
-        drsd_df = 2. * u2 / (b + c['f']*u2)
-        drsd_dfsig8 = 2. * u2 / (b*c['sigma_8']*c['D'] + c['f']*c['sigma_8']*c['D']*u2)
+        drsd_df = 2. * u2 / (b + f*u2)
+        drsd_dfsig8 = 2. * u2 / (b*c['sigma_8']*c['D'] + f*c['sigma_8']*c['D']*u2)
         drsd_dsig2 = -k**2. * u2
-        drsd_du2 = 2.*c['f'] / (b + c['f']*u2) - (k * c['sigma_nl'])**2.
+        drsd_du2 = 2.*f / (b + f*u2) - (k * c['sigma_nl'])**2.
         drsd_dk = -2. * k * u2 * c['sigma_nl']**2.
     else:
-        drsd_df = u2 * ( 2. * u2 / (b + c['f']*u2) \
-                       - (1. + c['f']) * (k*c['sigma_nl']*c['D'])**2. )
-        drsd_dsig2 = -0.5 * (k * c['D'])**2. * ( 1. - u2 + u2*(1. + c['f'])**2. )
-        drsd_du2 = 2. * c['f'] / (b + c['f']*u2) \
-                 - 0.5 * (k*c['sigma_nl']*c['D'])**2. * ((1. + c['f'])**2. - 1.)
-        drsd_dk = -k*(c['D']*c['sigma_nl'])**2. * (1. - u2 + u2*(1. + c['f'])**2.)
+        drsd_df = u2 * ( 2. * u2 / (b + f*u2) \
+                       - (1. + f) * (k*c['sigma_nl']*c['D'])**2. )
+        drsd_dsig2 = -0.5 * (k * c['D'])**2. * ( 1. - u2 + u2*(1. + f)**2. )
+        drsd_du2 = 2. * f / (b + f*u2) \
+                 - 0.5 * (k*c['sigma_nl']*c['D'])**2. * ((1. + f)**2. - 1.)
+        drsd_dk = -k*(c['D']*c['sigma_nl'])**2. * (1. - u2 + u2*(1. + f)**2.)
     
     # Evaluate derivatives for non-Gaussian bias
     if transfer_fn is not None:
         # Prefactor for NG bias deriv. terms
-        fac = 2. / (b + c['f']*u2)
+        fac = 2. / (b + f*u2)
         
         # Derivatives of b_NG
         dbng_fNL = 3.*(b - 1.) * alpha
@@ -1562,7 +1601,8 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         # Massive neutrinos
         dbng_dmnu_term = 0.
         if massive_nu_fn is not None:
-            print "\tWARNING: (M_nu, f_NL) crossterm not currently supported. Setting to 0."
+            print ("\tWARNING: (M_nu, f_NL) crossterm not currently supported." 
+                   "Setting to 0.")
             """
             # TODO: Implement dTk_mnu(k) function.
             dTk_mnu = _dTk_mnu(k)
@@ -1572,7 +1612,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
             #dbng_dmnu_term = 0.
         
         # Derivatives of C_S
-        dbias_k = 2. * c['bHI'] * (c['beta_1'] + 2.*k*c['beta_2']) / (b + c['f']*u2) \
+        dbias_k = 2. * c['bHI'] * (2.*c['b_1']*k/c['k0_bias']**2.) / (b + f*u2) \
                  + dbng_k * fac
         dbng_df_term = dbng_f * fac # Used in deriv_f
         
@@ -1581,7 +1621,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         deriv_omegaDE_ng = dbng_omegaDE * fac * cs / ctot
     else:
         dbng_bHI = s_k
-        dbias_k = 2. * c['bHI'] * (c['beta_1'] + 2.*k*c['beta_2']) / (b + c['f']*u2)
+        dbias_k = 2. * c['bHI'] * (2.*(k/c['k0_bias']**2.)*c['b_1']) / (b + f*u2)
         dbng_df_term = 0.
         dbng_dmnu_term = 0.
         deriv_omegak_ng = 0.
@@ -1590,23 +1630,49 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # Get analytic log-derivatives for parameters
     # FIXME: (f sigma8) and (b sigma8) terms don't handle NG properly
     deriv_A   = c['fbao'](k) / (1. + c['A']*c['fbao'](k)) * cs / ctot
-    deriv_bHI = 2. * dbng_bHI / (b + c['f']*u2) * cs / ctot
+    deriv_bHI = 2. * dbng_bHI / (b + f*u2) * cs / ctot
     deriv_f   = ( use['f_rsd'] * drsd_df \
                 + use['f_growthfactor'] * 2.*np.log(a) \
                 + dbng_df_term ) * cs / ctot
-    deriv_bsig8 = 2. * dbng_bHI / (b*c['sigma_8']*c['D'] + c['f']*c['sigma_8']*c['D']*u2) * cs / ctot
+    deriv_bsig8 = 2.*dbng_bHI/(b*c['sigma_8']*c['D'] + f*c['sigma_8']*c['D']*u2) * cs / ctot
     deriv_fsig8 = drsd_dfsig8 * cs / ctot
     deriv_sig2 = drsd_dsig2 * cs / ctot
     deriv_pk = cs / ctot
     
-    # Analytic log-derivatives for scale-dependent bias parameters
-    deriv_beta1 = 2. * k * c['bHI'] / (b + c['f']*u2) * cs / ctot
-    deriv_beta2 = 2. * k**2. * c['bHI'] / (b + c['f']*u2) * cs / ctot
+    # Analytic log-derivatives for scale-dependent bias parameter
+    deriv_b1 = 2. * c['bHI'] * (k / c['k0_bias'])**2. / (b + f*u2) * cs / ctot
     
-    # Get analytic log-derivatives for new parameters
+    # Get analytic log-derivatives for additional parameters
     deriv_sigma8 = (2. / c['sigma_8']) * cs / ctot
     deriv_ns = np.log(k / c['k_piv']) * cs / ctot
     deriv_Tb = (2. / c['Tb']) * cs / ctot if not galaxy_survey else 0.
+    
+    # Analytic log-derivatives for modified gravity parameters
+    a = 1. / (1. + c['z'])
+    Oma = c['omega_M_0'] * (1.+c['z'])**3. / Ez(cosmo, c['z'])**2.
+    xi = 3.*(100.*c['h']/C)**2. * c['omega_M_0'] * (1. + c['z']) / k**2.
+    eta = 0. if 'eta0' not in c.keys() else c['eta0'] + c['eta1'] * (1. - a)
+    
+    deriv_gamma0 = deriv_f * f * np.log(Oma)
+    deriv_gamma1 = deriv_f * f * np.log(Oma) * (1. - a)
+    deriv_eta0 = deriv_f * f / (1. + eta)
+    deriv_eta1 = deriv_f * f * (1. - a) / (1. + eta)
+    
+    # Numerical derivatives for MG params
+    if 'mg' in switches:
+        deriv_Axi, deriv_kmg = mg_growth.growth_derivs( c['z'], K, c, 
+                                   mg_params=['A_xi', 'k_mg'], dx=[1e-3, 1e-3] )
+        deriv_Axi *= deriv_f
+        deriv_kmg *= deriv_f
+        
+    # Derivatives for binned f0(k)
+    derivs_f0k = []
+    if 'f0_kbins' in c.keys():
+        for i in range(len(c['f0_kbins']) - 1):
+            # FIXME: Fixed f0(k) = 1.
+            ka = c['f0_kbins'][i]; kb = c['f0_kbins'][i+1]
+            derivs_f0k = np.zeros(k.shape)
+            derivs_f0k[np.where(np.logical_and(k >= ka, k < kb))] = f * deriv_f
     
     # Evaluate derivatives for (apar, aperp) parameters
     dlogpk_dk = logpk_derivative(c['pk_nobao'], k) # Numerical deriv.
@@ -1659,7 +1725,6 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
                    deriv_bsig8, deriv_fsig8 ]
     paramnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 
                   'aperp', 'apar', 'fs8', 'bs8']
-    # FIXME: Add d_beta1, d_beta2
     
     # Evaluate derivatives for massive neutrinos and add to list
     if massive_nu_fn is not None:
@@ -1680,12 +1745,27 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         #deriv_list.append(deriv_omegaDE_ng)
         paramnames.append('f_NL')
     
+    # Scale-dependent bias parameter
+    if 'sdbias' in switches:
+        deriv_list.append(deriv_b1)
+        paramnames.append('b_1')
+    
+    # Modified gravity parameters
+    if 'mg' in switches:
+        deriv_list += [deriv_gamma0, deriv_gamma1, deriv_eta0, deriv_eta1, 
+                       deriv_Axi, deriv_kmg]
+        paramnames += ['gamma0', 'gamma1', 'eta0', 'eta1', 'A_xi', 'k_mg']
+        if 'f0_kbins' in c.keys():
+            deriv_list += derivs_f0k
+            paramnames += ["f0k%d" for i in range(len(c['f0_kbins']) - 1)]
+    
     # Add deriv_pk to list (always assumed to be last in the list)
     deriv_list.append(deriv_pk)
     paramnames.append('pk')
     
     # Return derivs. Order is:
-    # (A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [Neff], [fNL], pk)
+    # (A, bHI, Tb, sig2, sigma8, ns, f, aperp, apar, [Mnu], [Neff], [fNL], 
+    # [MG parameters], pk)
     return deriv_list, paramnames
 
 
@@ -1774,6 +1854,7 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
     interp_aperp = [scipy.interpolate.interp1d(aa[::-1], d[::-1], 
                     kind='linear', bounds_error=False) for d in derivs_aperp]
     return [interp_f, interp_aperp, interp_apar]
+
 
 
 def indexes_for_sampled_fns(p, Nbins, zfns):
@@ -2167,7 +2248,7 @@ def load_param_names(fname):
 
 def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None, 
             massive_nu_fn=None, Neff_fn=None, transfer_fn=None, cv_limited=False, 
-            kmin=1e-7, kmax=130. ):
+            switches=[], kmin=1e-7, kmax=130. ):
     """
     Return Fisher matrix (an binned power spectrum, with errors) for given
     fiducial cosmology and experimental settings.
@@ -2202,6 +2283,11 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     Neff_fn : interpolation fn.
         Interpolating function for calculating derivative of log[P(k)] with 
         respect to effective number of neutrinos.
+    
+    switches : list, optional
+        List of additional parameters to include in the Fisher matrix. Options 
+        are 'sdbias' (scale-dep. bias parameter b_1), and 'mg' (modified 
+        gravity parameters gamma0, gamma1, eta0, eta1, A_xi, k_mg)
     
     transfer_fn : interpolation fn.
         Interpolating function for calculating T(k) and its derivative w.r.t k.
@@ -2242,7 +2328,7 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     cosmo['omega_HI'] = omega_HI(z, cosmo)
     cosmo['bHI'] = bias_HI(z, cosmo)
     cosmo['Tb'] = Tb(z, cosmo)
-    cosmo['z'] = z; cosmo['f'] = ff(z); cosmo['D'] = DD(z)
+    cosmo['z'] = z; cosmo['D'] = DD(z); cosmo['f'] = ff(z)
     cosmo['r'] = rr(z); cosmo['rnu'] = C*(1.+z)**2. / HH(z) # Perp/par. dist. scales
     
     # Physical volume (in rad^2 Mpc^3) (note factor of nu_line in here)
@@ -2289,7 +2375,8 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
                                             massive_nu_fn=massive_nu_fn,
                                             Neff_fn=Neff_fn,
                                             transfer_fn=transfer_fn,
-                                            cv_limited=cv_limited )
+                                            cv_limited=cv_limited,
+                                            switches=switches )
     F = Vfac * integrate_fisher_elements(derivs, kgrid, ugrid)
     
     # Calculate cross-terms between binned P(k) and other params

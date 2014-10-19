@@ -62,7 +62,7 @@ def add_detf_planck_prior(F, lbls, info=False):
         if info: print "Planck prior:", lbls_planck[ii], "not found in Fisher matrix."
     return Fpl
 
-def euclid_to_baofisher(F, cosmo):
+def euclid_to_rf(F, cosmo):
     """
     Transform Planck prior from Euclid science review, Amendola (et al. 2012), 
     Table 1.17, to our set of parameters.
@@ -136,7 +136,7 @@ def camb_to_baofisher(F, cosmo):
     Fnew = np.dot(M, np.dot(F, M.T))
     return Fnew
 
-def detf_to_baofisher(fname, cosmo, omegab=False):
+def detf_to_rf(fname, cosmo, omegab=False):
     """
     Transform Planck prior from DETF to our set of parameters. DETF Fisher 
     matrix can be obtained from:

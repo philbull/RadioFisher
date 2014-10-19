@@ -42,7 +42,7 @@ def load_expt(expt):
 USE = {
   'f_rsd':             True,     # RSD constraint on f(z)
   'f_growthfactor':    False,    # D(z) constraint on f(z)
-  'alpha_all':         True,     # Use all constraints on alpha_{perp,par}
+  'alpha_all':         False,     # Use all constraints on alpha_{perp,par}
   'alpha_volume':      False,
   'alpha_rsd_angle':   False,
   'alpha_rsd_shift':   False,
