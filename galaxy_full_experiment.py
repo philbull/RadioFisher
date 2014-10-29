@@ -40,7 +40,7 @@ expt_list = [
     ( 'HETDEX',             e.HETDEX ),             # 9
     ( 'WEAVEhdeep',         e.WEAVE_deep_highz ),   # 10
     ( 'WEAVEhmid',          e.WEAVE_mid_highz ),    # 11
-    ( 'WEAVEhlow',          e.WEAVE_wide_highz ),   # 12
+    ( 'WEAVEhwide',         e.WEAVE_wide_highz ),   # 12
     ( 'WEAVEldeep',         e.WEAVE_deep_lowz ),    # 13
     ( 'WEAVElmid',          e.WEAVE_mid_lowz ),     # 14
     ( 'WEAVElwide',         e.WEAVE_wide_lowz ),    # 15
