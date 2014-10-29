@@ -26,8 +26,8 @@ cosmo = {
     'sigma_nl':         7.,
     'b_1':              0.,         # Scale-dependent bias (k^2 term coeff.)
     'k0_bias':          0.1,        # Scale-dependent bias pivot scale [Mpc^-1]
-    'A_xi':             0.0,        # Modified gravity growth amplitude
-    'k_mg':             1e-2        # New modified gravity growth scale
+    'A_xi':             0.001,         # Modified gravity growth amplitude
+    'k_mg':             1e-2        # New modified gravity growth scale # FIXME
 }
 
 # Define which measurements to include in forecasts

@@ -42,7 +42,7 @@ def load_expt(expt):
 USE = {
   'f_rsd':             True,     # RSD constraint on f(z)
   'f_growthfactor':    False,    # D(z) constraint on f(z)
-  'alpha_all':         False,     # Use all constraints on alpha_{perp,par}
+  'alpha_all':         True,     # Use all constraints on alpha_{perp,par}
   'alpha_volume':      False,
   'alpha_rsd_angle':   False,
   'alpha_rsd_shift':   False,
@@ -192,3 +192,67 @@ HETDEX = {
 HETDEX.update(SURVEY)
 
 
+
+#########################
+# WEAVE
+#########################
+
+WEAVE_deep_lowz = {
+    'fsky':        sarea_to_fsky(70.*10.),
+    'fname':       'nz_WEAVE_deep_lowz.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+WEAVE_deep_lowz.update(SURVEY)
+
+WEAVE_mid_lowz = {
+    'fsky':        sarea_to_fsky(1e3),
+    'fname':       'nz_WEAVE_mid_lowz.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+WEAVE_mid_lowz.update(SURVEY)
+
+WEAVE_wide_lowz = {
+    'fsky':        sarea_to_fsky(20e3),
+    'fname':       'nz_WEAVE_wide_lowz.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+WEAVE_wide_lowz.update(SURVEY)
+
+WEAVE_deep_highz = {
+    'fsky':        sarea_to_fsky(70.*10.),
+    'fname':       'nz_WEAVE_deep_highz.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+WEAVE_deep_highz.update(SURVEY)
+
+WEAVE_mid_highz = {
+    'fsky':        sarea_to_fsky(1e3),
+    'fname':       'nz_WEAVE_mid_highz.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+WEAVE_mid_highz.update(SURVEY)
+
+WEAVE_wide_highz = {
+    'fsky':        sarea_to_fsky(20e3),
+    'fname':       'nz_WEAVE_wide_highz.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+WEAVE_wide_highz.update(SURVEY)
