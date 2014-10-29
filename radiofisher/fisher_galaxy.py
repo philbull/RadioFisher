@@ -48,7 +48,8 @@ def Csignal_galaxy(q, y, cosmo, expt):
 
 
 def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns, 
-                          switches=[], kbins=None, return_pk=False ):
+                          switches=[], massive_nu_fn=None, kbins=None, 
+                          return_pk=False ):
     """
     Calculate Fisher matrix for a galaxy redshift survey.
     
@@ -113,7 +114,7 @@ def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns,
     
     # Calculate derivatives and integrate
     derivs, paramnames = rf.fisher_integrands( kgrid, ugrid, cosmo, expt=expt, 
-                                   massive_nu_fn=None, transfer_fn=None, 
+                                   massive_nu_fn=massive_nu_fn, transfer_fn=None, 
                                    galaxy_survey=True, cs_galaxy=Csignal_galaxy,
                                    switches=switches )
     Vfac = Vsurvey / (8. * np.pi**2.)

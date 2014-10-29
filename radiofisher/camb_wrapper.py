@@ -15,7 +15,7 @@ C = 3e5 # km/s
 def camb_params( params_fname,
                  output_root='test', calc_late_isw='F', get_scalar_cls='T', 
                  get_vector_cls='F', get_tensor_cls='F', get_transfer='T', 
-                 do_lensing='T', do_nonlinear=0, l_max_scalar=2200, 
+                 do_lensing='F', do_nonlinear=0, l_max_scalar=2200, 
                  l_max_tensor=1500, k_eta_max_tensor=3000, use_physical='T', 
                  ombh2=0.0226, omch2=0.112, omnuh2=0, omk=0, hubble=70, 
                  w=-1, wa=0, use_tabulated_w='F', wafile='wa.dat',

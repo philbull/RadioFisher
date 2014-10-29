@@ -120,6 +120,6 @@ def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'k_mg'], dx=[1e-3, 1e-3]):
         c = copy.deepcopy(cosmo) # Get unmodified cosmo dict.
         c[mg_params[i]] += dx[i]
         ff, DD = growth_k(zc, c)
-        derivs.append((ff(k) - f0_k / dx[i]))
+        derivs.append( (ff(k) - f0_k) / dx[i] )
     return derivs
 

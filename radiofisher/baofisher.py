@@ -495,7 +495,7 @@ def load_power_spectrum( cosmo, cachefile, kmax=CAMB_KMAX, comm=None,
     
     # Set-up CAMB parameters
     p = convert_to_camb(cosmo)
-    p['transfer_kmax'] = kmax / cosmo['h']
+    p['transfer_kmax'] = kmax / cosmo['h'] if kmax <= 14. else 14.
     p['transfer_high_precision'] = 'T'
     p['transfer_k_per_logint'] = 250 #1000
     
@@ -876,11 +876,11 @@ def deriv_neutrinos(cosmo, cacheroot, kmax=CAMB_KMAX, force=False,
     if comm is not None:
         myid = comm.Get_rank()
         size = comm.Get_size()
-    if myid == 0: print "\tderiv_logpk_neutrinos(): Loading P(k) data for derivs..."
+    if myid == 0: print "\tderiv_neutrinos(): Loading P(k) data for derivs..."
     
     # Set finite difference values and other CAMB parameters
     p = convert_to_camb(cosmo)
-    p['transfer_kmax'] = kmax
+    p['transfer_kmax'] = kmax if kmax <= 10. else 10.
     if mnu != 0.:
         # Neutrino mass derivative
         # Set neutrino density and choose one massive neutrino species
@@ -889,7 +889,7 @@ def deriv_neutrinos(cosmo, cacheroot, kmax=CAMB_KMAX, force=False,
         p['omnuh2'] = mnu / 93.04
         p['massless_neutrinos'] = Neff - 1.
         p['massive_neutrinos'] = "2 1"
-        p['nu_mass_eigenstates'] = 1.
+        p['nu_mass_eigenstates'] = 1
         deriv_param = 'omnuh2'
         x = p['omnuh2']
         dx = dmnu / 93.04
@@ -1410,7 +1410,7 @@ def Csignal(q, y, cosmo, expt):
     u2 = (kpar / k)**2.
     
     # Linear growth function (including scale-dependence)
-    f = c['f'] # FIXME: assumes fiducial model is GR.
+    f = c['f'] if 'f' in c.keys() else fgrowth_k(c, c['z'], k)
     
     # RSD function (bias 'btot' already includes scale-dep. bias/non-Gaussianity)
     if RSD_FUNCTION == 'kaiser':
@@ -1503,7 +1503,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     u2 = y**2. / ( y**2. + (q * rnu/r * aperp/apar)**2. )
     
     # Calculate linear growth rate
-    f = c['f'] # FIXME: Assumes fiducial model is GR
+    f = c['f'] if 'f' in c.keys() else fgrowth_k(c, c['z'], k)
     
     # Calculate bias (incl. non-Gaussianity, if requested)
     # FIXME: Should calculate bias only in the functions that need it 
@@ -1755,6 +1755,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         deriv_list += [deriv_gamma0, deriv_gamma1, deriv_eta0, deriv_eta1, 
                        deriv_Axi, deriv_kmg]
         paramnames += ['gamma0', 'gamma1', 'eta0', 'eta1', 'A_xi', 'k_mg']
+        
         if 'f0_kbins' in c.keys():
             deriv_list += derivs_f0k
             paramnames += ["f0k%d" for i in range(len(c['f0_kbins']) - 1)]
@@ -2328,7 +2329,8 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     cosmo['omega_HI'] = omega_HI(z, cosmo)
     cosmo['bHI'] = bias_HI(z, cosmo)
     cosmo['Tb'] = Tb(z, cosmo)
-    cosmo['z'] = z; cosmo['D'] = DD(z); cosmo['f'] = ff(z)
+    cosmo['z'] = z; cosmo['D'] = DD(z)
+    cosmo['f'] = ff(z) if 'mg' in switches else None
     cosmo['r'] = rr(z); cosmo['rnu'] = C*(1.+z)**2. / HH(z) # Perp/par. dist. scales
     
     # Physical volume (in rad^2 Mpc^3) (note factor of nu_line in here)
@@ -2365,9 +2367,8 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     
     # Sanity check on P(k)
     if kmax > cosmo['k_in_max']:
-        raise ValueError(
-          "Input P(k) only goes up to %3.2f Mpc^-1, but kmax is %3.2f Mpc^-1." \
-          % (cosmo['k_in_max'], kmax) )
+        print "\tWARNING: Input P(k) goes up to %3.2f Mpc^-1, but kmax is %3.2f Mpc^-1." \
+          % (cosmo['k_in_max'], kmax)
     
     # Get derivative terms for Fisher matrix integrands, then perform the 
     # integrals and populate the matrix
