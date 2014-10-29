@@ -24,8 +24,8 @@ e = experiments
 cosmo = experiments.cosmo
 
 # Label experiments with different settings
-EXPT_LABEL = "_mg_Dz" #"_baoonly"
-#EXPT_LABEL = "_uls"
+#EXPT_LABEL = "_mg_Dz_kmg0.1" #"_mnu" #"_mg_Dz" "_baoonly" "_uls"
+EXPT_LABEL = "_mg_Dz_kmg0.01"
 
 expt_list = [
     ( 'exptS',            e.exptS ),        # 0
@@ -143,7 +143,7 @@ kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
 ##kbins = np.logspace(-4., 0., 81)
 
 # Neutrino mass
-cosmo['mnu'] = 0.
+#cosmo['mnu'] = 0.1 # FIXME
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
 cosmo_fns =  rf.background_evolution_splines(cosmo)
@@ -153,21 +153,20 @@ if cosmo['mnu'] != 0.:
     fname_pk = "cache_pk_%s.dat" % mnu_str
     fname_nu = "cache_%s" % mnu_str
     survey_name += mnu_str; root += mnu_str
-    
-    cosmo =  rf.load_power_spectrum(cosmo, fname_pk, comm=comm)
-    Neff_fn =  rf.deriv_neutrinos(cosmo, fname_nu, Neff=cosmo['N_eff'], comm=comm)
+    cosmo = rf.load_power_spectrum(cosmo, fname_pk, comm=comm)
+    mnu_fn = rf.deriv_neutrinos(cosmo, fname_nu, mnu=cosmo['mnu'], comm=comm)
 else:
     # Normal operation (no massive neutrinos or non-Gaussianity)
     cosmo =  rf.load_power_spectrum(cosmo, "cache_pk.dat", comm=comm)
-    massive_nu_fn = None
+    mnu_fn = None
 
 # Non-Gaussianity
 #transfer_fn =  rf.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
 transfer_fn = None
 
 # Effective no. neutrinos, N_eff
-Neff_fn =  rf.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
-#Neff_fn = None
+#Neff_fn =  rf.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
+Neff_fn = None
 
 # Optional additional parameters
 #switches = []
@@ -221,7 +220,7 @@ for i in range(zs.size-1):
                                          zs[i], zs[i+1], cosmo, expt_eff, 
                                          cosmo_fns=cosmo_fns,
                                          transfer_fn=transfer_fn,
-                                         massive_nu_fn=massive_nu_fn,
+                                         massive_nu_fn=mnu_fn,
                                          Neff_fn=Neff_fn,
                                          return_pk=True,
                                          cv_limited=cv_limited, 
