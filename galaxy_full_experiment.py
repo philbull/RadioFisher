@@ -24,19 +24,26 @@ size = comm.Get_size()
 cosmo = experiments.cosmo
 
 # Label experiments with different settings
-EXPT_LABEL = "_mg" #"_baoonly" #"_mg" #"_baoonly"
+#EXPT_LABEL = "_mnu" #"_baoonly" #"_mg" #"_baoonly"
+EXPT_LABEL = "" # "_mg_Dz_kmg0.01"
 
 expt_list = [
-    ( 'EuclidOpt',          e.EuclidOpt ),      # 0
-    ( 'EuclidRef',          e.EuclidRef ),      # 1
-    ( 'EuclidPess',         e.EuclidPess ),     # 2
-    ( 'gSKAMIDMKB2',        e.SKAMIDMKB2 ),     # 3
-    ( 'gSKASURASKAP',       e.SKASURASKAP ),    # 4
-    ( 'gSKA2',              e.SKA2 ),           # 5
-    ( 'LSST',               e.LSST ),           # 6
-    ( 'BOSS',               e.BOSS ),           # 7
-    ( 'WFIRST',             e.WFIRST ),         # 8
-    ( 'HETDEX',             e.HETDEX )          # 9
+    ( 'EuclidOpt',          e.EuclidOpt ),          # 0
+    ( 'EuclidRef',          e.EuclidRef ),          # 1
+    ( 'EuclidPess',         e.EuclidPess ),         # 2
+    ( 'gSKAMIDMKB2',        e.SKAMIDMKB2 ),         # 3
+    ( 'gSKASURASKAP',       e.SKASURASKAP ),        # 4
+    ( 'gSKA2',              e.SKA2 ),               # 5
+    ( 'LSST',               e.LSST ),               # 6
+    ( 'BOSS',               e.BOSS ),               # 7
+    ( 'WFIRST',             e.WFIRST ),             # 8
+    ( 'HETDEX',             e.HETDEX ),             # 9
+    ( 'WEAVEhdeep',         e.WEAVE_deep_highz ),   # 10
+    ( 'WEAVEhmid',          e.WEAVE_mid_highz ),    # 11
+    ( 'WEAVEhlow',          e.WEAVE_wide_highz ),   # 12
+    ( 'WEAVEldeep',         e.WEAVE_deep_lowz ),    # 13
+    ( 'WEAVElmid',          e.WEAVE_mid_lowz ),     # 14
+    ( 'WEAVElwide',         e.WEAVE_wide_lowz ),    # 15
 ]
 names, expts = zip(*expt_list)
 names = list(names); expts = list(expts)
@@ -59,22 +66,40 @@ e.load_expt(expt)
 zmin = expt['zmin']
 zmax = expt['zmax']
 
-#switches = []
-switches = ['mg', 'sdbias']
+switches = []
+#switches = ['mg', 'sdbias']
 
 
 ################################################################################
 
 # Define kbins (used for output)
 kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
-#kbins = np.logspace(np.log10(0.0001), np.log10(1.), 2) # FIXME
+
+# Neutrino mass
+cosmo['mnu'] = 0. #0.1
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
-cosmo_fns = rf.background_evolution_splines(cosmo)
-cosmo = rf.load_power_spectrum(cosmo, "cache_pk_gal.dat", comm=comm)
-#massive_nu_fn = rf.deriv_logpk_mnu(cosmo['mnu'], cosmo, "cache_mnu010", comm=comm)
-#transfer_fn = rf.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
-#Neff_fn = rf.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
+cosmo_fns =  rf.background_evolution_splines(cosmo)
+if cosmo['mnu'] != 0.:
+    # Massive neutrinos
+    mnu_str = "mnu%03d" % (cosmo['mnu']*100.)
+    fname_pk = "cache_pk_gal_%s.dat" % mnu_str
+    fname_nu = "cache_%s" % mnu_str
+    survey_name += mnu_str; root += mnu_str
+    cosmo = rf.load_power_spectrum(cosmo, fname_pk, comm=comm)
+    mnu_fn = rf.deriv_neutrinos(cosmo, fname_nu, mnu=cosmo['mnu'], comm=comm)
+else:
+    # Normal operation (no massive neutrinos or non-Gaussianity)
+    cosmo =  rf.load_power_spectrum(cosmo, "cache_pk_gal.dat", comm=comm)
+    mnu_fn = None
+
+# Non-Gaussianity
+#transfer_fn =  rf.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
+transfer_fn = None
+
+# Effective no. neutrinos, N_eff
+#Neff_fn =  rf.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
+Neff_fn = None
 
 H, r, D, f = cosmo_fns
 zc = 0.5 * (zmin + zmax)
@@ -121,8 +146,8 @@ for i in range(zmin.size):
     F_pk, kc, binning_info, paramnames =  rf.galaxy.fisher_galaxy_survey(
                                            zmin[i], zmax[i], expt['nz'][i], 
                                            expt['b'][i], cosmo, expt, cosmo_fns, 
-                                           switches=switches, return_pk=True, 
-                                           kbins=kbins )
+                                           massive_nu_fn=mnu_fn, switches=switches,
+                                           return_pk=True, kbins=kbins )
     # Expand Fisher matrix with EOS parameters
     ##F_eos = rf.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
     F_eos, paramnames = rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
