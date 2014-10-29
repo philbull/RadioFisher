@@ -57,16 +57,16 @@ for k in range(len(names)):
     errs = np.sqrt(np.diag(cov))
     
     # Fixing b_1
-    #excl.append('b_1')
-    #F2, lbls2 = rf.combined_fisher_matrix( F_list,
-    #                                     expand=zfns, names=pnames,
-    #                                     exclude=excl )
-    #cov2 = np.linalg.inv(F2)
-    #errs2 = np.sqrt(np.diag(cov2))
+    excl.append('b_1')
+    F2, lbls2 = rf.combined_fisher_matrix( F_list,
+                                         expand=zfns, names=pnames,
+                                         exclude=excl )
+    cov2 = np.linalg.inv(F2)
+    errs2 = np.sqrt(np.diag(cov2))
     
     # Identify functions of z
     pfs8 = rf.indices_for_param_names(lbls, 'fs8*')
-    #pfs8_2 = rf.indices_for_param_names(lbls2, 'fs8*')
+    pfs8_2 = rf.indices_for_param_names(lbls2, 'fs8*')
     
     print ""
     print "#", names[k]
