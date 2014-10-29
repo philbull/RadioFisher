@@ -3,3 +3,6 @@
 *.pyc
 *.pdf
 *.dat
+old/*
+old_code/*
+paramfiles/*
