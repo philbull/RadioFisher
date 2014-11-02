@@ -37,8 +37,7 @@ RSD_FUNCTION = 'kaiser'
 
 # Location of CAMB fiducial P(k) file
 # NOTE: Currently expects CAMB P(k) needs to be at chosen z value (z=0 here).
-#CAMB_MATTERPOWER = "/home/phil/oslo/iswfunction/cosmomc/camb/testX_matterpower.dat"
-CAMB_KMAX = 130. / 0.7 # Max. k for CAMB, in h Mpc^-1
+CAMB_KMAX = 20. / 0.7 # Max. k for CAMB, in h Mpc^-1
 CAMB_EXEC = "/home/phil/oslo/bao21cm/camb" # Directory containing camb executable
 
 
@@ -540,10 +539,10 @@ def fgrowth(cosmo, z):
 
 def fgrowth_k(cosmo, z, k):
     """
-    Generalised form for the scale-dependent growth rate.
+    Generalised form for the scale-dependent growth rate and growth factor.
     """
     f, D = mg_growth.growth_k(z, cosmo)
-    return f(k)
+    return f(k), D(k)
 
 def Ez(cosmo, z):
     """
@@ -657,6 +656,17 @@ def omegaM_z(z, cosmo):
     ok = 1. - om - ol
     E = np.sqrt(om*(1.+z)**3. + ok*(1.+z)**2. + ol)
     return om * (1. + z)**3. * E**-2.
+
+def inverse_interpfn(f):
+    """
+    Invert an array, replacing all 1/0 with 0. This is for use on arrays that 
+    have been produced by interpolation, where some of the elements were 
+    outside the interpolation range.
+    """
+    ff = np.zeros(f.shape)
+    idxs = np.where(f != 0.)
+    ff[idxs] = 1. / f[idxs]
+    return ff
 
 def convert_to_camb(cosmo):
     """
@@ -808,13 +818,13 @@ def deriv_transfer(cosmo, cachefile, kmax=CAMB_KMAX, kref=1e-3, comm=None, force
     # Interpolate weighted inverse transfer fn. in rescaled (non-h^-1) units
     scale_fn = 1. / (Tk * k**2.)
     iscalefn = scipy.interpolate.interp1d( k, scale_fn, kind='linear',
-                                           bounds_error=False ) #fill_value=0.)
+                                           bounds_error=False, fill_value=0.)
     
     # Calculate derivative w.r.t k and interpolate
     dk = 1e-7 # Small-ish, to prevent spikes in derivative nr. boundaries
     dscalefn = (iscalefn(k + 0.5*dk) - iscalefn(k - 0.5*dk)) / dk
     idscalefn_dk = scipy.interpolate.interp1d( k, dscalefn, kind='linear',
-                                               bounds_error=False )
+                                               bounds_error=False, fill_value=0.)
     # TODO: Calculate derivative w.r.t. M_nu
     idscalefn_dMnu = None
     return iscalefn, idscalefn_dk, idscalefn_dMnu
@@ -1410,7 +1420,7 @@ def Csignal(q, y, cosmo, expt):
     u2 = (kpar / k)**2.
     
     # Linear growth function (including scale-dependence)
-    f = c['f'] if 'f' in c.keys() else fgrowth_k(c, c['z'], k)
+    f, D = (c['f'], c['D']) if c['f'] is not None else fgrowth_k(c, c['z'], k)
     
     # RSD function (bias 'btot' already includes scale-dep. bias/non-Gaussianity)
     if RSD_FUNCTION == 'kaiser':
@@ -1418,11 +1428,11 @@ def Csignal(q, y, cosmo, expt):
         Frsd = (c['btot'] + f*u2)**2. * np.exp(-u2*(k*c['sigma_nl'])**2.)
     else:
         # arXiv:0812.0419, Eq. 5
-        sigma_nl2_eff = (c['D'] * c['sigma_nl'])**2. * (1. - u2 + u2*(1.+f)**2.)
+        sigma_nl2_eff = (D * c['sigma_nl'])**2. * (1. - u2 + u2*(1.+f)**2.)
         Frsd = (c['btot'] + f*u2)**2. * np.exp(-0.5 * k**2. * sigma_nl2_eff)
     
     # Construct signal covariance and return
-    cs = Frsd * (1. + c['A'] * c['fbao'](k)) * c['D']**2. * c['pk_nobao'](k)
+    cs = Frsd * (1. + c['A'] * c['fbao'](k)) * D**2. * c['pk_nobao'](k)
     cs *= c['aperp']**2. * c['apar']
     return cs * c['Tb']**2. / (c['r']**2. * c['rnu'])
 
@@ -1503,7 +1513,8 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     u2 = y**2. / ( y**2. + (q * rnu/r * aperp/apar)**2. )
     
     # Calculate linear growth rate
-    f = c['f'] if 'f' in c.keys() else fgrowth_k(c, c['z'], k)
+    f, D = (c['f'], c['D']) if c['f'] is not None else fgrowth_k(c, c['z'], k)
+    Dinv = inverse_interpfn(D) # D^-1 with zeros outside interpolation range
     
     # Calculate bias (incl. non-Gaussianity, if requested)
     # FIXME: Should calculate bias only in the functions that need it 
@@ -1512,14 +1523,16 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     if transfer_fn is None:
         b = c['btot'] = c['bHI'] * s_k
     else:
-        # Get values/derivatives of matter transfer function term, 1/(T(k) k^2)
+        # Get values/derivatives of matter transfer function term, Tfn = 1/(T(k) k^2)
         _Tfn, _dTfn_dk, _dTfn_dmnu = transfer_fn
         Tfn = _Tfn(k); dTfn_dk = _dTfn_dk(k)
         
         # Calculate non-Gaussian bias
         fNL = c['fNL']
-        delta_c = 1.686 / c['D'] # LCDM critical overdensity (e.g. Eke et al. 1996)
-        alpha = (100.*c['h'])**2. * c['omega_M_0'] * delta_c * Tfn / (C**2. * c['D'])
+        D_ng = fgrowth_k(c, c['z'], 0.1)[1]
+        delta_c = 1.686 / D_ng # LCDM critical overdensity (e.g. Eke et al. 1996)
+        alpha = (100.*c['h'])**2. * c['omega_M_0'] * delta_c * Tfn * Dinv / (C**2.)
+        alpha[np.where(np.isinf(alpha))] = 0. # Remove infs outside interp. range
         b = c['btot'] = c['bHI'] * s_k + 3.*(c['bHI'] - 1.) * alpha * fNL
     
     # Choose signal/noise models depending on whether galaxy or HI survey
@@ -1571,17 +1584,17 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # (Ignores scale-dep. of bias in drsd_sk; that's included later)
     if RSD_FUNCTION == 'kaiser':
         drsd_df = 2. * u2 / (b + f*u2)
-        drsd_dfsig8 = 2. * u2 / (b*c['sigma_8']*c['D'] + f*c['sigma_8']*c['D']*u2)
+        drsd_dfsig8 = 2. * u2 * Dinv / (b*c['sigma_8'] + f*c['sigma_8']*u2)
         drsd_dsig2 = -k**2. * u2
         drsd_du2 = 2.*f / (b + f*u2) - (k * c['sigma_nl'])**2.
         drsd_dk = -2. * k * u2 * c['sigma_nl']**2.
     else:
         drsd_df = u2 * ( 2. * u2 / (b + f*u2) \
-                       - (1. + f) * (k*c['sigma_nl']*c['D'])**2. )
-        drsd_dsig2 = -0.5 * (k * c['D'])**2. * ( 1. - u2 + u2*(1. + f)**2. )
+                       - (1. + f) * (k*c['sigma_nl']*D)**2. )
+        drsd_dsig2 = -0.5 * (k * D)**2. * ( 1. - u2 + u2*(1. + f)**2. )
         drsd_du2 = 2. * f / (b + f*u2) \
-                 - 0.5 * (k*c['sigma_nl']*c['D'])**2. * ((1. + f)**2. - 1.)
-        drsd_dk = -k*(c['D']*c['sigma_nl'])**2. * (1. - u2 + u2*(1. + f)**2.)
+                 - 0.5 * (k*c['sigma_nl']*D)**2. * ((1. + f)**2. - 1.)
+        drsd_dk = -k*(D*c['sigma_nl'])**2. * (1. - u2 + u2*(1. + f)**2.)
     
     # Evaluate derivatives for non-Gaussian bias
     if transfer_fn is not None:
@@ -1634,7 +1647,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     deriv_f   = ( use['f_rsd'] * drsd_df \
                 + use['f_growthfactor'] * 2.*np.log(a) \
                 + dbng_df_term ) * cs / ctot
-    deriv_bsig8 = 2.*dbng_bHI/(b*c['sigma_8']*c['D'] + f*c['sigma_8']*c['D']*u2) * cs / ctot
+    deriv_bsig8 = 2.*dbng_bHI*Dinv/(b*c['sigma_8'] + f*c['sigma_8']*u2) * cs / ctot
     deriv_fsig8 = drsd_dfsig8 * cs / ctot
     deriv_sig2 = drsd_dsig2 * cs / ctot
     deriv_pk = cs / ctot
@@ -1671,8 +1684,8 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         for i in range(len(c['f0_kbins']) - 1):
             # FIXME: Fixed f0(k) = 1.
             ka = c['f0_kbins'][i]; kb = c['f0_kbins'][i+1]
-            derivs_f0k = np.zeros(k.shape)
-            derivs_f0k[np.where(np.logical_and(k >= ka, k < kb))] = f * deriv_f
+            derivs_f0k.append( f * deriv_f )
+            derivs_f0k[-1][np.where(np.logical_or(k < ka, k >= kb))] = 0.
     
     # Evaluate derivatives for (apar, aperp) parameters
     dlogpk_dk = logpk_derivative(c['pk_nobao'], k) # Numerical deriv.
@@ -1758,7 +1771,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         
         if 'f0_kbins' in c.keys():
             deriv_list += derivs_f0k
-            paramnames += ["f0k%d" for i in range(len(c['f0_kbins']) - 1)]
+            paramnames += ["f0k%d" % i for i in range(len(c['f0_kbins']) - 1)]
     
     # Add deriv_pk to list (always assumed to be last in the list)
     deriv_list.append(deriv_pk)
@@ -2330,7 +2343,7 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     cosmo['bHI'] = bias_HI(z, cosmo)
     cosmo['Tb'] = Tb(z, cosmo)
     cosmo['z'] = z; cosmo['D'] = DD(z)
-    cosmo['f'] = ff(z) if 'mg' in switches else None
+    cosmo['f'] = ff(z) if 'mg' not in switches else None
     cosmo['r'] = rr(z); cosmo['rnu'] = C*(1.+z)**2. / HH(z) # Perp/par. dist. scales
     
     # Physical volume (in rad^2 Mpc^3) (note factor of nu_line in here)

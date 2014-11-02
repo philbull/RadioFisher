@@ -51,7 +51,7 @@ def dfDdloga(y, x, k, cosmo):
     dlogDdx = f
     return [dfdx, dlogDdx]
 
-def growth_k(z, cosmo, kmin=1e-4, kmax=1e2, nsamp=100):
+def growth_k(z, cosmo, kmin=1e-4, kmax=1e2, kref=1e-1, nsamp=100):
     """
     Find growth rate f and growth function D as a function of k for a given 
     redshift.
@@ -61,11 +61,15 @@ def growth_k(z, cosmo, kmin=1e-4, kmax=1e2, nsamp=100):
     x = np.log(aa)
     f = []; D = []
     
+    # Calculate reference value of D(k=kref, a=1) = 1, for normalisation
+    ff, logD = scipy.integrate.odeint(dfDdloga, [1.,0.], x, args=(kref, cosmo)).T
+    logDref = logD[-1]
+    
     # Loop through specified k values
     for k in kk:
         ff, logD = scipy.integrate.odeint(dfDdloga, [1.,0.], x, args=(k, cosmo)).T
         f.append(ff[1])
-        D.append( np.exp(logD[1] - logD[-1]) )
+        D.append( np.exp(logD[1] - logDref) )
     
     # Interpolate growth rate and growth function
     ff = scipy.interpolate.interp1d(kk, f, kind='linear', bounds_error=False, 
