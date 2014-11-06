@@ -663,9 +663,12 @@ def inverse_interpfn(f):
     have been produced by interpolation, where some of the elements were 
     outside the interpolation range.
     """
-    ff = np.zeros(f.shape)
-    idxs = np.where(f != 0.)
-    ff[idxs] = 1. / f[idxs]
+    if f.shape == (): # 0-dimensional case
+        ff = 1. / f
+    else:
+        ff = np.zeros(f.shape)
+        idxs = np.where(f != 0.)
+        ff[idxs] = 1. / f[idxs]
     return ff
 
 def convert_to_camb(cosmo):
@@ -1514,7 +1517,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     
     # Calculate linear growth rate
     f, D = (c['f'], c['D']) if c['f'] is not None else fgrowth_k(c, c['z'], k)
-    Dinv = inverse_interpfn(D) # D^-1 with zeros outside interpolation range
+    Dinv = inverse_interpfn(D)
     
     # Calculate bias (incl. non-Gaussianity, if requested)
     # FIXME: Should calculate bias only in the functions that need it 
