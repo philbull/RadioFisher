@@ -16,7 +16,7 @@ cosmo = {
     'gamma':            0.55,
     'w0':               -1.,
     'wa':               0.,
-    'fNL':              0.,
+    'fNL':              0., #10., # FIXME
     'mnu':              0.,
     'k_piv':            0.05, # n_s
     'aperp':            1.,
@@ -26,7 +26,7 @@ cosmo = {
     'sigma_nl':         7.,
     'b_1':              0.,         # Scale-dependent bias (k^2 term coeff.)
     'k0_bias':          0.1,        # Scale-dependent bias pivot scale [Mpc^-1]
-    'A_xi':             0.001,         # Modified gravity growth amplitude
+    'A_xi':             0., #0.001,         # Modified gravity growth amplitude
     'k_mg':             1e-2        # New modified gravity growth scale # FIXME
 }
 
@@ -690,7 +690,8 @@ SKA1LOW = {
     'theta_b':          5.29*(D2RAD),      # Beam at critical frequency
     'Aeff':             925.,              # Effective area at critical freq.
     'Ddish':            35.,               # Single dish diameter [m]
-    'Tinst':            106.*(1e3),        # System temp. [mK]
+    'Tinst':            40.*(1e3),         # System temp. [mK]
+    'Tsky_factor':      0.1,               # Additional factor of Tsky to add to Tsys
     'survey_dnutot':    100.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     350.,              # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]

@@ -1339,6 +1339,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     Vsurvey = expt['Sarea'] * expt['dnutot'] / expt['nu_line']
     Tsky = 60e3 * (300.*(1.+c['z']) / expt['nu_line'])**2.55 # Temp. of sky (mK)
     Tsys = expt['Tinst'] + Tsky
+    if 'Tsky_factor' in expt.keys(): Tsys += expt['Tsky_factor'] * Tsky
     noise = Tsys**2. * Vsurvey / (npol * expt['ttot'] * expt['dnutot'])
     if cv: noise = 1. # Cosmic variance-limited calc.
     
