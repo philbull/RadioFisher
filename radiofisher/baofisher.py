@@ -251,6 +251,34 @@ def plot_corrmat(F, names):
 # Binning strategies
 ################################################################################
 
+def zbins_fixed(expt, zbin_min=0., zbin_max=6., dz=0.1):
+    """
+    Construct a sensible binning for a given experiment for bins with fixed dz, 
+    equally spaced from z=zbin_min. If the band does not exactly divide into 
+    the binning, smaller bins will be added at the end of the band.
+    """
+    zs = np.arange(zbin_min, zbin_max, dz)
+    zc = (zs + 0.5*dz)[:-1]
+    
+    # Get redshift ranges of actual experiment
+    zmin = expt['nu_line'] / expt['survey_numax'] - 1.
+    zmax = expt['nu_line'] / (expt['survey_numax'] - expt['survey_dnutot']) - 1.
+    
+    # Remove bins with no overlap
+    idxs = np.where(np.logical_and(zs >= zmin, zs <= zmax))
+    zs = zs[idxs]
+    
+    # Add end bins to cover as much of the full band as possible
+    if (zs[0] - zmin) > 0.1*dz:
+        zs = np.concatenate(([zmin,], zs))
+    if (zmax - zs[-1]) > 0.1*dz:
+        zs = np.concatenate((zs, [zmax,]))
+    
+    # Return bin edges and centroids
+    zc = np.array([0.5*(zs[i+1] + zs[i]) for i in range(zs.size - 1)])
+    return zs, zc
+    
+
 def zbins_equal_spaced(expt, bins=None, dz=None):
     """
     Return redshift bin edges and centroids for an equally-spaced redshift 
@@ -1405,9 +1433,10 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     if 'comb' in expt['mode']: raise NotImplementedError("Combined mode not implemented!")
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
-    kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
-    kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
-    noise[np.where(kpar < kfg)] = INF_NOISE
+    # FIXME: Needs to be re-enabled
+    #kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
+    #kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
+    #noise[np.where(kpar < kfg)] = INF_NOISE
     return noise
 
 
