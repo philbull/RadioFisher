@@ -418,8 +418,8 @@ def zbins_split_width(expt, dz=(0.1, 0.3), zsplit=2.):
     zmax = expt['nu_line'] / (expt['survey_numax'] - expt['survey_dnutot']) - 1.
     
     # Special case if zmax < zsplit
-    if zmax > zsplit:
-        nbins = np.floor((zsplit - zmin) / dz[0])
+    if zmax < zsplit:
+        nbins = np.floor((zmax - zmin) / dz[0])
         z1 = np.linspace(zmin, zmin + nbins*dz[0], nbins+1)
         if (zmax - z1[-1]) > 0.2 * dz[0]:
             z1 = np.concatenate((z1, [zmax,]))
@@ -433,13 +433,12 @@ def zbins_split_width(expt, dz=(0.1, 0.3), zsplit=2.):
     # Fill remaining range with equal-sized bins with width dz[1]
     nbins = np.floor((zmax - z1[-1]) / dz[1])
     z2 = np.linspace(z1[-1] + dz[1], z1[-1] + nbins*dz[1], nbins)
+    zs = np.concatenate((z1, z2))
     
     # Add final bin to fill range only if >20% of dz[1]
-    if (zmax - z2[-1]) > 0.2 * dz[1]:
-        z2 = np.concatenate((z2, [zmax,]))
+    if (zmax - zs[-1]) > 0.2 * dz[1]:
+        zs = np.concatenate((zs, [zmax,]))
     
-    # Concatenate full range and return
-    zs = np.concatenate((z1, z2))
     zc = np.array([0.5*(zs[i+1] + zs[i]) for i in range(zs.size - 1)])
     return zs, zc
     
