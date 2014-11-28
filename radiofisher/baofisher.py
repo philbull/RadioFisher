@@ -423,7 +423,7 @@ def zbins_split_width(expt, dz=(0.1, 0.3), zsplit=2.):
         z1 = np.linspace(zmin, zmin + nbins*dz[0], nbins+1)
         if (zmax - z1[-1]) > 0.2 * dz[0]:
             z1 = np.concatenate((z1, [zmax,]))
-        zc = np.array([0.5*(zs[i+1] + zs[i]) for i in range(zs.size - 1)])
+        zc = np.array([0.5*(z1[i+1] + z1[i]) for i in range(z1.size - 1)])
         return z1, zc
     
     # Fill first range with equal-sized bins with width dz[0]
