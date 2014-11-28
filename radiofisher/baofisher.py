@@ -394,6 +394,50 @@ def zbins_const_dnu(expt, cosmo, bins=None, dnu=None, initial_dz=None):
     zc = [0.5*(zbins[i+1] + zbins[i]) for i in range(zbins.size - 1)]
     return zbins, np.array(zc)
 
+def zbins_split_width(expt, dz=(0.1, 0.3), zsplit=2.):
+    """
+    Construct a binning scheme with bin widths that change after a certain 
+    redshift. The first redshift range is filled with equal-sized bins that may 
+    go over the split redshift. The remaining range is filled with bins of the 
+    other width (apart from the last bin, that may be truncated).
+    
+    Parameters
+    ----------
+    expt : dict
+        Dict of experimental settings.
+        
+    dz : tuple (length 2)
+        Widths of redshift bins before and after the split redshift.
+    
+    zsplit : float
+        Redshift at which to change from the first bin width to the second.
+    """
+    
+    # Get redshift ranges of actual experiment
+    zmin = expt['nu_line'] / expt['survey_numax'] - 1.
+    zmax = expt['nu_line'] / (expt['survey_numax'] - expt['survey_dnutot']) - 1.
+    
+    # Sanity checks
+    assert zmax > zsplit, "Split redshift must be less than max. redshift of experiment."
+    
+    # Fill first range with equal-sized bins with width dz[0]
+    nbins = np.ceil((zsplit - zmin) / dz[0])
+    z1 = np.linspace(zmin, zmin + nbins*dz[0], nbins+1)
+    
+    # Fill remaining range with equal-sized bins with width dz[1]
+    nbins = np.floor((zmax - z1[-1]) / dz[1])
+    z2 = np.linspace(z1[-1] + dz[1], z1[-1] + nbins*dz[1], nbins)
+    
+    # Add final bin to fill range only if >20% of dz[1]
+    if (zmax - z2[-1]) > 0.2 * dz[1]:
+        z2 = np.concatenate((z2, [zmax,]))
+    
+    # Concatenate full range and return
+    zs = np.concatenate((z1, z2))
+    zc = np.array([0.5*(zs[i+1] + zs[i]) for i in range(zs.size - 1)])
+    return zs, zc
+    
+
 ################################################################################
 # Experiment specification handler functions
 ################################################################################
