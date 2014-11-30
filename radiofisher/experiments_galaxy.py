@@ -95,6 +95,16 @@ EuclidPess = {
 }
 EuclidPess.update(SURVEY)
 
+EuclidRef_dz03 = {
+    'fsky':        sarea_to_fsky(15e3),
+    'fname':       'nz_euclid_dz0.3.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'rescale_nz':  0.67**3.,
+    'b(z)':        lambda z: np.sqrt(1. + z),
+}
+EuclidRef_dz03.update(SURVEY)
 
 #########################
 # SKA
