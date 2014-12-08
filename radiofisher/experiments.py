@@ -89,7 +89,7 @@ exptM = {
     'survey_numax':     1000.,             # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
     'Sarea':            2e3*(D2RAD)**2.,   # Total survey area [radians^2]
-    'Dmax':             60.,               # Max. interferom. baseline [m]
+    'Dmax':             53.,               # Max. interferom. baseline [m]
     'Dmin':             4.                 # Min. interferom. baseline [m]
     }
 exptM.update(SURVEY)
