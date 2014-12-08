@@ -16,7 +16,7 @@ cosmo = {
     'gamma':            0.55,
     'w0':               -1.,
     'wa':               0.,
-    'fNL':              0., #10., # FIXME
+    'fNL':              0.,
     'mnu':              0.,
     'k_piv':            0.05, # n_s
     'aperp':            1.,
@@ -26,20 +26,20 @@ cosmo = {
     'sigma_nl':         7.,
     'b_1':              0.,         # Scale-dependent bias (k^2 term coeff.)
     'k0_bias':          0.1,        # Scale-dependent bias pivot scale [Mpc^-1]
-    'A_xi':             0., #0.001,         # Modified gravity growth amplitude
-    'k_mg':             1e-2        # New modified gravity growth scale # FIXME
+    'A_xi':             0.,         # Modified gravity growth amplitude
+    'k_mg':             1e-2        # New modified gravity growth scale
 }
 
 # Define which measurements to include in forecasts
 USE = {
   'f_rsd':             True,     # RSD constraint on f(z)
-  'f_growthfactor':    True, #FIXME   # D(z) constraint on f(z)
+  'f_growthfactor':    False,    # D(z) constraint on f(z)
   'alpha_all':         True,     # Use all constraints on alpha_{perp,par}
   'alpha_volume':      False,
-  'alpha_rsd_angle':   False, #t
-  'alpha_rsd_shift':   False, #t
-  'alpha_bao_shift':   True, # was True
-  'alpha_pk_shift':    False # True
+  'alpha_rsd_angle':   False,
+  'alpha_rsd_shift':   False,
+  'alpha_bao_shift':   True,
+  'alpha_pk_shift':    False
 }
 
 SURVEY = {
@@ -80,12 +80,13 @@ exptS.update(SURVEY)
 
 exptM = {
     'mode':             'interferom',      # Interferometer or single dish
-    'Ndish':            160, #128          # No. of dishes
+    'Ndish':            160,               # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
     'Ddish':            4.,                # Single dish diameter [m]
     'Tinst':            35.*(1e3),         # System temp. [mK]
+    'nu_crit':          1000.,             # Critical frequency [MHz]
     'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
-    'survey_numax':     1000., #800.,      # Max. freq. of survey
+    'survey_numax':     1000.,             # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
     'Sarea':            2e3*(D2RAD)**2.,   # Total survey area [radians^2]
     'Dmax':             60.,               # Max. interferom. baseline [m]
