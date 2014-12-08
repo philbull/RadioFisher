@@ -7,3 +7,4 @@ import experiments
 import experiments_galaxy
 import fisher_galaxy as galaxy
 import mg_growth
+import read_config
