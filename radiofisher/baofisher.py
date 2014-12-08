@@ -1091,7 +1091,8 @@ def fbao_derivative(fbao, kgrid, kref=[3e-2, 4.5e-1]):
     return idfbao_dk
     
 # 2.15e-2!!!!
-def spline_pk_nobao(k_in, pk_in, kref=[2.15e-2, 4.5e-1]): #kref=[3e-2, 4.5e-1]):
+#kref=[2.15e-2, 4.5e-1]): #kref=[3e-2, 4.5e-1]):
+def spline_pk_nobao(k_in, pk_in, kref=[2.4e-2, 4.5e-1]):
     """
     Construct a smooth power spectrum with BAOs removed, and a corresponding 
     BAO template function, by using a two-stage splining process.
@@ -1412,7 +1413,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     
     # Number of receiver polarisation channels (default is two) and dish effic.
     npol = expt['npol'] if 'npol' in expt.keys() else 2.
-    effic = expt['effic'] if 'effic' in expt.keys() else 1.
+    effic = expt['effic'] if 'effic' in expt.keys() else 0.7
     
     # Calculate base noise properties
     Vsurvey = expt['Sarea'] * expt['dnutot'] / expt['nu_line']
@@ -1426,10 +1427,18 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     if expt['mode'][0] == 'i':
         # Interferometer mode
         print "\tInterferometer mode",
-        Aeff = effic * 0.25 * np.pi * expt['Ddish']**2. if 'Aeff' not in expt.keys() \
-               else expt['Aeff']
+        
+        # Default effective area / beam FWHM
+        Aeff = effic * 0.25 * np.pi * expt['Ddish']**2. \
+               if 'Aeff' not in expt.keys() else expt['Aeff']
         theta_b = l / expt['Ddish']
         
+        # Evaluate at critical freq.
+        if 'nu_crit' in expt.keys():
+            nu_crit = expt['nu_crit']
+            l_crit = 3e8 / (nu_crit * 1e6)
+            theta_b_crit = l_crit / expt['Ddish']
+            
         # Choose specific mode
         if 'cyl' in expt['mode']:
             # Cylinder interferometer
@@ -1438,32 +1447,38 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         elif 'paf' in expt['mode']:
             # PAF interferometer
             print "(PAF)"
-            theta_b = expt['theta_b']
-            theta_b *= (expt['nu_crit'] / nu) if nu > expt['nu_crit'] else 1.
+            theta_b = theta_b_crit * (nu_crit / nu) if nu > nu_crit else 1.
         elif 'aa' in expt['mode']:
             # Aperture array interferometer
             print "(aperture array)"
-            Aeff *= (expt['nu_crit'] / nu)**2. if nu > expt['nu_crit'] else 1.
-            theta_b = expt['theta_b'] * (expt['nu_crit'] / nu)
+            Aeff *= (expt['nu_crit'] / nu)**2. if nu > nu_crit else 1.
+            theta_b = theta_b_crit * (nu_crit / nu)
         else:
             # Standard dish interferometer
             print "(dish)"
         
         noise *= interferometer_response(q, y, cosmo, expt)
         noise *= l**4. / (expt['Nbeam'] * (Aeff * theta_b)**2.)
+        
     else:
         # Autocorrelation mode
         print "\tAutocorrelation mode",
         
+        Aeff = effic * 0.25 * np.pi * expt['Ddish']**2. \
+               if 'Aeff' not in expt.keys() else expt['Aeff']
+        theta_b = l / expt['Ddish']
+        
         if 'paf' in expt['mode']:
             # PAF autocorrelation mode
             print "(PAF)"
+            noise *= l**4. / (Aeff**2. * theta_b**4.)
             noise *= 1. if nu > expt['nu_crit'] else (expt['nu_crit'] / nu)**2.
         else:
-            # Standard dish autocorrelation mode 
+            # Standard dish autocorrelation mode
             print "(dish)"
+            noise *= l**4. / (Aeff**2. * theta_b**4.)
         
-        noise *= 1. / (effic**2. * expt['Ndish'] * expt['Nbeam'])
+        noise *= 1. / (expt['Ndish'] * expt['Nbeam'])
         noise *= dish_response(q, y, cosmo, expt)
     
     """
@@ -1484,10 +1499,9 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     if 'comb' in expt['mode']: raise NotImplementedError("Combined mode not implemented!")
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
-    # FIXME: Needs to be re-enabled
-    #kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
-    #kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
-    #noise[np.where(kpar < kfg)] = INF_NOISE
+    kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
+    kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
+    noise[np.where(kpar < kfg)] = INF_NOISE
     return noise
 
 
