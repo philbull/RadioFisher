@@ -1,19 +1,16 @@
 #!/usr/bin/python
 """
 Plot several figures of merit as function of experimental settings.
+(Fig. 21) (Fig. 22) (Fig. 23) (Fig. 24) (Fig. 25) (Fig. 26).
 """
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
+from radiofisher.units import *
 import os, sys
-import euclid
-
-USE_DETF_PLANCK_PRIOR = True
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
@@ -26,8 +23,10 @@ slabels = ['$t_\mathrm{tot} [10^3 \mathrm{hrs}]$',
            '$k_\mathrm{FG} / k_{\mathrm{FG}, 0}$',
            '$\sigma_\mathrm{NL} \, [\mathrm{Mpc}]$']
 logscale = [False, False, True, False, False, False]
-fname = ['pub-ttot.pdf', 'pub-sarea.pdf', 'pub-efg.pdf', 'pub-omegaHI.pdf', 'pub-kfg.pdf', 'pub-signl.pdf']
-fac = [1e3 * HRS_MHZ, 1e3 * (D2RAD)**2., 1., 1e-4, 1., 1.] # Divide by this factor to get sensible units
+fname = ['fig25-ttot.pdf', 'fig26-sarea.pdf', 'fig23-efg.pdf', 
+         'fig21-omegaHI.pdf', 'fig24-kfg.pdf', 'fig22-signl.pdf']
+fac = [1e3 * HRS_MHZ, 1e3 * (D2RAD)**2., 1., 
+       1e-4, 1., 1.] # Divide by this factor to get sensible units
 
 markers = ['o', 'D', 's']
 
@@ -39,8 +38,7 @@ else:
 
 
 # Experiments
-#names = ['exptS', 'iexptM', 'cexptL']
-names = ['iexptM', 'cexptL']
+names = ['aexptM', 'exptL']
 #colours = ['#990A9C', '#5B9C0A', '#1619A1', '#CC0000']
 colours = ['#5B9C0A', '#1619A1', '#CC0000']
 
@@ -49,7 +47,7 @@ colours = ['#5B9C0A', '#1619A1', '#CC0000']
 #           ['#0a0b4a', '#1619A1', '#2226f5']]
 
 #linestyle = [[3, 4], [8, 4], [1,0], [2, 4, 6, 4]]
-linestyle = [[8, 4], [1,0],]
+linestyle = [[8, 4], [],]
 lw = [1.2, 1.8, 2.2]
 
 # Fiducial value and plotting
@@ -82,24 +80,13 @@ for k in range(len(names)):
         pnames = rf.load_param_names(root+"-fisher-full-0.dat")
         zfns = ['b_HI',]
         excl = ['Tb', 'f', 'H', 'DA', 'apar', 'aperp', 'pk*']
-        F, lbls = rf.combined_fisher_matrix( F_list,
-                                                    expand=zfns, names=pnames,
-                                                    exclude=excl )
-        # Add Planck prior
-        if USE_DETF_PLANCK_PRIOR:
-            # DETF Planck prior
-            #print "*** Using DETF Planck prior ***"
-            l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-            F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", 
-                                               cosmo, omegab=False)
-            Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-        else:
-            # Euclid Planck prior
-            #print "*** Using Euclid (Mukherjee) Planck prior ***"
-            l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-            Fe = euclid.planck_prior_full
-            F_eucl = euclid.euclid_to_rf(Fe, cosmo)
-            Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+        F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                             exclude=excl )
+        # DETF Planck prior
+        #print "*** Using DETF Planck prior ***"
+        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
         
         # Get indices of w0, wa
         pw0 = lbls.index('w0'); pwa = lbls.index('wa'); pA = lbls.index('A')
@@ -142,7 +129,6 @@ bbox = [[0.92,0.45],
 labels = ['DE FOM', '$(\sigma_K)^{-1}$', '$(\sigma_\gamma)^{-1}$']
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=lw[k], marker=markers[k], color='k', alpha=1.) for k in range(3)]
 P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'large'}, bbox_to_anchor=bbox[j])
-
 
 ax.set_ylabel("$\mathrm{FOM} / \mathrm{FOM}|_\mathrm{max}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_xlabel(slabels[j], fontdict={'fontsize':'xx-large'}, labelpad=15.)
