@@ -38,7 +38,7 @@ else:
 
 
 # Experiments
-names = ['aexptM', 'exptL']
+names = ['aexptM_paper', 'exptL_paper']
 #colours = ['#990A9C', '#5B9C0A', '#1619A1', '#CC0000']
 colours = ['#5B9C0A', '#1619A1', '#CC0000']
 
