@@ -7,6 +7,7 @@ import numpy as np
 import radiofisher as rf
 from mpi4py import MPI
 from radiofisher import experiments
+from rf.units import *
 import sys
 
 comm = MPI.COMM_WORLD
