@@ -84,16 +84,16 @@ if names[k][0] == "c": expts[k]['mode'] = "combined"
 expt = expts[k]
 
 # Define redshift bins
-expt_zbins = baofisher.overlapping_expts(expt)
-#zs, zc = baofisher.zbins_equal_spaced(expt_zbins, dz=0.1)
-#zs, zc = baofisher.zbins_const_dr(expt_zbins, cosmo, bins=14)
-zs, zc = baofisher.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
+expt_zbins = rf.overlapping_expts(expt)
+#zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.1)
+#zs, zc = rf.zbins_const_dr(expt_zbins, cosmo, bins=14)
+zs, zc = rf.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
 
 # Define kbins (used for output)
 kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
-cosmo_fns = baofisher.background_evolution_splines(cosmo)
+cosmo_fns = rf.background_evolution_splines(cosmo)
 if cosmo['mnu'] != 0.:
     # Massive neutrinos
     mnu_str = "mnu%03d" % (cosmo['mnu']*100.)
@@ -101,19 +101,19 @@ if cosmo['mnu'] != 0.:
     fname_nu = "cache_%s" % mnu_str
     survey_name += mnu_str; root += mnu_str
     
-    cosmo = baofisher.load_power_spectrum(cosmo, fname_pk, comm=comm)
-    Neff_fn = baofisher.deriv_neutrinos(cosmo, fname_nu, Neff=cosmo['N_eff'], comm=comm)
+    cosmo = rf.load_power_spectrum(cosmo, fname_pk, comm=comm)
+    Neff_fn = rf.deriv_neutrinos(cosmo, fname_nu, Neff=cosmo['N_eff'], comm=comm)
 else:
     # Normal operation (no massive neutrinos or non-Gaussianity)
-    cosmo = baofisher.load_power_spectrum(cosmo, "cache_pk.dat", comm=comm)
+    cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", comm=comm)
     massive_nu_fn = None
 
 # Non-Gaussianity
-#transfer_fn = baofisher.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
+#transfer_fn = rf.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
 transfer_fn = None
 
 # Effective no. neutrinos, N_eff
-Neff_fn = baofisher.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
+Neff_fn = rf.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
 #Neff_fn = None
 
 # MG/scale-dep. bias switches
@@ -148,7 +148,7 @@ if myid == 0:
     np.savetxt(froot+"-cosmofns-smooth.dat", np.column_stack((zz, _H, _dA, _D, _f)) )
 
 # Precompute derivs for all processes
-eos_derivs = baofisher.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
+eos_derivs = rf.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
 
 ################################################################################
 # Loop through parameter values, then redshift bins
@@ -175,7 +175,7 @@ for v in range(len(svals)): #range(14,len(svals)):
         print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
         
         # Calculate effective experimental params. in the case of overlapping expts.
-        expt_eff = baofisher.overlapping_expts(expt, zs[i], zs[i+1])
+        expt_eff = rf.overlapping_expts(expt, zs[i], zs[i+1])
         
         # Calculate basic Fisher matrix
         # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
