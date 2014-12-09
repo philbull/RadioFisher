@@ -53,7 +53,7 @@ if pname == 'ttot':
     svals = np.array([1., 2., 5., 8., 10., 15., 20.]) * 1e3 * HRS_MHZ
 elif pname == 'sarea':
     sname = 'Sarea'
-    svals = np.array([1., 2., 5., 10., 15., 20., 25., 30.]) * 1e3 * (D2RAD)**2.
+    svals = np.array([1., 2., 5., 8., 10., 12., 15., 20., 25., 30.]) * 1e3 * (D2RAD)**2.
 elif pname == 'efg':
     sname = 'epsilon_fg'
     svals = np.array([1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 
@@ -74,13 +74,17 @@ elif pname == 'snl':
 else:
     print "Specified parameter name '%s' not in list of scannable params." % pname
 
-
 # Tweak settings depending on chosen experiment
 cv_limited = False
 expts[k]['mode'] = "dish"
-if names[k][0] == "i": expts[k]['mode'] = "interferom."
+if names[k][0] == "i": expts[k]['mode'] = "idish"
 if names[k][0] == "c": expts[k]['mode'] = "combined"
+if names[k][0] == "y": expts[k]['mode'] = "icyl"
+if names[k][0] == "f": expts[k]['mode'] = "paf"
+if names[k][0] == "t": expts[k]['mode'] = "ipaf"
+if names[k][0] == "a": expts[k]['mode'] = "iaa"
 expt = expts[k]
+
 
 # Define redshift bins
 expt_zbins = rf.overlapping_expts(expt)
