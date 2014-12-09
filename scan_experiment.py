@@ -1,16 +1,14 @@
 #!/usr/bin/python
 """
 Calculate Fisher matrix and P(k) constraints for all redshift bins for a given 
-experiment, scanning through a range of 
+experiment, scanning through a range of values of a given parameter.
 """
-
 import numpy as np
 import pylab as P
-import baofisher
+from rfwrapper import rf
 import matplotlib.patches
-from units import *
 from mpi4py import MPI
-import experiments
+from radiofisher import experiments
 import sys
 
 comm = MPI.COMM_WORLD
@@ -25,6 +23,7 @@ size = comm.Get_size()
 e = experiments
 cosmo = experiments.cosmo
 
+"""
 expts = [ e.exptS, e.exptM, e.exptL, e.GBT, e.BINGO, e.WSRT, e.APERTIF, 
           e.JVLA, e.ASKAP, e.KAT7, e.MeerKAT_band1, e.MeerKAT, e.SKA1MID,
           e.SKA1SUR, e.SKA1SUR_band1, e.SKAMID_PLUS, e.SKAMID_PLUS_band1, 
@@ -34,41 +33,48 @@ names = ['exptS', 'iexptM', 'cexptL', 'GBT', 'BINGO', 'WSRT', 'APERTIF',
          'JVLA', 'cASKAP', 'cKAT7', 'cMeerKAT_band1', 'cMeerKAT', 'cSKA1MID',
          'SKA1SUR', 'SKA1SUR_band1', 'SKAMID_PLUS', 'SKAMID_PLUS_band1', 
          'SKASUR_PLUS', 'SKASUR_PLUS_band1']
-
-
-# Define name of parameter and values to scan through
-#sname = 'ttot'
-#svals = np.array([1., 2., 5., 8., 10., 15., 20.]) * 1e3 * HRS_MHZ
-
-#sname = 'Sarea'
-#svals = np.array([1., 2., 5., 10., 15., 20., 25., 30.]) * 1e3 * (D2RAD)**2.
-
-#sname = 'epsilon_fg'
-#svals = np.array([1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 
-#                  5e-7, 2e-6, 5e-6, 7e-6, 2e-5, 5e-5, 7e-5,
-#                  3e-6, 1.5e-5, 3e-5])
-
-#sname = 'omega_HI_0'
-#svals = np.array([2., 4., 5., 6.5, 7.5, 8.5, 9.5, 11.]) * 1e-4
-
-#sname = 'bHI0'
-#svals = np.array([0.3, 0.4, 0.5, 0.6, 0.702, 0.8, 0.9, 1.0, 1.1])
-
-#sname = 'kfg_fac'
-#svals = np.logspace(-1., 1., 21)
-
-sname = 'sigma_nl'
-svals = np.array([0.25, 0.5, 0.75, 1., 1.25, 1.5, 1.75, 2.]) * 7.
+"""
+expts = [e.exptS, e.aexptM, e.exptL]
+names = ['exptS_paper', 'aexptM_paper', 'exptL_paper']
 
 # Take command-line argument for which survey to calculate, or set manually
-if len(sys.argv) > 1:
+if len(sys.argv) > 2:
     k = int(sys.argv[1])
+    pname = str(sys.argv[2]).lower()
 else:
-    raise IndexError("Need to specify ID for experiment.")
+    raise IndexError("Need to specify ID for experiment and parameter name.")
 if myid == 0:
     print "="*50
     print "Survey:", names[k]
     print "="*50
+
+# Define name of parameter and values to scan through
+if pname == 'ttot':
+    sname = 'ttot'
+    svals = np.array([1., 2., 5., 8., 10., 15., 20.]) * 1e3 * HRS_MHZ
+elif pname == 'sarea':
+    sname = 'Sarea'
+    svals = np.array([1., 2., 5., 10., 15., 20., 25., 30.]) * 1e3 * (D2RAD)**2.
+elif pname == 'efg':
+    sname = 'epsilon_fg'
+    svals = np.array([1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 
+                      5e-7, 2e-6, 5e-6, 7e-6, 2e-5, 5e-5, 7e-5,
+                      3e-6, 1.5e-5, 3e-5])
+elif pname == 'ohi':
+    sname = 'omega_HI_0'
+    svals = np.array([2., 4., 5., 6.5, 7.5, 8.5, 9.5, 11.]) * 1e-4
+elif pname == 'bhi':
+    sname = 'bHI0'
+    svals = np.array([0.3, 0.4, 0.5, 0.6, 0.702, 0.8, 0.9, 1.0, 1.1])
+elif pname == 'kfg':
+    sname = 'kfg_fac'
+    svals = np.logspace(-1., 1., 21)
+elif pname == 'snl':
+    sname = 'sigma_nl'
+    svals = np.array([0.25, 0.5, 0.75, 1., 1.25, 1.5, 1.75, 2.]) * 7.
+else:
+    print "Specified parameter name '%s' not in list of scannable params." % pname
+
 
 # Tweak settings depending on chosen experiment
 cv_limited = False
@@ -109,6 +115,9 @@ transfer_fn = None
 # Effective no. neutrinos, N_eff
 Neff_fn = baofisher.deriv_neutrinos(cosmo, "cache_Neff", Neff=cosmo['N_eff'], comm=comm)
 #Neff_fn = None
+
+# MG/scale-dep. bias switches
+switches = []
 
 H, r, D, f = cosmo_fns
 
@@ -170,7 +179,7 @@ for v in range(len(svals)): #range(14,len(svals)):
         
         # Calculate basic Fisher matrix
         # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
-        F_pk, kc, binning_info, paramnames = baofisher.fisher( 
+        F_pk, kc, binning_info, paramnames = rf.fisher( 
                                              zs[i], zs[i+1], cosmo, expt_eff, 
                                              cosmo_fns=cosmo_fns,
                                              transfer_fn=transfer_fn,
@@ -178,12 +187,12 @@ for v in range(len(svals)): #range(14,len(svals)):
                                              Neff_fn=Neff_fn,
                                              return_pk=True,
                                              cv_limited=cv_limited, 
+                                             switches=switches,
                                              kbins=kbins )
         
         # Expand Fisher matrix with EOS parameters
-        ##F_eos = baofisher.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
-        F_eos, paramnames = baofisher.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
-                                                      names=paramnames, exclude=[])
+        F_eos, paramnames = rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
+                                                    names=paramnames, exclude=[])
         
         # Expand Fisher matrix for H(z), dA(z)
         # Replace aperp with dA(zi), using product rule. aperp(z) = dA(fid,z) / dA(z)
