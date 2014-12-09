@@ -32,7 +32,7 @@ names = ['exptS', 'iexptM', 'cexptL', 'GBT', 'BINGO', 'WSRT', 'APERTIF',
          'SKA1SUR', 'SKA1SUR_band1', 'SKAMID_PLUS', 'SKAMID_PLUS_band1', 
          'SKASUR_PLUS', 'SKASUR_PLUS_band1']
 """
-expts = [e.exptS, e.aexptM, e.exptL]
+expts = [e.exptS, e.exptM, e.exptL]
 names = ['exptS_paper', 'aexptM_paper', 'exptL_paper']
 
 # Take command-line argument for which survey to calculate, or set manually
