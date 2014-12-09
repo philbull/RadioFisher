@@ -79,7 +79,7 @@ for k in range(len(names)):
         # Actually, (aperp, apar) are (D_A, H)
         pnames = rf.load_param_names(root+"-fisher-full-0.dat")
         zfns = ['b_HI',]
-        excl = ['Tb', 'f', 'H', 'DA', 'apar', 'aperp', 'pk*']
+        excl = ['Tb', 'f', 'H', 'DA', 'apar', 'aperp', 'pk*', 'fs8', 'bs8', 'N_eff',]
         F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
                                              exclude=excl )
         # DETF Planck prior
