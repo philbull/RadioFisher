@@ -5,7 +5,7 @@ experiment, scanning through a range of values of a given parameter.
 """
 import numpy as np
 import pylab as P
-from rfwrapper import rf
+import radiofisher as rf
 import matplotlib.patches
 from mpi4py import MPI
 from radiofisher import experiments
