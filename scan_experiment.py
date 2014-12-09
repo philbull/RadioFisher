@@ -93,6 +93,7 @@ kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
 cosmo_fns = rf.background_evolution_splines(cosmo)
+cosmo['mnu'] = 0.
 if cosmo['mnu'] != 0.:
     # Massive neutrinos
     mnu_str = "mnu%03d" % (cosmo['mnu']*100.)
