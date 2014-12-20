@@ -702,6 +702,7 @@ def Tb(z, cosmo, formula='powerlaw'):
         ok = 1. - om - ol
         E = np.sqrt(om*(1.+z)**3. + ok*(1.+z)**2. + ol)
         Tb = 188. * cosmo['h'] * omegaHI * (1.+z)**2. / E
+    Tb *= 1. if 'Tb_factor' not in cosmo.keys() else cosmo['Tb_factor']
     return Tb
 
 def bias_HI(z, cosmo, formula='powerlaw'):
@@ -1443,7 +1444,8 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         if 'cyl' in expt['mode']:
             # Cylinder interferometer
             print "(cylinder)"
-            raise NotImplementedError("Cylinders not implemented yet!")
+            Aeff = effic * expt['Ncyl'] * expt['cyl_area'] / expt['Ndish'] # area per receiver
+            theta_b = np.sqrt( 0.5 * np.pi * l / expt['Ddish'] ) # FOV ~ 90 deg * l/D
         elif 'paf' in expt['mode']:
             # PAF interferometer
             print "(PAF)"
@@ -1459,7 +1461,6 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         
         noise *= interferometer_response(q, y, cosmo, expt)
         noise *= l**4. / (expt['Nbeam'] * (Aeff * theta_b)**2.)
-        
     else:
         # Autocorrelation mode
         print "\tAutocorrelation mode",
