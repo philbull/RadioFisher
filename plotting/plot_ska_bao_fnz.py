@@ -7,21 +7,25 @@ import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
-import os
-import euclid
+import radiofisher.euclid as euclid
 
 cosmo = rf.experiments.cosmo
 
-CUR_K = 3
+#CUR_K = 2
+#filename = "ska-baoz-SKA2.pdf"
+CUR_K = 4
+filename = "ska-baoz-Euclid.pdf"
 
-names = ["SKAHI73", "EuclidRef", "SKAHI100", 'fSKA1SURfull1'] # "SKAHI73", 'EuclidRef']
-labels = ['SKA2 HI gal.', 'Euclid', 'SKA1 HI gal.', 'SKA1-SUR Full B1']
-colours = ['#1619A1', '#CC0000', '#FFB928', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
+names = [ 'gSKAMIDMKB2', 'gSKASURASKAP', 'gSKA2', 'BOSS', 'EuclidRef', 'WFIRST']
+labels = [ 'SKA1-MID+MeerKAT', 'SKA1-SUR+ASKAP', 'SKA 2', 'BOSS', 'Euclid', 'WFIRST']
+colours = ['#1619A1', '#FFB928', '#CC0000', 
+           '#3D3D3D', '#858585', '#c1c1c1',]
 linestyle = [[1,0], [1, 0], [1, 0],]
 marker = ['o', 'D', 's',]
+YLIM = (0.0, 4.)
+
+P.text(0.5, 0.15, labels[CUR_K], horizontalalignment='center', fontsize=24, 
+       color=colours[CUR_K], transform=P.gca().transAxes) # 0.5, 0.9
 
 # Get f_bao(k) function
 cosmo_fns = rf.background_evolution_splines(cosmo)
@@ -65,14 +69,21 @@ for k in [CUR_K,]:
         y = scale*fbao(x) + 0.18*zc[j]*10.
         err = scale*cov
         
+        P.axhline(0.18*zc[j]*10., alpha=0.1, color='k', xmax=0.82)
+        
         print j, zc[j], (zc[j] < 1.9)
         
         if zc[j] < 3.: #1.9:
             P.errorbar( x, y, yerr=err, color=colours[k], ls='none', 
                           lw=1., capthick=1., label=names[k], ms='.' )
             
-            #if j % 2 == 0:
-            if j % 1 == 0:
+            if CUR_K == 4: # Euclid
+                P.annotate( "%3.2f<z<%3.2f"%(zc[j]-0.05, zc[j]+0.05), 
+                          xy=(4e-1, 0.18*zc[j]*10.), xytext=(0., 0.), 
+                          fontsize='small', textcoords='offset points', 
+                          ha='center', va='center' )
+            
+            if CUR_K == 2: # SKA2
                 P.annotate( "%3.2f<z<%3.2f"%(zc[j]-0.05, zc[j]+0.05), 
                           xy=(4e-1, 0.18*zc[j]*10.), xytext=(0., 0.), 
                           fontsize='small', textcoords='offset points', 
@@ -80,18 +91,17 @@ for k in [CUR_K,]:
                           
         P.xscale('log')
         P.xlim((1.8e-2, 6e-1))
-        ##P.ylim((-0.5, 3.8))
-        P.ylim((-0.5, 4.8))
+        P.ylim(YLIM)
         #axes[k].set_title(labels[k], fontsize='x-large')
         
     #P.text(0.5, 1.03, labels[k], horizontalalignment='center', fontsize=19, 
     #       transform=P.gca().transAxes)
     #P.title(labels[k], fontsize=19)
     print "-"*50
-
     
     # Plot errorbars
     #yup, ydn = rf.fix_log_plot(pk, cov)
+
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]
@@ -124,9 +134,11 @@ P.text(0.7, 0.35,'$0.65 < z < 0.75$', horizontalalignment='center',
 P.text(0.7, 0.9,'$1.75 < z < 1.85$', horizontalalignment='center', 
        transform=axes[1].transAxes, fontsize=18)
 """
+
+P.gcf().set_size_inches(7.,12.)
 P.tight_layout()
 
-#P.savefig('ska-bao-%s.pdf' % names[k], transparent=True)
+P.savefig(filename, transparent=True)
 
 P.show()
 exit()

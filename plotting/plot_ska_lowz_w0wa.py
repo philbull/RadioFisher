@@ -14,6 +14,9 @@ from mpi4py import MPI
 import os, copy
 import euclid
 
+print "OBSOLETE"
+exit()
+
 fig_name = "ska-w0wa-inclSKA1gal.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
@@ -47,10 +50,28 @@ colours = [ ['#5B9C0A', '#BAE484'],
 #            ['#FFB928', '#FFEA28'] ]
 
 
+
+
+#-----------------------------------------------------------
+# SKA BAO chapter: BAO-only (w0, wa), incl. BOSS and Planck
+#-----------------------------------------------------------
+names = ['gSKASURASKAP_baoonly', 'SKA1MIDfull2_baoonly', 'EuclidRef_baoonly', 
+         'gSKA2_baoonly']
+labels = ['SKA1-SUR (gal.)', 'SKA1-MID B2 (IM)', 'Euclid (gal.)', 'SKA 2 (gal.)']
+fig_name = "ska-w0wa-gal.pdf"
+legend_order = [0,1,3,2]
+colours = [ ['#1619A1', '#B1C9FD'], 
+            ['#FFA728', '#F8D24B'],
+            ['#6B6B6B', '#BDBDBD'],
+            ['#CC0000', '#F09B9B'], ]
+
+
+
+
+
 ################################################################################
 # Load low-z galaxy survey Fisher matrix
-
-root = "output/" + "SKAHI100"
+root = "output/" + "BOSS_baoonly"
 
 # Load cosmo fns.
 dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -66,16 +87,15 @@ F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
 pnames = rf.load_param_names(root+"-fisher-full-0.dat")
 zfns = ['b_HI', ]
 excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
-F_lowz, lbls_lowz = rf.combined_fisher_matrix( F_list,
-                                                      expand=zfns, names=pnames,
-                                                      exclude=excl )
-
+F_lowz, lbls_lowz = rf.combined_fisher_matrix( F_list, expand=zfns, 
+                                               names=pnames, exclude=excl )
 # Relabel galaxy bias from low-z survey
 for i in range(len(lbls_lowz)):
     if "b_HI" in lbls_lowz[i]: lbls_lowz[i] = "lowz%s" % lbls_lowz[i]
 
-################################################################################
+print lbls_lowz
 
+################################################################################
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -99,32 +119,21 @@ for k in _k:
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI', ]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     
     # Relabel galaxy bias from low-z survey and sum current survey + low-z
     F, lbls = rf.add_fisher_matrices(F_lowz, F, lbls_lowz, lbls, expand=True)
     print lbls
     
     # Add Planck prior
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+    F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
-    print l2
-    print F_detf
-    exit()
+    # Add BOSS 
+    Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
     fixed_params = []
@@ -165,38 +174,6 @@ for k in _k:
     ax.plot(x, y, 'ko')
 
 P.figtext(0.18, 0.22, "Combined w. Planck + SKA1 gal.", fontsize=15)
-
-"""
-################################################################################
-# Add combined constraint for Facility + Euclid
-
-# Relabel galaxy bias from Euclid and sum Facility + Euclid
-for i in range(len(lbl1)):
-    if "b_HI" in lbl1[i]: lbl1[i] = "gal%s" % lbl1[i]
-Fc, lbls = rf.add_fisher_matrices(F1, F2, lbl1, lbl2, expand=True)
-
-
-# Add Planck prior
-l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-Fc, lbls = rf.add_fisher_matrices(Fc, F_detf, lbls, l2, expand=True)
-cov_pl = np.linalg.inv(Fc)
-
-# Plot contours for gamma, w0
-transp = [1., 0.95]
-w, h, ang, alpha = rf.ellipse_for_fisher_params(pw0, pwa, None, Finv=cov_pl)
-ellipses = [matplotlib.patches.Ellipse(xy=(x, y), width=alpha[kk]*w, 
-            height=alpha[kk]*h, angle=ang, fc=colours[-1][kk], 
-            ec=colours[-1][0], lw=1.5, alpha=transp[kk]) for kk in [1,0]]
-for e in ellipses: ax.add_patch(e)
-labels += ['Combined']
-
-print "\nCOMBINED"
-pw0 = lbls.index('w0'); pwa = lbls.index('wa')
-print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
-print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
-################################################################################
-"""
 
 # Report on what options were used
 print "-"*50

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Make a triangle plot for a set of parameters.
+Make a triangle plot for a set of parameters (Fig. 11).
 """
 import numpy as np
 import pylab as P
@@ -8,13 +8,9 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
-USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
 MARGINALISE_OVER_W0WA = False # Whether to fix or marginalise over (w0, wa)
 
 cosmo = rf.experiments.cosmo
@@ -22,11 +18,11 @@ cosmo = rf.experiments.cosmo
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'] ]
 if MARGINALISE_OVER_W0WA:
-    names = ['EuclidRef', 'cexptL', 'iexptM']
+    names = ['EuclidRef_paper', 'exptL_paper', 'aexptM_paper']
     labels = ['DETF IV + Planck', 'Facility + Planck', 'Stage II + Planck']
     colours.append(['#5B9C0A', '#BAE484']) # Green
 else:
-    names = ['EuclidRef', 'cexptL', 'cexptL']
+    names = ['EuclidRef_paper', 'exptL_paper', 'exptL_paper']
     labels = ['DETF IV + Planck', 'Facility + Planck', 'Planck only'] 
     colours.append(['#6B6B6B', '#BDBDBD']) # Grey
 
@@ -70,9 +66,8 @@ for k in _k:
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI', ]
     excl = ['Tb', 'f', 'aperp', 'apar', 'fs8', 'bs8', 'DA', 'H', 'gamma', 'N_eff', 'pk*']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     # Apply DETF Planck prior
     print "*** Using DETF Planck prior ***"
     l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
@@ -185,7 +180,7 @@ if MARGINALISE_OVER_W0WA:
     row_step = [0, 1, 1, 1, 1, 1]
     col_step = [1, 1, 1, 1, 1, -1]
 else:
-    row_step = [0, 0, 1, 1, 1]
+    row_step = [0, 1, 1, 0, 1]
     col_step = [1, 2, 1, 0, -1]
     
 fontsize = 12.
@@ -219,5 +214,5 @@ P.gcf().set_size_inches(16.5,10.5)
 if MARGINALISE_OVER_W0WA:
     P.savefig('pub-5params-w0wamarg.pdf', dpi=100)
 else:
-    P.savefig('pub-5params.pdf', dpi=100)
+    P.savefig('fig11-5params.pdf', dpi=100)
 P.show()

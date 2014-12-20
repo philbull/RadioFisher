@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Plot 1D constraints on a parameter.
+Plot 1D constraints on a parameter, by default the curvature (Fig. 16).
 """
 import numpy as np
 import pylab as P
@@ -8,16 +8,13 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
-#fig_name = "pub-ok.pdf"
-fig_name = "ska-omegak.png"
+fig_name = "fig16-ok.pdf"
+#fig_name = "ska-omegak.png"
 
 param1 = "omegak"
 label1 = "$\Omega_K$"
@@ -26,21 +23,16 @@ fid1 = 0.
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True    # Marginalise over Omega_K
 MARGINALISE_INITIAL_PK = True   # Marginalise over (n_s, sigma_8)
-MARGINALISE_OMEGAB = True      # Marginalise over Omega_baryons
+MARGINALISE_OMEGAB = True       # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True         # Marginalise over (w0, wa)
 
-names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
+names = ['EuclidRef_paper', 'exptL_paper', 'aexptM_paper'] #, 'exptS']
 labels = ['DETF IV', 'Facility', 'Stage II'] #, 'Stage I']
-colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
-
-
-names = [ 'fSKA1SURfull2', 'gSKA2', 'EuclidRef', ] #'iMFAA']
-labels = ['SKA1-SUR (IM)', 'Full SKA (gal.)', 'Euclid (gal.)',]
-
-
-colours = ['#BAE484', '#5B9C0A',   '#B1C9FD', '#1619A1',   '#F6ADAD', '#CC0000',
+colours = ['#BAE484', '#5B9C0A',
+           '#B1C9FD', '#1619A1',
+           '#F6ADAD', '#CC0000',
            '#FFB928', '#FFEA28']
-#'#F09B9B'
+
 # Fiducial value and plotting
 fig = P.figure()
 ax = fig.add_subplot(111)
@@ -65,25 +57,14 @@ for k in _k:
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
     excl = ['Tb', 'f', 'aperp', 'apar', 'H', 'DA', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
-    # Add Planck prior
-    #Fpl = euclid.add_detf_planck_prior(F, lbls, info=False)
-    #Fpl = euclid.add_planck_prior(F, lbls, info=False)
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
+    
+    # DETF Planck prior
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
+    F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo)
+    Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
     fixed_params = []
@@ -127,7 +108,6 @@ for k in _k:
                  marker='.', markersize=10. )
     #ax.annotate( labels[k], xy=(x, m), xytext=(0., 10.), 
     #             fontsize='large', textcoords='offset points', ha='center', va='bottom' )
-    
     m += 2
 
 
@@ -141,8 +121,6 @@ print "NOTE:", s1
 print "NOTE:", s2
 print "NOTE:", s3
 print "NOTE:", s4
-
-
 
 # Planck-only 1D
 omegak_planck_up = -5e-4 + 0.5*6.6e-3 # From Planck 2013 XVI, Table 10, Planck+WMAP+highL+BAO, 95% CL

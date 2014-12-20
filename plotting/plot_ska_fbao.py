@@ -1,24 +1,19 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and plot P(k).
+Plot constraints on BAO wiggles for SKA experiments.
+[SKA BAO CHAPTER FIG. 1]
 """
-
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
-import os
-import euclid
 
 cosmo = rf.experiments.cosmo
 
-names = ['gSKA2_baoonly', 'SKA1MIDfull1_baoonly', 'gSKASURASKAP_baoonly']
-labels = ['Full SKA (gal.)', 'SKA1-MID B1 (IM)', 'SKA1-SUR (gal.)']
-colours = ['#CC0000', '#1619A1', '#FFB928',] #'#8082FF',
+names = ['gSKA2_baoonly', 'SKA1MID350_baoonly_25000', 'gSKAMIDMKB2_baoonly'] #'gSKASURASKAP_baoonly']
+labels = ['SKA2 (gal.)', 'SKA1-MID B1 (IM)', 'SKA1-MID/SUR (gal.)']
+colours = ['#CC0000', '#1619A1', '#FFB928',]
 
 # Get f_bao(k) function
 cosmo_fns = rf.background_evolution_splines(cosmo)
@@ -28,6 +23,7 @@ fbao = cosmo['fbao']
 # Fiducial value and plotting
 fig = P.figure()
 axes = [fig.add_subplot(311), fig.add_subplot(312), fig.add_subplot(313),]
+dx = [0.18, 0.05, 0.] # x-position correction for labels
 
 for k in range(len(names)):
     root = "output/" + names[k]
@@ -74,8 +70,8 @@ for k in range(len(names)):
     axes[k].set_ylim((-0.13, 0.12))
     #axes[k].set_ylim((-0.08, 0.08))
     
-    axes[k].text( 0.215, 0.09, labels[k], fontsize=14, 
-                  bbox={'facecolor':'white', 'alpha':1., 'edgecolor':'white',
+    axes[k].text( 0.17+dx[k], 0.09, labels[k], fontsize=14, 
+                  bbox={'facecolor':'white', 'alpha':0.85, 'edgecolor':'white',
                         'pad':15.} )
 
 # Move subplots

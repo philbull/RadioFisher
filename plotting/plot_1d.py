@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """
 Plot 1D constraints on a parameter.
+**OBSOLETE**
 """
 import numpy as np
 import pylab as P
@@ -8,15 +9,12 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
-fig_name = "pub-ok.pdf"
+fig_name = "fig-ok.pdf"
 
 param1 = "omegak"
 label1 = "$\Omega_K$"
@@ -28,7 +26,7 @@ MARGINALISE_INITIAL_PK = True   # Marginalise over (n_s, sigma_8)
 MARGINALISE_OMEGAB = True      # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True         # Marginalise over (w0, wa)
 
-names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
+names = ['EuclidRef_paper', 'exptL_paper', 'aexptM_paper'] #, 'exptS']
 labels = ['DETF IV', 'Facility', 'Mature'] #, 'Snapshot']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
 

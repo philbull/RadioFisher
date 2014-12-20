@@ -7,17 +7,20 @@ import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from mpi4py import MPI
 import os
-import euclid
 
 cosmo = rf.experiments.cosmo
 
-names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
-colours = ['#CC0000', '#1619A1', 'y', '#5B9C0A', '#990A9C', 'c', 'm'] # DETF/F/M/S
+names = ['EuclidRef_paper', 'exptL_paper', 'aexptM_paper', 'yCHIME_paper'] #'exptS_paper']
+colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C', 'c', 'm'] # DETF/F/M/S
 labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
-linestyle = [[2, 4, 6, 4], [], [8, 4], [8, 4], [3, 4], [], [], [], []]
+linestyle = [[2, 4, 6, 4], [], [8, 4], [3, 4], [], [], [], []]
 
+
+names = ['yCHIME_paper', 'yCHIME_nocut_paper', 'yCHIME_avglow_paper', 'EuclidRef_paper']
+labels = names
+
+"""
 #names = ['EuclidRef', 'cexptLx', 'cexptLy', 'iexptOpt']
 #labels = ['Euclid', 'Fac. quadrature', 'Fac. min.', 'MEGA']
 
@@ -34,10 +37,9 @@ names = ['FAST', 'FAST4yr', 'fSKA1SURfull1', 'EuclidRef', 'yCHIME']
 labels = ['FAST 10k hrs', 'FAST 4yr', 'SKA1-SUR Full B1', 'Euclid', 'CHIME']
 linestyle = [[], [], [], [], [], [], []]
 
-
-names = ['EuclidRef']
-labels = ['Euclid']
-
+names = ['SKA1MID350XXX_25000', 'fSKA1SUR350XXX_25000']
+labels = ['SKA1MID350', 'fSKA1SUR350']
+"""
 
 # Get f_bao(k) function
 cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", force_load=True)
@@ -63,9 +65,8 @@ for k in range(len(names)):
     # Actually, (aperp, apar) are (D_A, H)
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = []; excl = []
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     
     # Just do the simplest thing for P(k) and get 1/sqrt(F)
     cov = [np.sqrt(1. / np.diag(F)[lbls.index(lbl)]) for lbl in lbls if "pk" in lbl]
@@ -105,29 +106,31 @@ for k in range(len(names)):
         # Plot errorbars
         P.plot(kc, cov, color=colours[k], label=labels[k], lw=2.2, ls=linestyle[k])
     """
-    #line = P.plot(kc, cov, color=colours[k], label=labels[k], lw=1.8, marker='.')#lw=2.4)
-    line = P.plot(kc/0.7, cov, color=colours[k], label=labels[k], lw=1.8, marker='.')#lw=2.4)
+    line = P.plot(kc, cov, color=colours[k], label=labels[k], lw=2.4, marker='None')
+    #line = P.plot(kc/0.7, cov, color=colours[k], label=labels[k], lw=1.8, marker='.')#lw=2.4)
     
     # Set custom linestyle
     print linestyle[k]
     line[0].set_dashes(linestyle[k])
 
-#exit()
+#P.axhline(1., ls='dashed', color='k', lw=1.5)
+#P.axvline(1e-2, ls='dashed', color='k', lw=1.5)
+
 P.xscale('log')
 P.yscale('log')
-P.xlim((1.5e-3, 3e0))
+P.xlim((1.3e-3, 1.2e0))
 P.ylim((9e-4, 1e1))
 P.legend(loc='lower left', prop={'size':'large'}, frameon=False)
 
 P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5)
 
-P.xlabel(r"$k \,[h \mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'})
+P.xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'})
 P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'})
 
 P.tight_layout()
 # Set size
 P.gcf().set_size_inches(8.,6.)
-#P.savefig('pub-dlogp.pdf', transparent=True) # 100
+#P.savefig("fig04-dlogp.pdf", transparent=True) # 100
 
 P.show()

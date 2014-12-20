@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Make a triangle plot for EOS/dark energy params.
+Make a triangle plot for EOS/dark energy params (Fig. 17).
 """
 import numpy as np
 import pylab as P
@@ -8,17 +8,14 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
 USE_DETF_PLANCK_PRIOR = True # If False, use Euclid prior instead
 
 cosmo = rf.experiments.cosmo
 
-names = ['EuclidRef', 'cexptL']
+names = ['EuclidRef_paper', 'exptL_paper']
 labels = ['DETF IV + Planck', 'Facility + Planck']
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -26,13 +23,10 @@ colours = [ ['#CC0000', '#F09B9B'],
             ['#5B9C0A', '#BAE484'],
             ['#FFB928', '#FFEA28'] ]
 
-# FIXME
-names = ['EuclidRef', 'EuclidRef_BAOonly']
-labels = ['Euclid (all)', 'Euclid (BAO only)']
-
-
-names = ['EuclidRef_full', 'EuclidRef_fix', 'gSKA2_full', 'SKA1MIDfull2_full']
-labels = ['Euclid', 'Euclid_nsfix', 'SKA2', 'SKA1-MID B2']
+#names = ['EuclidRef', 'EuclidRef_BAOonly']
+#labels = ['Euclid (all)', 'Euclid (BAO only)']
+#names = ['EuclidRef_full', 'EuclidRef_fix', 'gSKA2_full', 'SKA1MIDfull2_full']
+#labels = ['Euclid', 'Euclid_nsfix', 'SKA2', 'SKA1-MID B2']
 
 scale_idx = 1 # Index of experiment to use as reference for setting the x,y scales
 nsigma = 4.1 # No. of sigma (of reference experiment 1D marginal) to plot out to
@@ -74,18 +68,14 @@ for k in _k:
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*', 'fs8', 'bs8']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     
     # Apply DETF Planck prior
     print "*** Using DETF Planck prior ***"
     l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
     F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
     Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    
-    #print "FIXME: Not applying Planck prior."
-    #Fpl = F # FIXME
     
     # Add Planck H_0 prior
     #if 'H_0' in labels[k]:
@@ -184,7 +174,7 @@ P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'xx-l
 # Set every other label to be invisible
 # Decide to trim either even/odd labels for each plot on x/y-axis
 # -1: No labels, 0: Even labels, 1: Odd labels, 2: All labels
-row_step = [1, 0, 0, 0, 1, 0] # h, ode, ok, w0, wa, gamma
+row_step = [1, 0, 1, 0, 1, 0] # h, ode, ok, w0, wa, gamma
 col_step = [0, 1, 0, 0, 0, -1] # gamma, wa, w0, ok, ode, h
 
 for j in range(Nparam):
@@ -214,6 +204,6 @@ for p in params:
 
 # Set size and save
 P.gcf().set_size_inches(16.5,10.5)
-#P.savefig('pub-6params-eos.pdf', dpi=100)
+P.savefig('fig17-6params-eos.pdf', transparent=True)
 #P.savefig('BINGO-6params-eos.pdf', dpi=100)
 P.show()

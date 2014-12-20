@@ -8,11 +8,10 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
+from radiofisher.units import *
 
 import os
-import euclid
+from radiofisher import euclid
 
 fig_name = "pub-w0wa-okmarg.pdf"
 #fig_name = "pub-w0wa-okfixed.pdf"
@@ -36,6 +35,9 @@ labels = ['SKA1-MID B1', 'SKA1-MID B2', 'SKA1-SUR B1', 'SKA1-SUR B2', 'BOSS']
 names = ['EuclidRef_full', 'EuclidRef_fix', 'gSKA2_full', 'SKA1MIDfull2_full']
 labels = ['Euclid', 'Euclid_nsfix', 'SKA2', 'SKA1-MID B2']
 
+names = ['yCHIME_paper', 'yCHIME_nocut_paper', 'SKA1MID900_paper', 'EuclidRef_paper']
+labels = names
+
 #names = ['EuclidRef', 'iexptO', 'cexptL', 'iexptM']
 #labels = ['DETF IV', 'Optimal', 'Facility', 'Pathfinder']
 
@@ -58,7 +60,7 @@ colours = [ ['#CC0000', '#F09B9B'],
 fig = P.figure()
 ax = fig.add_subplot(111)
 
-_k = range(len(names))[::-1]
+_k = range(len(names)) #[::-1]
 for k in _k:
     root = "output/" + names[k]
     

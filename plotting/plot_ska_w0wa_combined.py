@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """
-Plot 2D constraints on (w0, wa).
+Plot 2D constraints on (w0, wa), combined with BOSS and Planck priors.
+[SKA BAO CHAPTER FIG. 4]
 """
 import numpy as np
 import pylab as P
@@ -8,11 +9,7 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os, copy
-import euclid
 
 fig_name = "ska-w0wa-combined.pdf"
 
@@ -32,9 +29,10 @@ colours = [ ['#FFB928', '#FFEA28'],
             ['#5B9C0A', '#BAE484'],
             ['#6B6B6B', '#BDBDBD'] ]
 
-names = [ 'gSKASURASKAP_baoonly', 'SKA1MIDfull1_baoonly', 'EuclidRef_baoonly', 'gSKA2_baoonly', ]
-labels = ['SKA1-SUR  (gal.)', 'SKA1-MID B1 (IM)', 'Euclid (gal.)', 'Full SKA (gal.)',]
-
+names = [ 'gSKAMIDMKB2_baoonly', 'SKA1MID350_baoonly_25000',#'gSKASURASKAP_baoonly' 
+          'EuclidRef_baoonly', 'gSKA2_baoonly', ]
+labels = ['SKA1-MID/SUR (gal.)', 'SKA1-MID B1 (IM)', 
+          'Euclid (gal.)', 'SKA2 (gal.)',]
 
 ################################################################################
 # Load BOSS
@@ -47,9 +45,8 @@ F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(zc.size)]
 pnames = rf.load_param_names(root+"-fisher-full-0.dat")
 zfns = ['b_HI',]
 excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
-Fboss, lbl_boss = rf.combined_fisher_matrix( F_list,
-                                                    expand=zfns, names=pnames,
-                                                    exclude=excl )
+Fboss, lbl_boss = rf.combined_fisher_matrix( F_list, expand=zfns, 
+                                             names=pnames, exclude=excl )
 # Relabel galaxy bias
 for i in range(len(lbl_boss)):
     if "b_HI" in lbl_boss[i]: lbl_boss[i] = "gal%s" % lbl_boss[i]
@@ -77,11 +74,9 @@ for k in _k:
     # EOS FISHER MATRIX
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI', ]
-    #excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*', 'fs8', 'bs8']
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     
     # Combine with BOSS
     F, lbls = rf.add_fisher_matrices(F, Fboss, lbls, lbl_boss, expand=True)
@@ -89,7 +84,7 @@ for k in _k:
     # DETF Planck prior
     print "*** Using DETF Planck prior ***"
     l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-    F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    F_detf = rf.euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
     Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
@@ -99,13 +94,8 @@ for k in _k:
     if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
     
     if len(fixed_params) > 0:
-        Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], 
-                     names=lbls, exclude=fixed_params )
-    
-    # Really hopeful H0 prior
-    #ph = lbls.index('h')
-    #Fpl[ph, ph] += 1./(0.012)**2.
-    
+        Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], names=lbls, 
+                                               exclude=fixed_params )
     # Get indices of w0, wa
     pw0 = lbls.index('w0'); pwa = lbls.index('wa')
     
@@ -118,7 +108,8 @@ for k in _k:
     
     # Print 1D marginals
     print "1D sigma(w_0) = %3.4f" % np.sqrt(cov_pl[pw0,pw0])
-    print "1D sigma(gamma) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
+    print "1D sigma(w_a) = %3.4f" % np.sqrt(cov_pl[pwa,pwa])
+    print "FOM:", rf.figure_of_merit(pw0, pwa, Fpl, cov=cov_pl)
     print lbls
     
     x = rf.experiments.cosmo['w0']
@@ -136,7 +127,6 @@ for k in _k:
 # Centroid
 ax.plot(x, y, 'ko')
 
-
 # Report on what options were used
 print "-"*50
 s1 = "Marginalised over Omega_K" if MARGINALISE_CURVATURE else "Fixed Omega_K"
@@ -146,7 +136,6 @@ print "NOTE:", s1
 print "NOTE:", s2
 print "NOTE:", s3
 
-
 labels = [labels[k] for k in [0,1,2,3,]]
 lines = [ matplotlib.lines.Line2D([0.,], [0.,], lw=8.5, color=colours[k][0], alpha=0.65) for k in [0,1,2,3,]]
 
@@ -155,6 +144,7 @@ P.gcf().legend((l for l in lines), (name for name in labels), prop={'size':'larg
 P.figtext(0.18, 0.23, "(incl. BOSS + Planck)", fontsize=16)
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=15.)
+ax.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=15.)
 xminorLocator = matplotlib.ticker.MultipleLocator(0.1)
 yminorLocator = matplotlib.ticker.MultipleLocator(0.5)
 ax.xaxis.set_minor_locator(xminorLocator)
@@ -163,11 +153,8 @@ ax.yaxis.set_minor_locator(yminorLocator)
 ax.set_xlabel(r"$w_0$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_ylabel(r"$w_a$", fontdict={'fontsize':'xx-large'})
 
-ax.set_xlim((-1.51, -0.49))
-ax.set_ylim((-1.3, 1.3))
-
-#ax.set_xlim((-1.31, -0.69))
-#ax.set_ylim((-0.8, 0.8))
+ax.set_xlim((-1.35, -0.65))
+ax.set_ylim((-1., 1.))
 
 # Set size and save
 P.tight_layout()

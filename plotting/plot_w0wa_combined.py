@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """
-Plot 2D constraints on (w0, wa).
+Plot 2D constraints on (w0, wa) from Euclid and an SKA configuration, as well 
+as their combination (Fig. 28).
 """
 import numpy as np
 import pylab as P
@@ -8,15 +9,10 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os, copy
-import euclid
+from radiofisher import euclid
 
-FILENAME = "euclid_covmat.dat"
-
-fig_name = "pub-w0wa-combined.pdf"
+fig_name = "fig28-w0wa-combined.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True # Marginalise over Omega_K
@@ -24,8 +20,8 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = rf.experiments.cosmo
-names = ['EuclidRef', 'cSKA1MIDfull2']
-labels = ['DETF IV + Planck', 'SKA1-MID Full (B2) + Planck']
+names = ['EuclidRef_paper', 'SKA1MID900_paper']
+labels = ['DETF IV + Planck', 'SKA1-MID (B2) + Planck']
 
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
@@ -55,28 +51,18 @@ for k in _k:
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI', ]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'N_eff', 'pk*', 'fs8', 'bs8']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     if 'Euclid' in names[k]:
         F1 = F; lbl1 = copy.deepcopy(lbls)
     else:
         F2 = F; lbl2 = copy.deepcopy(lbls)
     
-    # Add Planck prior
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
-        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    # DETF Planck prior
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h', 'sigma8']
+    F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
     fixed_params = []
@@ -178,8 +164,8 @@ ax.yaxis.set_minor_locator( matplotlib.ticker.MultipleLocator(0.1) )
 ax.set_xlabel(r"$w_0$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 ax.set_ylabel(r"$w_a$", fontdict={'fontsize':'xx-large'})
 
-ax.set_xlim((-1.14, -0.79))
-ax.set_ylim((-0.5, 0.5))
+ax.set_xlim((-1.14, -0.84))
+ax.set_ylim((-0.55, 0.55))
 
 # Set size and save
 P.tight_layout()

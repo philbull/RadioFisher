@@ -1,8 +1,8 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and plot P(k).
+Plot constraints on P(k) for an experiment, overlaying the errorbars over the 
+fiducial power spectrum. (Fig. 29)
 """
-
 import numpy as np
 import pylab as P
 from rfwrapper import rf
@@ -10,19 +10,11 @@ import matplotlib.patches
 import matplotlib.cm
 import scipy.integrate
 import scipy.interpolate
-from units import *
-from mpi4py import MPI
 
-import os
-import euclid
-
+C = 3e5
 cosmo = rf.experiments.cosmo
-
-names = ["fSKA1SURfull1",] # "EuclidRef", "iexptM", "exptS"]
-
-#colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
-colours = ['#1619A1', '#CC0000', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['Facility', 'DETF IV', 'Mature', 'Snapshot']
+names = ["SKA1MID350_nokfg_paper",]
+colours = ['#1619A1', '#CC0000', '#5B9C0A', '#990A9C']
 
 # Get f_bao(k) function
 cosmo_fns = rf.background_evolution_splines(cosmo)
@@ -52,9 +44,8 @@ for k in range(len(names)):
              'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
     pnames += ["pk%d" % i for i in range(kc.size)]
     zfns = []; excl = []
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     
     # Just do the simplest thing for P(k) and get 1/sqrt(F)
     cov = [np.sqrt(1. / np.diag(F)[lbls.index(lbl)]) for lbl in lbls if "pk" in lbl]
@@ -69,12 +60,13 @@ for k in range(len(names)):
     #ydn[np.where(ydn > 1e1)] = 1e1
     ax.errorbar( kc, pk, yerr=[ydn, yup], color=colours[k], ls='none', 
                       lw=1.8, capthick=1.8, label=names[k], ms='.' )
-    
+
+# Plot fiducial power spectrum, P(k)
 kk = np.logspace(-4., 0., 1000)
 pk = cosmo['pk_nobao'](kk) * (1. + fbao(kk))
 ax.plot(kk, pk, 'k-', lw=1.5)
 
-
+"""
 # Calculate horizon size
 zeq = 3265. # From WMAP 9; horizon size is pretty insensitive to this
 om = cosmo['omega_M_0']
@@ -91,16 +83,13 @@ khor_z = scipy.interpolate.interp1d(_z[::-1], k_hor[::-1], kind='linear')
 ax.axvline(khor_z(np.min(zc)), color='r', lw=5.)
 ax.axvline(khor_z(np.max(zc)), color='r', lw=5.)
 ax.axvline(khor_z(3.5), color='r', lw=5.)
-
+"""
 
 # Set limits
 ax.set_xscale('log')
 ax.set_yscale('log')
-##ax.set_xlim((2e-3, 3e-2))
-ax.set_xlim((2e-3, 8e-2))
-#ax.set_xlim((5e-4, 3e-2))
-##ax.set_ylim((2e4, 1.5e5))
-ax.set_ylim((1e4, 1.5e5))
+ax.set_xlim((1.25e-3, 8e-2))
+ax.set_ylim((9e3, 1.1e5))
 
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 ax.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)
@@ -110,7 +99,5 @@ ax.set_ylabel(r"$\mathrm{P}(k) \,[\mathrm{Mpc}^{3}]$", fontdict={'fontsize':'xx-
 # Set size
 P.tight_layout()
 #P.gcf().set_size_inches(8.,6.)
-#P.savefig('pub-pk-lowk.pdf', transparent=True)
-P.savefig('ska-pk-lowk.png', transparent=True)
-
+P.savefig('fig29-pk-lowk.pdf', transparent=True)
 P.show()

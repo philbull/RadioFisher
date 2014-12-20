@@ -1,29 +1,23 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and plot P(k) for "ideal" rf.experiments.
+Plot fractional constraints on P(k) for Euclid and noise-free versions of 
+Facility with different amounts of foreground contamination. (Fig. 27)
 """
-
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
-names = ['EuclidRef', 'exptCV', 'exptCV2'] #'cexptL', 'iexptM', 'exptS']
+names = ['EuclidRef_paper', 'exptCV_efg6_paper', 'exptCV_efg12_paper']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['DETF IV', 'Ideal, $\epsilon_\mathrm{FG}=10^{-6}$', 'Ideal, $\epsilon_\mathrm{FG}=10^{-12}$'] #'Pathfinder', 'FirstGen']
-linestyle = [[1,0], [8, 4], [2, 4, 6, 4], [3, 4]]
-
-
-#names = ['EuclidRef', 'cexptLx', 'cexptLy', 'iexptOpt']
-#labels = ['Euclid', 'Fac. quadrature', 'Fac. min.', 'MEGA']
+labels = ['DETF IV', 'Ideal, $\epsilon_\mathrm{FG}=10^{-6}$', 
+          'Ideal, $\epsilon_\mathrm{FG}=10^{-12}$']
+linestyle = [[], [8, 4], [2, 4, 6, 4], [3, 4]]
 
 
 # Get f_bao(k) function
@@ -89,7 +83,7 @@ for k in range(len(names)):
 P.xscale('log')
 P.yscale('log')
 P.xlim((1e-3, 1.5e0))
-P.ylim((9e-4, 1e1))
+P.ylim((8e-4, 1e1))
 P.legend(loc='lower left', prop={'size':'large'}, frameon=False)
 
 P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
@@ -101,6 +95,6 @@ P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'})
 P.tight_layout()
 # Set size
 #P.gcf().set_size_inches(8.,6.)
-P.savefig('pub-dlogp-ideal.pdf', transparent=True) # 100
+P.savefig('fig27-dlogp-ideal.pdf', transparent=True) # 100
 
 P.show()

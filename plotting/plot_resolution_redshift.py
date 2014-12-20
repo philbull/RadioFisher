@@ -10,11 +10,10 @@ import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
 import scipy.integrate
-from units import *
+from radiofisher.units import *
 from mpi4py import MPI
-
 import os
-import euclid
+import radiofisher.euclid as euclid
 
 
 cosmo = rf.experiments.cosmo
@@ -161,7 +160,7 @@ ax2.set_position([0.15, 0.75, 0.8, 0.2])
 # Set size and save
 #P.tight_layout()
 P.gcf().set_size_inches(8.,7.)
-#P.savefig('pub-resolution-z.pdf', transparent=True)
+P.savefig('fig03-resolution-z.pdf', transparent=True)
 #P.savefig('pub-resolution-bao.pdf', transparent=True)
 #P.savefig('ska-resolution-bao.pdf', transparent=True)
 P.show()

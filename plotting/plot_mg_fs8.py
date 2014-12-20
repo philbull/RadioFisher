@@ -15,10 +15,10 @@ fname = 'mg-fsigma8.pdf'
 #fname = 'mg-fsigma8-scaledep.pdf'
 
 names = ['SKA1MID900_mg', 'SKA1MID350_mg', 'fSKA1SUR650_mg', 'fSKA1SUR350_mg', 
-         'gSKAMIDMKB2_mg', 'gSKASURASKAP_mg', 'gSKA2_mg']
+         'gSKAMIDMKB2_mg', 'gSKASURASKAP_mg', 'gSKA2_mg', 'EuclidRef_mg_Dz_kmg0.01']
 labels = ['SKA1-MID 900 (IM)', 'SKA1-MID 350 (IM)', 'SKA1-SUR 650 (IM)', 
           'SKA1-SUR 350 (IM)', 'SKA1-MID (gal.)', 'SKA1-SUR (gal.)', 
-          'Full SKA (gal.)']
+          'SKA2 (gal.)', 'Euclid (gal.)']
 
 colours = ['#8082FF', '#1619A1', '#FFB928', '#ff6600', '#95CD6D', '#007A10', '#CC0000', 
            '#000000', '#858585', '#c1c1c1']
@@ -100,9 +100,9 @@ P.tick_params(axis='both', which='major', labelsize=20, width=1.5, size=8., pad=
 P.tick_params(axis='both', which='minor', labelsize=20, width=1.5, size=8.)
 
 # Set axis limits
-P.xlim((-0.05, 2.2))
+P.xlim((-0.05, 2.6))
 #P.ylim((0., 0.045))
-P.ylim((0., 0.095))
+P.ylim((0., 0.083))
 
 # Add label to panel
 #P.figtext(l0 + 0.02, b0 + hh*(0.86+i), ax_lbls[i], 
@@ -112,7 +112,7 @@ P.xlabel('$z$', labelpad=10., fontdict={'fontsize':'xx-large'})
 P.ylabel('$\sigma(f \sigma_8) / (f \sigma_8)$', labelpad=15., fontdict={'fontsize':'xx-large'})
 
 # Set tick locations
-P.gca().yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(0.01))
+P.gca().yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(0.02))
 P.gca().yaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(0.01))
     
 leg = P.legend(prop={'size':'large'}, loc='upper right', frameon=True, ncol=2)

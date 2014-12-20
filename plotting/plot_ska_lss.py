@@ -7,19 +7,23 @@ import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
-import os
-import euclid
+from radiofisher import euclid
+from radiofisher.units import *
 
 cosmo = rf.experiments.cosmo
 
-names = ["SKAHI100", "SKAHI73", 'EuclidRef']
-labels = ['SKA1 HI gal.', 'SKA2 HI gal.', 'Euclid']
-colours = ['#1619A1', '#CC0000', '#FFB928', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
-linestyle = [[1,0], [1, 0], [1, 0],]
-marker = ['o', 'D', 's',]
+#---------------------------
+# SKA galaxy survey chapter
+#---------------------------
+filename = "ska-galaxy-rsd.pdf"
+names = [ 'gSKAMIDMKB2', 'gSKASURASKAP', 'gSKA2', 'BOSS', 'EuclidRef', 'WFIRST']
+labels = [ 'SKA1-MID+MeerKAT', 'SKA1-SUR+ASKAP', 'SKA 2', 'BOSS', 'Euclid', 'WFIRST']
+colours = ['#1619A1', '#FFB928', '#CC0000', 
+           '#3D3D3D', '#858585', '#c1c1c1',]
+linestyle = [[], [], [], [], [], [],]
+marker = ['D', 'D', 's', 'o', 'o', 'o']
+ymax = [0.046, 0.046]
+
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -37,14 +41,6 @@ for k in range(len(names)):
     # Load Fisher matrices as fn. of z
     Nbins = zc.size
     F_list = [np.genfromtxt(root+"-fisher-full-%d.dat" % i) for i in range(Nbins)]
-    
-    # EOS FISHER MATRIX
-    # Actually, (aperp, apar) are (D_A, H)
-    #pnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 'aperp', 'apar', 
-    #         'omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
-    #pnames += ["pk%d" % i for i in range(kc.size)]
-    #zfns = [0,1,6,7,8]
-    #excl = [2,4,5,  9,10,11,12,13,14] # Exclude all cosmo params
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     
     # Transform from D_A and H to D_V and F
@@ -61,9 +57,9 @@ for k in range(len(names)):
     zfns = ['A', 'bs8', 'fs8', 'DV', 'F']
     excl = ['Tb', 'sigma8', 'n_s', 'omegak', 'omegaDE', 'w0', 'wa', 'h', 
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI'] #'fs8', 'bs8']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
+    print lbls
     cov = np.linalg.inv(F)
     errs = np.sqrt(np.diag(cov))
     
@@ -95,7 +91,6 @@ for k in range(len(names)):
 
 # Subplot labels
 ax_lbls = ["$\sigma_{f \sigma_8}/ f\sigma_8$", "$\sigma_F/F$"]
-ymax = [0.055, 0.055]
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]
@@ -114,7 +109,7 @@ for i in range(len(axes)):
     axes[i].tick_params(axis='both', which='major', labelsize=20.)
     
     # Set axis limits
-    axes[i].set_xlim((-0.1, 2.1))
+    axes[i].set_xlim((-0.1, 2.4))
     axes[i].set_ylim((0., ymax[i]))
     
     # Add label to panel
@@ -131,9 +126,9 @@ for i in range(len(axes)):
 # Manually add shared x label
 #P.figtext(0.5, 0.02, "$z$", fontdict={'size':'xx-large'})
 
-P.legend(prop={'size':'large'}, bbox_to_anchor=[0.68, 0.98], frameon=False)
+axes[1].legend(prop={'size':'medium'}, loc='upper right', frameon=False, ncol=2)
 
 # Set size
 P.gcf().set_size_inches(8.4, 7.8)
-P.savefig('ska-gal-rsd.pdf', transparent=True)
+P.savefig(filename, transparent=True)
 P.show()

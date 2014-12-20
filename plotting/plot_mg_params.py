@@ -30,7 +30,7 @@ plabel1 = r"$A_\xi$"
 x = rf.experiments.cosmo['A_xi']
 
 param2 = 'k_mg' #'w0'
-plabel2 = "$k_{MG}$" #"$w_0$"
+plabel2 = r"$k_\xi$" #"$w_0$"
 y = rf.experiments.cosmo['k_mg']
 
 mgexclude = [ ['gamma0', 'gamma1', 'eta0', 'eta1', 'f0k*'],          # Tessa's MG params
@@ -39,25 +39,26 @@ mgexclude = [ ['gamma0', 'gamma1', 'eta0', 'eta1', 'f0k*'],          # Tessa's M
               ['eta0', 'eta1', 'alphaxi', 'f0k*', 'A_xi', 'k_mg'],   # Extended gamma(z)
               ['gamma1', 'eta1', 'alphaxi', 'f0k*', 'A_xi', 'k_mg'], # Basic eta=const.
               ['gamma1', 'alphaxi', 'f0k*', 'A_xi', 'k_mg'],         # Extended eta(z)
-              ['alphaxi', 'f0k*', 'A_xi', 'k_mg'],                   # Full (scale-indep.)
-              ['gamma1', 'eta0', 'eta1', 'f0k*', 'A_xi', 'k_mg'],    # Basic (scale-dep.)
-              ['gamma1', 'eta0', 'eta1', 'alphaxi', 'A_xi', 'k_mg'], # Binned f0(k)
             ]
-mgnames = ["Tessa's param", "Basic $\gamma = \mathrm{const.}$", "Extended $\gamma(z)$", 
-           "Basic $\eta = \mathrm{const.}$", "Extended $\eta(z)$",
-           "Full (scale-indep.)", "Basic (scale-dep.)", "Binned $f_0(k)$"]
+mgnames = [r"Standard $(A_\xi, k_\xi)$", "Basic $\gamma = \mathrm{const.}$", 
+           "Extended $\gamma(z)$", "Basic $\eta = \mathrm{const.}$", 
+           "Extended $\eta(z)$",]
 
-names = ['SKA1MID350_mg_Dz',]
-labels = ['SKA1-MID 350',]
-#names = ['SKA1MID900_mg', 'SKA1MID900_mg_Dz', 'SKA1MID350_mg', #'fSKA1SUR650_mg',
-#         'gSKA2_mg']
-#labels = ['SKA1-MID 900 (IM)', 'SKA1-MID 900 XXX', 'SKA1-MID 350 (IM)', #'SKA1-SUR 650 (IM)', 
-#          'Full SKA (gal.)']
+#names = ['SKA1MID350_mg_Dz_kmg0.01', 'SKA1MID900_mg_Dz_kmg0.01',
+#         'fSKA1SUR350_mg_Dz_kmg0.01', 'fSKA1SUR650_mg_Dz_kmg0.01',
+#         'gSKA2_mg_Dz_kmg0.01']
+#labels = ['SKA1-MID 350 (IM)', 'SKA1-MID 900 (IM)',
+#          'SKA1-SUR 350 (IM)', 'SKA1-SUR 650 (IM)',
+#          'SKA2 (gal.)',]
 
-colours = [ ['#990A9C', '#F4BAF5'], 
-            ['#1619A1', '#B1C9FD'], 
-            ['#FFB928', '#FFEA28'],
-            ['#CC0000', '#F09B9B'], 
+names = ['EuclidRef_mg_Dz_kmg0.01', 'SKA1MID350_mg_Dz_kmg0.01', 'gSKA2_mg_Dz_kmg0.01']
+labels = ['Euclid (gal.)', 'SKA1-MID 350 (IM)', 'Full SKA (gal.)',]
+
+colours = [ ['#6B6B6B', '#BDBDBD'], # Grey, Euclid
+            ['#1619A1', '#B1C9FD'], # Blue, MID
+            ['#CC0000', '#F09B9B'], # Red, SKA2
+            ['#990A9C', '#F4BAF5'], 
+            ['#FFB928', '#FFEA28'], 
             ['#5B9C0A', '#BAE484'], 
             ['#6B6B6B', '#BDBDBD'],
             ['#5B9C0A', '#BAE484'],
@@ -68,8 +69,7 @@ colours = [ ['#990A9C', '#F4BAF5'],
 
 ################################################################################
 # Load low-z galaxy survey Fisher matrix
-
-root = "output/" + "BOSS_mg"
+root = "output/" + "BOSS_mg_Dz_kmg0.01"
 
 # Load cosmo fns.
 dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
@@ -114,11 +114,16 @@ for k in _k:
     
     # EOS FISHER MATRIX
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
+    
+    for n in range(len(F_list)):
+        print "%5.5e  %5.5e" % (F_list[n][pnames.index("A_xi"), pnames.index("A_xi")],
+                                F_list[n][pnames.index("k_mg"), pnames.index("k_mg")] )
+    
     zfns = ['b_HI',]
     excl = exclude_all + mgexclude[MGMODE]
     F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
                                          exclude=excl )
-                                                
+    
     # Relabel galaxy bias from low-z survey and sum current survey + low-z
     F, lbls = rf.add_fisher_matrices(F_lowz, F, lbls_lowz, lbls, expand=True)
     print lbls
@@ -135,13 +140,24 @@ for k in _k:
     if not MARGINALISE_INITIAL_PK: fixed_params += ['n_s', 'sigma8']
     if not MARGINALISE_OMEGAB: fixed_params += ['omega_b',]
     
+    #fixed_params += ['omegak', 'wa', 'b1']
+    
     if len(fixed_params) > 0:
         Fpl, lbls = rf.combined_fisher_matrix( [Fpl,], expand=[], 
                      names=lbls, exclude=fixed_params )
     print lbls
-    rf.plot_corrmat(Fpl, lbls)
-    P.show()
-    exit()
+    #rf.plot_corrmat(Fpl, lbls)
+    
+    # DEBUG: Output correlation coeffs
+    F11 = Fpl[lbls.index("A_xi"), lbls.index("A_xi")]
+    F22 = Fpl[lbls.index("k_mg"), lbls.index("k_mg")]
+    F12 = Fpl[lbls.index("A_xi"), lbls.index("k_mg")]
+    F13 = Fpl[lbls.index("A_xi"), lbls.index("w0")]
+    F33 = Fpl[lbls.index("w0"), lbls.index("w0")]
+    print "A_xi - A_xi: %3.3e  %3.3f" % (F11, 1.)
+    print "A_xi - k_mg: %3.3e  %3.3f" % (F12, F12 / np.sqrt(F11 * F22))
+    print "k_mg - k_mg: %3.3e  %3.3f" % (F22, 1.)
+    print "A_xi - w_0:  %3.3e  %3.3f" % (F13, F13 / np.sqrt(F11 * F33))
     
     # Get indices of selected parameters
     p1 = lbls.index(param1)

@@ -1,23 +1,18 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and plot P(k).
+Plot P(k) constraints on BAO wiggles (Fig. 5).
 """
-
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
-names = ["EuclidRef", "cexptL", "iexptM", "exptS"]
-#colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
+names = ["EuclidRef_paper", "exptL_paper", "aexptM_paper", "exptS_paper"]
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
 labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
 
@@ -104,6 +99,6 @@ axes[0].set_xlabel(r"$k \,[\mathrm{Mpc}^{-1}]$", fontdict={'fontsize':'xx-large'
 # Set size
 P.gcf().set_size_inches(8.5,12.)
 #P.gcf().set_size_inches(8.5,10.)
-#P.savefig('pub-fbao.pdf', transparent=True)
-P.savefig('ska-fbao.pdf', transparent=True)
+P.savefig('fig05-fbao.pdf', transparent=True)
+#P.savefig('ska-fbao.pdf', transparent=True)
 P.show()

@@ -1,9 +1,11 @@
 #!/usr/bin/python
-
+"""
+Plot Omega_HI(z) model against a compilation of observational data (Fig. 20).
+"""
 import numpy as np
 import pylab as P
 from rfwrapper import rf
-from rf.experiments.import cosmo
+from radiofisher.experiments import cosmo
 
 def rho_c(z):
     """
@@ -13,7 +15,6 @@ def rho_c(z):
     return 2.76e7 * (100.*cosmo['h'])**2. * E2
 
 z = np.linspace(-0.1, 5., 1000)
-
 oHI = rf.omega_HI(z, cosmo)
 bHI = rf.bias_HI(z, cosmo)
 
@@ -50,9 +51,7 @@ P.subplot(111)
 
 # Theory curves
 P.plot(z, oHI / 1e-3, 'k-', lw=2.2)
-P.plot(z, (0.45/0.65) * oHI / 1e-3, 'k--', lw=2.2)
-
-
+#P.plot(z, (0.45/0.65) * oHI / 1e-3, 'k--', lw=2.2)
 
 
 # DLA: Meiring et al. (2011), http://arxiv.org/abs/arXiv:1102.3927
@@ -101,9 +100,7 @@ P.errorbar([0., 1., 2.], [0.1389, 0.2515, 0.3773], np.zeros(3), marker='D', ls='
 
 # Load Mario's new data
 zz, omegaHI, bHI, Tb = np.genfromtxt("santos_powerlaw_HI_model.dat").T
-P.plot(zz, omegaHI/1e-3, 'mo', ms=10.)
-
-
+#P.plot(zz, omegaHI/1e-3, 'mo', ms=10.)
 
 # Zero line
 #P.axhline(0., ls='dotted', color='k', lw=1.5)
@@ -112,7 +109,7 @@ P.xlim((-0.08, 5.))
 P.ylim((0., 1.55))
 #P.ylim((0.1, 3.))
 P.ylabel("$\Omega_\mathrm{HI}(z) / 10^{-3}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-P.xlabel("$z$", fontdict={'fontsize':'xx-large'}, labelpad=8.)
+P.xlabel("$z$", fontdict={'fontsize':'xx-large'}, labelpad=4.)
 
 # Move subplot and legend
 # pos = [[x0, y0], [x1, y1]]
@@ -138,5 +135,5 @@ P.tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=
 # Set size and save
 #P.tight_layout()
 P.gcf().set_size_inches(8.,7.)
-#P.savefig("pub-omegaHI-evol.pdf", transparent=True)
+P.savefig("fig20-omegaHI-evol.pdf", transparent=True)
 P.show()

@@ -1,31 +1,38 @@
 #!/usr/bin/python
 """
-Plot figures of merit as function of experimental settings.
+Plot figures of merit as a function of experimental settings 
+**OBSOLETE**
 """
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
-import os
-import euclid
-
-USE_DETF_PLANCK_PRIOR = True
+import os, sys
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
 # Define names of parameters being varied
-snames = ['ttot', 'Sarea', 'epsilon_fg', 'omega_HI_0']
+snames = ['ttot', 'Sarea', 'epsilon_fg', 'omega_HI_0', 'sigma_NL']
 slabels = ['$t_\mathrm{tot} [10^3 \mathrm{hrs}]$',
            '$S_\mathrm{area} [10^3 \mathrm{deg}^2]$', 
            '$\epsilon_\mathrm{FG}$',
-           '$\Omega_\mathrm{HI} / 10^{-4}$']
+           '$\Omega_\mathrm{HI} / 10^{-4}$',
+           ]
 logscale = [False, False, True, False]
-fname = ['pub-ttot.pdf', 'pub-sarea.pdf', 'pub-efg.pdf', 'pub-omegaHI.pdf']
+fname = ['fig21-ttot.pdf', 'pub-sarea.pdf', 'fig23-efg.pdf', 
+         'fig21-omegaHI.pdf', 'fig22-sigmaNL.pdf']
 fac = [1e3 * HRS_MHZ, 1e3 * (D2RAD)**2., 1., 1e-4] # Divide by this factor to get sensible units
+
+# Get parameter ID from command line
+try:
+    j = int(sys.argv[1])
+except:
+    raise ValueError("Need to specify one argument: int(parameter_id)")
+print "-"*50
+print "Plotting parameter: %s" % snames[j]
+print "-"*50
 
 # Choose which parameter to plot
 j = 2

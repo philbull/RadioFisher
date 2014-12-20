@@ -29,7 +29,7 @@ surveys = [
     [0.6, 2.1, 15e3, "Euclid"],
     [1.0, 2.8, 2e3, "WFIRST"],
     [0.0, 3.0, 25e3, "SKA1-MID (IM)"],
-    [0.18, 1.86, 30e3, "SKA Full (gal. survey)"],
+    [0.18, 1.86, 30e3, "Full SKA (gal. survey)"],
 ]
 
 for s in surveys:
@@ -40,13 +40,14 @@ for s in surveys:
     
     xx = 0.; yy = 0.; col='k'
     if "SKA1-MID" in lbl: col = 'r'
-    if "SKA Full" in lbl: col = 'b'
+    if "Full SKA" in lbl: col = 'b'
     if "HETDEX" in lbl:
         xx = 60.
         yy = -5.
     if "DESI" in lbl: yy = -35.
     
-    P.errorbar(zc, vs, xerr=dz, color=col, marker='s', markeredgecolor=col, lw=2.)
+    P.errorbar(zc, vs, xerr=dz, color=col, marker='s', markeredgecolor=col, lw=2.,
+               capsize=0.)
     P.annotate(lbl, xy=(zc, vs), color=col,
                        xytext=(0.+xx, 15.+yy), fontsize='x-large', 
                        textcoords='offset points', ha='center', va='center' )
@@ -60,8 +61,8 @@ P.axhline(0., ls='dotted', lw=1.5, color='k')
 P.gca().tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
 P.gca().tick_params(axis='both', which='minor', labelsize=20, size=5., width=1.5, pad=8.)
 P.xlabel(r"$z$", fontdict={'fontsize':'xx-large'}, labelpad=10.)
-P.ylabel(r"Volume [Gpc$^3$]", fontdict={'fontsize':'xx-large'})
+P.ylabel(r"Volume [Gpc$^3$]", fontdict={'fontsize':'xx-large'}, labelpad=10.)
 
 P.tight_layout()
-P.savefig("survey-volumes.png")
+P.savefig("survey-volumes.pdf")
 P.show()

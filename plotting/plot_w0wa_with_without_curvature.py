@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """
-Plot 2D constraints on (w0, wa).
+Plot 2D constraints on (w0, wa) for different assumptions about curvature and 
+prior on H_0 (Fig. 12).
 """
 import numpy as np
 import pylab as P
@@ -8,13 +9,10 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
-fig_name = "pub-w0wa-with-without-ok.pdf"
+fig_name = "fig12-w0wa-with-without-ok.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_CURVATURE = True # Marginalise over Omega_K
@@ -22,13 +20,11 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 
 cosmo = rf.experiments.cosmo
-names = ['cexptL', 'cexptL', 'cexptL']
+names = ['exptL_paper', 'exptL_paper', 'exptL_paper']
 labels = ['Flatness prior', 'Planck $H_0$ prior', 'No priors']
-
 fix = ['omegak', None, None,]
 
-colours = [ 
-            ['#CC0000', '#F09B9B'],
+colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
             ['#6B6B6B', '#BDBDBD'],
             ['#5B9C0A', '#BAE484'] ]
@@ -56,23 +52,14 @@ for k in _k:
     pnames = rf.load_param_names(root+"-fisher-full-0.dat")
     zfns = ['b_HI',]
     excl = ['Tb', 'f', 'aperp', 'apar', 'DA', 'H', 'gamma', 'N_eff', 'pk*', 'fs8', 'bs8']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     print lbls
-    if USE_DETF_PLANCK_PRIOR:
-        # DETF Planck prior
-        print "*** Using DETF Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
-    else:
-        # Euclid Planck prior
-        print "*** Using Euclid (Mukherjee) Planck prior ***"
-        l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
-        Fe = euclid.planck_prior_full
-        F_eucl = euclid.euclid_to_rf(Fe, cosmo)
-        Fpl, lbls = rf.add_fisher_matrices(F, F_eucl, lbls, l2, expand=True)
+    # DETF Planck prior
+    print "*** Using DETF Planck prior ***"
+    l2 = ['n_s', 'w0', 'wa', 'omega_b', 'omegak', 'omegaDE', 'h']
+    F_detf = euclid.detf_to_rf("DETF_PLANCK_FISHER.txt", cosmo, omegab=False)
+    Fpl, lbls = rf.add_fisher_matrices(F, F_detf, lbls, l2, expand=True)
     
     # Decide whether to fix various parameters
     fixed_params = []
@@ -117,8 +104,7 @@ for k in _k:
     for e in ellipses: ax.add_patch(e)
     
     # Centroid
-    ax.plot(x, y, 'kx')
-
+    ax.plot(x, y, 'kx', mew=1.2)
 
 # Report on what options were used
 print "-"*50

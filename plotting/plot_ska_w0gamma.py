@@ -14,6 +14,9 @@ from mpi4py import MPI
 import os, copy
 import euclid
 
+print "OBSOLETE; USE plot_w0gamma.py"
+exit()
+
 #fig_name = "ska-w0gamma.pdf"
 fig_name = "ska-w0gamma-both.pdf"
 fig_name = "ska-w0gamma-combined-SUR.pdf"

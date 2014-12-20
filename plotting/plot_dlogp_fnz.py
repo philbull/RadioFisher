@@ -1,27 +1,26 @@
 #!/usr/bin/python
 """
-Process EOS Fisher matrices and plot P(k).
+Plot P(k) as a function of redshift (Fig. 7).
 """
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
 import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
-names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS']
+names = ['EuclidRef_paper', 'exptL_paper', 'aexptM_paper', 'exptS_paper']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
 labels = ['DETF IV', 'Facility', 'Mature', 'Snapshot']
 linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
 
 
-names = ['SKA1MIDfull2', 'fSKA1SURfull2', 'fSKA1LOW'] #, 'fSKA1SURfull2',]
-colours = ['#1619A1', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
-labels = ['SKA1-MID B2 SD', 'SKA1-SUR B2 PAF', 'SKA1-LOW']
+#names = ['SKA1MIDfull2', 'fSKA1SURfull2', 'fSKA1LOW'] #, 'fSKA1SURfull2',]
+#colours = ['#1619A1', '#5B9C0A', '#990A9C', '#FFB928', '#CC0000']
+#labels = ['SKA1-MID B2 SD', 'SKA1-SUR B2 PAF', 'SKA1-LOW']
 
 
 # Get f_bao(k) function
@@ -31,7 +30,7 @@ fbao = cosmo['fbao']
 # Fiducial value and plotting
 P.subplot(111)
 
-for k in [2,]: #range(len(names)):
+for k in [1,]: #range(len(names)):
     root = "output/" + names[k]
 
     # Load cosmo fns.
@@ -68,12 +67,12 @@ for k in [2,]: #range(len(names)):
         # Label for min/max redshifts
         N = kc.size
         if j == 0:
-            P.annotate("z = %3.2f" % zc[j], xy=(kc[N/2+5], cov[N/2+5]), 
-                       xytext=(65., -60.), fontsize='large', 
+            P.annotate("z = %3.2f" % zc[j], xy=(kc[43], cov[43]), 
+                       xytext=(50., -45.), fontsize='large', 
                        textcoords='offset points', ha='center', va='center', 
                        arrowprops={'width':1.8, 'color':'#1619A1', 'shrink':0.05} )
         if j == len(F_list) - 1:
-            P.annotate("z = %3.2f" % zc[j], xy=(kc[N/2], cov[N/2]), 
+            P.annotate("z = %3.2f" % zc[j], xy=(kc[35], cov[35]), 
                        xytext=(-65., 60.), fontsize='large', 
                        textcoords='offset points', ha='center', va='center',
                        arrowprops={'width':1.8, 'color':'#1619A1', 'shrink':0.07} )
@@ -96,8 +95,8 @@ for k in [2,]: #range(len(names)):
 
 P.xscale('log')
 P.yscale('log')
-P.xlim((2e-3, 3e0))
-P.ylim((3e-3, 1e1))
+P.xlim((2e-3, 7e-1))
+P.ylim((2e-3, 1e1))
 #P.legend(loc='lower left', prop={'size':'large'})
 
 P.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
@@ -108,7 +107,7 @@ P.ylabel(r"$\Delta P / P$", fontdict={'fontsize':'xx-large'}, labelpad=10.)
 P.tight_layout()
 # Set size
 P.gcf().set_size_inches(8.,6.)
-#P.savefig('pub-dlogp-fnz.pdf', transparent=True) # 100
+P.savefig('fig07-dlogp-fnz.pdf', transparent=True) # 100
 #P.savefig("pkz_%s.pdf" % names[k], transparent=True)
 
 P.show()

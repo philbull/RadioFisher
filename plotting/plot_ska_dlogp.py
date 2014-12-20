@@ -7,11 +7,7 @@ import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
-import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
@@ -21,6 +17,10 @@ labels = ['SKA1-MID B1 IM', 'SKA1-MID B2 IM', 'SKA1-SUR B1 IM', 'SKA1-SUR B2 IM'
           'Euclid']
 linestyle = [[], [8, 4], [], [8, 4], [], [], [2, 4, 6, 4], []]
 marker = ['o', 'D', 'o', 'D', 'o', 'D', 'o', 'D']
+
+names = ['SKA1MID350_25000', 'SKA1MID900_25000', 'fSKA1SUR650_25000', 'EuclidRef', 'gSKA2']
+labels = ['SKA1-MID B1 (IM)', 'SKA1-MID B2 (IM)', 'SKA1-SUR B2 (IM)', 
+          'Euclid (gal.)', 'SKA2 (gal.)']
 
 #names = ['EuclidRef', 'cexptLx', 'cexptLy', 'iexptOpt']
 #labels = ['Euclid', 'Fac. quadrature', 'Fac. min.', 'MEGA']

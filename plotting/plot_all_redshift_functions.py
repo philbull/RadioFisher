@@ -1,26 +1,23 @@
 #!/usr/bin/python
 """
-Plot functions of redshift.
+Plot functions of redshift (Fig. 6).
 """
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
 PLOT_DIFFERENT_MEASURES = False
 
 cosmo = rf.experiments.cosmo
 
 if not PLOT_DIFFERENT_MEASURES:
-    names = ['EuclidRef', 'cexptL', 'iexptM', 'exptS', 'cSKA1MIDbase1']
-    colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C', 'y'] # DETF/F/M/S
-    labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I', 'xxx']
+    names = ['EuclidRef_paper', 'exptL_paper', 'aexptM_paper', 'exptS_paper']
+    colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
+    labels = ['DETF IV', 'Facility', 'Stage II', 'Stage I']
     linestyle = [[2, 4, 6, 4], [], [8, 4], [3, 4], [1,1]]
 else:
     names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 
@@ -59,12 +56,11 @@ for k in range(len(names)):
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI', 'aperp', 'apar']
     
     # FIXME
-    zfns = ['H', 'DA',]
-    excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
-            'gamma', 'N_eff', 'pk*', 'f', 'b_HI', 'aperp', 'apar', 'fs8', 'bs8']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    #zfns = ['H', 'DA',]
+    #excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
+    #        'gamma', 'N_eff', 'pk*', 'f', 'b_HI', 'aperp', 'apar', 'fs8', 'bs8']
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     cov = np.linalg.inv(F)
     errs = np.sqrt(np.diag(cov))
     print lbls
@@ -95,7 +91,8 @@ for k in range(len(names)):
         line[0].set_dashes(linestyle[k])
     
 # Subplot labels
-ax_lbls = ["$\sigma_{D_A}/D_A$", "$\sigma_A/A$", "$\sigma_H/H$", "$\sigma_{f\sigma_8}/f\sigma_8$"]
+ax_lbls = ["$\sigma_{D_A}/D_A$", "$\sigma_A/A$", "$\sigma_H/H$", 
+           "$\sigma_{f\sigma_8}/f\sigma_8$"]
 
 if PLOT_DIFFERENT_MEASURES:
     ymax = [0.18, 0.85, 0.11, 0.065]
@@ -112,11 +109,13 @@ j = 0
 for i in range(len(axes)):
     axes[i].set_position([l0 + ww*j, b0 + hh*(i%2), ww, hh])
     
-    axes[i].tick_params(axis='both', which='major', labelsize=16, width=1.5, size=6.)
+    axes[i].tick_params(axis='both', which='major', labelsize=16, width=1.5, 
+                        size=6., pad=6.)
     axes[i].tick_params(axis='both', which='minor', labelsize=16)
     
     # Set axis limits
-    axes[i].set_xlim((0.25, 2.2))
+    #axes[i].set_xlim((0.25, 2.2))
+    axes[i].set_xlim((0., 2.43))
     axes[i].set_ylim((0., ymax[i]))
     
     # Add label to panel
@@ -143,14 +142,13 @@ for i in range(len(axes)):
 # Manually add shared x label
 P.figtext(0.5, 0.02, "$z$", fontdict={'size':'xx-large'})
 
-
 # Legend
 P.legend(bbox_to_anchor=[0.93,-0.04], frameon=False)
 
 # Set size
 P.gcf().set_size_inches(10., 7.)
 if not PLOT_DIFFERENT_MEASURES:
-    pass
-    #P.savefig('pub-zfns.pdf', transparent=True)
+    #pass
+    P.savefig('fig06-zfns.pdf', transparent=True)
     #P.savefig('BINGO-zfns.pdf', transparent=True)
 P.show()

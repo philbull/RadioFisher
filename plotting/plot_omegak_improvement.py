@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """
-Plot improvement in Omega_K or gamma as a function of z.
+Plot improvement in Omega_K, gamma, or FOM as a function of z (Fig. 14), 
+(Fig. 15), (Fig. 18).
 """
 import numpy as np
 import pylab as P
@@ -8,11 +9,8 @@ from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
 import matplotlib.ticker
-from units import *
-from mpi4py import MPI
-
 import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
@@ -20,22 +18,22 @@ nsig = 1.5 # No. of sigma to plot out to
 aspect = 1. #1.7 # Aspect ratio of range (w = aspect * h)
 
 #TYPE = 'omegak'
-TYPE = 'gamma'
-#TYPE = 'FOM'
+#TYPE = 'gamma'
+TYPE = 'FOM'
 
 if TYPE == 'omegak':
     param1 = "omegak"
     label1 = "\Omega_K"
     fid1 = 0.
-    fig_name = "pub-ok-improvement.pdf"
+    fig_name = "fig15-ok-improvement.pdf"
 elif TYPE == 'gamma':
     param1 = "gamma"
     label1 = "\gamma"
     fid1 = cosmo['gamma']
-    fig_name = "pub-gamma-improvement.pdf"
+    fig_name = "fig18-gamma-improvement.pdf"
 else:
     param1 = "fom"
-    fig_name = "pub-fom-improvement.pdf"
+    fig_name = "fig14-fom-improvement.pdf"
 
 USE_DETF_PLANCK_PRIOR = True
 MARGINALISE_GAMMA = True # Marginalise over gamma
@@ -44,10 +42,10 @@ MARGINALISE_INITIAL_PK = True # Marginalise over n_s, sigma_8
 MARGINALISE_OMEGAB = True # Marginalise over Omega_baryons
 MARGINALISE_W0WA = True # Marginalise over (w0, wa)
 
-names = ['EuclidRef', 'cexptL', 'iexptM'] #, 'exptS']
+names = ['EuclidRef_paper', 'exptL_paper', 'aexptM_paper'] #, 'exptS']
 labels = ['DETF IV', 'Facility', 'Stage II'] #, 'Stage I']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928']
-linestyle = [[2, 4, 6, 4], [1,0], [8, 4], [3, 4]]
+linestyle = [[2, 4, 6, 4], [], [8, 4], [3, 4]]
 
 # Fiducial value and plotting
 fig = P.figure()
@@ -135,19 +133,19 @@ print "NOTE:", s4
 # Axis ticks and labels
 ax.legend(prop={'size':'x-large'}, bbox_to_anchor=[0.96, 0.30], frameon=False)
 ax.tick_params(axis='both', which='major', labelsize=20, size=8., width=1.5, pad=8.)
-ax.set_xlim((0.25, 2.55))
+ax.set_xlim((0.0, 2.6))
 ax.set_xlabel("$z_\mathrm{max}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
 if param1 == 'fom':
     ax.set_ylabel("$\mathrm{FOM}$", fontdict={'fontsize':'xx-large'}, labelpad=15.)
-    ax.set_ylim((-0.5, 460.))
+    ax.set_ylim((0., 430.))
 elif param1=='omegak':
     ax.set_ylabel("$[\sigma({%s})]^{-1}$" % label1, fontdict={'fontsize':'xx-large'}, 
                   labelpad=15.)
-    ax.set_ylim((-10., 1200.))
+    ax.set_ylim((0., 1250.))
 else:
     ax.set_ylabel("$[\sigma({%s})]^{-1}$" % label1, fontdict={'fontsize':'xx-large'}, 
                   labelpad=15.)
-    ax.set_ylim((-0.5, 50.))
+    ax.set_ylim((0., 60.))
 
 # Set size and save
 P.tight_layout()

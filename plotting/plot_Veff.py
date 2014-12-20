@@ -1,13 +1,17 @@
 #!/usr/bin/python
 """
-Plot effective volume as a function of perp/parallel k.
+Plot effective volume as a function of perp/parallel k. (Fig. 2)
 """
-
 import numpy as np
 import pylab as P
 import scipy.interpolate
 import matplotlib.cm, matplotlib.ticker
 import scipy.ndimage
+from rfwrapper import rf
+from radiofisher.units import *
+
+expt = rf.experiments.SKA1MID350
+cosmo = rf.experiments.cosmo
 
 # Load data; Veff = cs/cn / (1 + cs/cn)
 Veff_sd = np.load("snr-Veff-sd.npy")
@@ -22,7 +26,6 @@ kpar_int = np.load("snr-kpar-int.npy")
 cn_int = np.load("snr-cn-int.npy")
 cs_int = np.load("snr-cs-int.npy")
 
-
 locs_perp_sd = [i for i in np.arange(kperp_sd.size)[::100]]
 lbls_perp_sd = ["%3.1e" % kk for kk in kperp_sd[::100]]
 locs_par_sd = [i for i in np.arange(kpar_sd.size)[::100]]
@@ -32,7 +35,6 @@ locs_perp_int = [i for i in np.arange(kperp_int.size)[::100]]
 lbls_perp_int = ["%3.1e" % kk for kk in kperp_int[::100]]
 locs_par_int = [i for i in np.arange(kpar_int.size)[::100]]
 lbls_par_int = ["%3.1e" % kk for kk in kpar_int[::100]]
-
 
 
 Xsd, Ysd = np.meshgrid(np.log10(kperp_sd), np.log10(kpar_sd))
@@ -66,16 +68,25 @@ P.ylabel("$k_\perp \, [\mathrm{Mpc}^{-1}]$", fontsize=20.)
 P.ylim((-4.05, 0.1))
 P.xlim((-4.05, 0.1))
 
-
-z = 1.05
-l = 3e8 / (1420e6/(1.+z))
-r = 3424.
-k_fov = 16.*np.log(2.)/1.22 * 13.5 / (r * l)
-kfg = 0.0012159813857
-k_fov = 0.0238854346229
+#z = 1.05
+#l = 3e8 / (1420e6/(1.+z))
+#r = 3424.
+#k_fov = 16.*np.log(2.)/1.22 * 13.5 / (r * l)
+#kfg = 0.0012159813857
+#k_fov = 0.0238854346229
 #P.axvline(np.log10(1./7), lw=3., color='k', alpha=0.3) # NL scale
 #P.axvline(np.log10(kfg), lw=3., color='k', alpha=0.3)
 #P.axhline(np.log10(k_fov), lw=3., color='k', alpha=0.3)
+
+# Plot the bandwidth scale (also known as k_FG)
+cosmo_fns =  rf.background_evolution_splines(cosmo)
+z = 1.
+H, r, D, f = cosmo_fns
+rnu = C*(1.+z)**2. / H(z)
+kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * rnu)
+print "kfg =", kfg
+line = P.axvline(np.log10(kfg), color='#949494', lw=2., ls='dotted')
+line.set_dashes([3,4])
 
 # Reformat tick labels
 fmt = lambda x, y: "$10^{%d}$" % x
@@ -92,16 +103,15 @@ P.gca().tick_params(axis='both', which='major', labelsize=22, size=8., width=1.5
 
 
 # Axis label font size
-fontsize = 18.
-for tick in P.gca().yaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
-for tick in P.gca().xaxis.get_major_ticks():
-  tick.label1.set_fontsize(fontsize)
+#fontsize = 18.
+#for tick in P.gca().yaxis.get_major_ticks():
+#  tick.label1.set_fontsize(fontsize)
+#for tick in P.gca().xaxis.get_major_ticks():
+#  tick.label1.set_fontsize(fontsize)
+
 P.tight_layout()
-
 #P.gcf().set_size_inches(8.5,10.)
-P.savefig('pub-veff.pdf', transparent=True)
-
+P.savefig('fig02-veff.pdf', transparent=True)
 P.show()
 
 """
