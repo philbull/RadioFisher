@@ -119,7 +119,7 @@ exptCV = {
     'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     860.,              # Max. freq. of survey
     'dnu':              0.1,               # Bandwidth of single channel [MHz]
-    'Sarea':            15e3*(D2RAD)**2. #15e3   # Total survey area [radians^2]
+    'Sarea':            15e3*(D2RAD)**2.   # Total survey area [radians^2]
     }
 exptCV.update(SURVEY)
 
@@ -311,7 +311,9 @@ CHIME = {
     'mode':             'cylinder',        # Interferometer or single dish
     'Ndish':            1280,              # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ncyl':             5,                 # No. cylinders
     'Ddish':            20.,               # Single dish diameter [m]
+    'cyl_area':         20.*80.,           # Single dish area [m^2]
     'Tinst':            50.*(1e3),         # System temp. [mK]
     'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     800.,              # Max. freq. of survey
@@ -323,11 +325,13 @@ CHIME = {
     }
 CHIME.update(SURVEY)
 
-CHIME_fullfov = {
+CHIME_nocut = {
     'mode':             'cylinder',        # Interferometer or single dish
     'Ndish':            1280,              # No. of dishes
     'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ncyl':             5,                 # No. cylinders
     'Ddish':            20.,               # Single dish diameter [m]
+    'cyl_area':         20.*80.,           # Single dish area [m^2]
     'Tinst':            50.*(1e3),         # System temp. [mK]
     'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
     'survey_numax':     800.,              # Max. freq. of survey
@@ -337,7 +341,25 @@ CHIME_fullfov = {
     'Dmin':             20.,               # Min. interferom. baseline [m]
     'n(x)': "array_config/nx_CHIME_800_nocut.dat" # Interferometer antenna density
     }
-CHIME_fullfov.update(SURVEY)
+CHIME_nocut.update(SURVEY)
+
+CHIME_avglow = {
+    'mode':             'cylinder',        # Interferometer or single dish
+    'Ndish':            1280,              # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ncyl':             5,                 # No. cylinders
+    'Ddish':            20.,               # Single dish diameter [m]
+    'cyl_area':         20.*80.,           # Single dish area [m^2]
+    'Tinst':            50.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    400.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     800.,              # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'Dmax':             128.,              # Max. interferom. baseline [m]
+    'Dmin':             20.,               # Min. interferom. baseline [m]
+    'n(x)': "array_config/nx_CHIME_800_avg.dat" # Interferometer antenna density
+    }
+CHIME_avglow.update(SURVEY)
 
 TIANLAI = {
     'mode':             'cylinder',        # Interferometer or single dish
