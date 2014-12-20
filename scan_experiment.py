@@ -62,6 +62,9 @@ elif pname == 'efg':
 elif pname == 'ohi':
     sname = 'omega_HI_0'
     svals = np.array([2., 4., 5., 6.5, 7.5, 8.5, 9.5, 11.]) * 1e-4
+elif pname == 'tb':
+    sname = 'Tb_factor'
+    svals = np.linspace(0.1, 2.4, 16)
 elif pname == 'bhi':
     sname = 'bHI0'
     svals = np.array([0.3, 0.4, 0.5, 0.6, 0.702, 0.8, 0.9, 1.0, 1.1])
