@@ -99,7 +99,8 @@ def run_camb(params_fname, camb_exec_dir):
     for line in output.split("\n"):
         # Special cases: sigma8 and tau_recomb
         if "sigma8" in line:
-            vals['sigma8'] = float( re.findall(r'\b\d+.\d+\b', line)[1] )
+            s8line = line[line.find('sigma8'):] # Only get sigma8 part of string
+            vals['sigma8'] = float( re.findall(r'\b\d+.\d+\b', s8line)[0] )
         elif "tau_recomb" in line:
             tau = re.findall(r'\b\d+.\d+\b', line)
             vals['tau_recomb/Mpc'] = float(tau[0])
