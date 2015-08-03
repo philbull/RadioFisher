@@ -17,7 +17,7 @@ Radio Fisher is a Fisher forecasting code for cosmology with intensity maps of
 the redshifted 21cm emission line of neutral hydrogen. The formalism 
 implemented by this code is described in Bull, Ferreira, Patel and Santos 
 (2014). It's written in Python, and makes heavy use of NumPy, SciPy, and 
-matplotlib. You also need CAMB. I'm running it very happily on Ubuntu 13.10 and 
+matplotlib. You also need CAMB. I'm running it very happily on Ubuntu 14.04 and 
 a RHEL cluster. It should also run fine on Macs.
 
 The code is provided openly for inspection and re-use. If you use it, please 
@@ -51,7 +51,7 @@ although most of the Fisher forecasting code in baofisher.py doesn't need MPI,
 the full_experiment.py frontend code does. Finally, in order to use some of the 
 existing experiment definitions, you’ll need to download the interferometer 
 baselines package* and unpack it in the array_config/ subdirectory.
-*[http://www.physics.ox.ac.uk/Users/bullp/radiofisher_array_config.tar.gz; 5 MB]
+*[http://philbull.com/radiofisher_array_config.tar.gz; 5 MB]
 
 Next, edit the CAMB_EXEC variable at the top of baofisher.py to point at the 
 directory where the CAMB executable resides (not the CAMB executable itself). 
@@ -121,8 +121,8 @@ CITING THIS CODE
 If you use this code in a scientific work, please cite us! The relevant paper 
 is the following:
 
-Philip Bull, Pedro G. Ferreira, Prina Patel, and Mario Santos, arXiv:1405.1452 
-(2014).
+Philip Bull, Pedro G. Ferreira, Prina Patel, and Mario Santos, 
+ApJ 803, 21 (2015) [arXiv:1405.1452] [doi:10.1088/0004-637X/803/1/21].
 
 PROBLEMS / BUGS
 ---------------
