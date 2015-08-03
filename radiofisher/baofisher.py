@@ -235,7 +235,9 @@ def plot_corrmat(F, names):
     ax.ylim((5.5, -0.5))
     """
     lbls = ["%d:%s" % (i, names[i]) for i in range(len(names))]
-    ax.set_xlabel(lbls)
+    #ax.set_xlabel(lbls)
+    ax.text(1.3, 0.99, "\n".join(lbls), horizontalalignment='left', 
+            verticalalignment='top', transform=ax.transAxes)
     
     for tick in ax.xaxis.get_major_ticks():
         tick.tick1line.set_markersize(0)
@@ -1409,6 +1411,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     c = cosmo
     kperp = q / (c['aperp']*c['r'])
     kpar = y / (c['apar']*c['rnu'])
+    
     nu = expt['nu_line'] / (1. + c['z'])
     l = 3e8 / (nu * 1e6) # Wavelength (m)
     
@@ -1502,7 +1505,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
     kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
-    noise[np.where(kpar < kfg)] = INF_NOISE
+    noise[np.where(np.abs(kpar) < kfg)] = INF_NOISE
     return noise
 
 
@@ -1772,10 +1775,10 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     
     # Numerical derivatives for MG params
     if 'mg' in switches:
-        deriv_Axi, deriv_kmg = mg_growth.growth_derivs( c['z'], K, c, 
-                                   mg_params=['A_xi', 'k_mg'], dx=[1e-3, 1e-3] )
+        deriv_Axi, deriv_logkmg = mg_growth.growth_derivs( c['z'], K, c, 
+                                   mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-1] )
         deriv_Axi *= deriv_f
-        deriv_kmg *= deriv_f
+        deriv_logkmg *= deriv_f
         
     # Derivatives for binned f0(k)
     derivs_f0k = []
@@ -1865,8 +1868,8 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     # Modified gravity parameters
     if 'mg' in switches:
         deriv_list += [deriv_gamma0, deriv_gamma1, deriv_eta0, deriv_eta1, 
-                       deriv_Axi, deriv_kmg]
-        paramnames += ['gamma0', 'gamma1', 'eta0', 'eta1', 'A_xi', 'k_mg']
+                       deriv_Axi, deriv_logkmg]
+        paramnames += ['gamma0', 'gamma1', 'eta0', 'eta1', 'A_xi', 'logkmg']
         
         if 'f0_kbins' in c.keys():
             deriv_list += derivs_f0k
@@ -1932,7 +1935,7 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
     derivs_f = [df_domegak, df_domegaDE, df_w0, df_wa, df_dh, df_dgamma]
     
     # Calculate comoving distance (including curvature)
-    r_c = scipy.integrate.cumtrapz(1./(aa**2. * EE))
+    r_c = scipy.integrate.cumtrapz(1./(aa**2. * EE), aa)
     r_c = np.concatenate(([0.], r_c))
     if ok > 0.:
         r = C/(H0*np.sqrt(ok)) * np.sinh(r_c * np.sqrt(ok))
@@ -1942,7 +1945,7 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
         r = C/H0 * r_c
     
     # Perform integrals needed to calculate derivs. of aperp
-    derivs_aperp = [(C/H0)/r[1:] * scipy.integrate.cumtrapz( f(aa)/(aa * EE)**2.) 
+    derivs_aperp = [(C/H0)/r[1:] * scipy.integrate.cumtrapz(f(aa)/(aa * EE)**2., aa) 
                         for f in fns]
     
     # Add additional term to curvature integral (idx 1)
@@ -1951,7 +1954,7 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
     #derivs_aperp[1] -= (H0 * r[1:] / C)**2. / 6.
     
     # Add initial values (to deal with 1/(r=0) at origin)
-    inivals = [0.5, 0.5, 0., 0.] # FIXME: Are these OK?
+    inivals = [0.5, 0.0, 0., 0.]
     derivs_aperp = [ np.concatenate(([inivals[i]], derivs_aperp[i])) 
                      for i in range(len(derivs_aperp)) ]
     
@@ -2120,7 +2123,7 @@ def add_fisher_matrices(F1, F2, lbls1, lbls2, info=False, expand=False):
         not_found = [l for l in lbls2 if l not in lbls1]
         lbls = lbls1 + not_found
         Nnew = len(lbls)
-        print "add_fisher_matrices: Expanded output matrix to include non-overlapping params:", not_found
+        if info: print "add_fisher_matrices: Expanded output matrix to include non-overlapping params:", not_found
         
         # Construct expanded F1, with additional params at the end
         Fnew = np.zeros((Nnew, Nnew))
@@ -2147,6 +2150,27 @@ def add_fisher_matrices(F1, F2, lbls1, lbls2, info=False, expand=False):
         return Fnew, lbls1
     else:
         return Fnew
+
+
+def add_fisher_list(F_list, lbls_list, exclude=[], info=False, expand=False):
+    """
+    Combine a list of Fisher matrices together, using add_fisher_matrices().
+    """
+    F = None
+    lbls = None
+    
+    # Combine all matrices
+    for _F, _lbls in zip(F_list, lbls_list):
+        if F is None: # Initial value
+            F = _F; lbls = _lbls
+        else:
+            F, lbls = add_fisher_matrices(F, _F, lbls, _lbls, info=info, expand=expand)
+    
+    # Remove any unwanted parameters
+    if exclude is not []:
+        F, lbls = combined_fisher_matrix([F,], names=lbls, exclude=exclude)
+    return F, lbls
+
 
 def transform_to_lss_distances(z, F, paramnames, cosmo_fns=None, DA=None, H=None, 
                                rescale_da=1., rescale_h=1.):
