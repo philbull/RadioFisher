@@ -13,7 +13,7 @@ def xi(a, k, cosmo):
     Modified growth parameter, mu / gamma.
     """
     w0 = cosmo['w0']; wa = cosmo['wa']
-    k0 = cosmo['k_mg']; A_xi = cosmo['A_xi']
+    k0 = 10.**cosmo['logkmg']; A_xi = cosmo['A_xi']
     odea = np.exp(3.*wa*(a - 1.)) / a**(3.*(1. + w0 + wa)) # Omega_DE(a)/Omega_DE(1)
     return 1. + A_xi * odea * (1. + (k0/k)**2.)
 
@@ -79,7 +79,7 @@ def growth_k(z, cosmo, kmin=1e-4, kmax=1e2, kref=1e-1, nsamp=100):
     return ff, DD
 
 
-def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'k_mg'], dx=[1e-3, 1e-3]):
+def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-3]):
     """
     Calculate derivatives of growth rate as a function of scale, with respect 
     to specified modified gravity parameters.
@@ -123,7 +123,7 @@ def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'k_mg'], dx=[1e-3, 1e-3]):
     for i in range(len(mg_params)):
         c = copy.deepcopy(cosmo) # Get unmodified cosmo dict.
         c[mg_params[i]] += dx[i]
-        ff, DD = growth_k(zc, c)
-        derivs.append( (ff(k) - f0_k) / dx[i] )
+        ffp, DDp = growth_k(zc, c)
+        derivs.append( (ffp(k) - f0_k) / dx[i] )
     return derivs
 

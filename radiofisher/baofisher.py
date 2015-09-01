@@ -1789,6 +1789,19 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
             derivs_f0k.append( f * deriv_f )
             derivs_f0k[-1][np.where(np.logical_or(k < ka, k >= kb))] = 0.
     
+    # Derivatives for binned fs8 and bs8
+    derivs_fs8k = []; derivs_bs8k = []
+    if 'fs8_kbins' in c.keys():
+        for i in range(len(c['fs8_kbins']) - 1):
+            # Construct mask for this k range
+            ka = c['fs8_kbins'][i]; kb = c['fs8_kbins'][i+1]
+            msk = np.ones(k.shape)
+            msk[np.where(np.logical_or(k < ka, k >= kb))] = 0.
+            
+            # Add derivatives
+            derivs_fs8k.append( deriv_fsig8 * msk )
+            derivs_bs8k.append( deriv_bsig8 * msk )
+    
     # Evaluate derivatives for (apar, aperp) parameters
     dlogpk_dk = logpk_derivative(c['pk_nobao'], k) # Numerical deriv.
     daperp_u2 = -2. * (rnu/r * q/y * aperp/apar * u2)**2. / aperp
@@ -1874,6 +1887,12 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         if 'f0_kbins' in c.keys():
             deriv_list += derivs_f0k
             paramnames += ["f0k%d" % i for i in range(len(c['f0_kbins']) - 1)]
+        
+        if 'fs8_kbins' in c.keys():
+            deriv_list += derivs_bs8k
+            deriv_list += derivs_fs8k
+            paramnames += ["k%dbs8" % i for i in range(len(c['fs8_kbins']) - 1)]
+            paramnames += ["k%dfs8" % i for i in range(len(c['fs8_kbins']) - 1)]
     
     # Add deriv_pk to list (always assumed to be last in the list)
     deriv_list.append(deriv_pk)
