@@ -1418,6 +1418,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     # Number of receiver polarisation channels (default is two) and dish effic.
     npol = expt['npol'] if 'npol' in expt.keys() else 2.
     effic = expt['effic'] if 'effic' in expt.keys() else 0.7
+    effic2 = expt['effic2'] if 'effic2' in expt.keys() else 0.7
     
     # Calculate base noise properties
     Vsurvey = expt['Sarea'] * expt['dnutot'] / expt['nu_line']
@@ -1477,6 +1478,49 @@ def Cnoise(q, y, cosmo, expt, cv=False):
             print "(PAF)"
             noise *= l**4. / (Aeff**2. * theta_b**4.)
             noise *= 1. if nu > expt['nu_crit'] else (expt['nu_crit'] / nu)**2.
+        elif 'hybrid' in expt['mode']:
+            print "(hybrid array)"
+            # Standard autocorrelation mode, but with overlapping sub-arrays
+            # Calculate properties of sub-array 2
+            Aeff2 = effic2 * 0.25 * np.pi * expt['Ddish2']**2. \
+                    if 'Aeff2' not in expt.keys() else expt['Aeff2']
+            Tsys2 = expt['Tinst2'] + Tsky
+            theta_b2 = l / expt['Ddish2']
+            Nd1 = expt['Ndish']; Nd2 = expt['Ndish2']
+            
+            # Band boundaries
+            numax1 = expt['array_numax1']
+            numax2 = expt['array_numax2']
+            numin1 = numax1 - expt['array_dnutot1']
+            numin2 = numax2 - expt['array_dnutot2']
+            
+            # Decide if overlapping and calculate combined values
+            if (nu >= numin1 and nu <= numax1):
+                if (nu >= numin2 and nu <= numax2):
+                    # Full overlap (just average theta_b here)
+                    Ndish_comb = Nd1 + Nd2
+                    theta_b_comb = (Nd1*theta_b + Nd2*theta_b2) / float(Ndish_comb)
+                    avg_AoverT = ((Nd1 * Aeff / Tsys) + (Nd2 * Aeff2 / Tsys2)) \
+                                 / float(Ndish_comb)
+                else:
+                    # Only array 1
+                    Ndish_comb = Nd1
+                    theta_b_comb = theta_b
+                    avg_AoverT = Aeff / Tsys
+                    
+            elif (nu >= numin2 and nu <= numax2):
+                # Only array 2
+                Ndish_comb = Nd2
+                theta_b_comb = theta_b2
+                avg_AoverT = Aeff2 / Tsys2
+            else:
+                # No overlap; error
+                raise ValueError("Cnoise(): hybrid array: neither array covers this frequency")
+            # Noise expression
+            noise *= l**4. / (avg_AoverT**2. * theta_b_comb**4.)
+            
+            # Replace previous 1-array values with new 2-array values
+            noise *= (expt['Ndish'] / float(Ndish_comb)) / Tsys**2.
         else:
             # Standard dish autocorrelation mode
             print "(dish)"

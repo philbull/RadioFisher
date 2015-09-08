@@ -41,7 +41,7 @@ def load_expt(expt):
 # Define which measurements to include in forecasts
 USE = {
   'f_rsd':             True,     # RSD constraint on f(z)
-  'f_growthfactor':    False,    # D(z) constraint on f(z)
+  'f_growthfactor':    True,    # D(z) constraint on f(z)
   'alpha_all':         True,     # Use all constraints on alpha_{perp,par}
   'alpha_volume':      False,
   'alpha_rsd_angle':   False,
@@ -106,6 +106,18 @@ EuclidRef_dz03 = {
 }
 EuclidRef_dz03.update(SURVEY)
 
+
+EuclidEE = {
+    'fsky':        sarea_to_fsky(15e3),
+    'fname':       'nz_euclid.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         3,
+    'rescale_nz':  0.67**3.,
+    'b(z)':        lambda z: np.sqrt(1. + z),
+}
+EuclidEE.update(SURVEY)
+
 #########################
 # SKA
 #########################
@@ -139,6 +151,30 @@ SKA2 = {
     '_b':          4
 }
 SKA2.update(SURVEY)
+
+
+gCV = {
+    'fsky':        1.,
+    'fname':       'nz_CVlimited_z3.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    'b(z)':        lambda z: np.sqrt(1. + z),
+}
+gCV.update(SURVEY)
+
+
+SKA1ref = {
+    'fsky':        sarea_to_fsky(5e3),
+    'fname':       'nz_SKA1-ref.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+SKA1ref.update(SURVEY)
+
+
 
 
 #########################
@@ -201,6 +237,15 @@ HETDEX = {
 }
 HETDEX.update(SURVEY)
 
+HETDEXdz03 = {
+    'fsky':        sarea_to_fsky(420.),
+    'fname':       'nz_hetdex_dz03.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'b(z)':        lambda z: 2.2 + z*0. # b1=2.2, arXiv:1306.4157
+}
+HETDEXdz03.update(SURVEY)
 
 
 #########################
@@ -266,3 +311,68 @@ WEAVE_wide_highz = {
     '_b':          4
 }
 WEAVE_wide_highz.update(SURVEY)
+
+
+#########################
+# SKA MG paper
+#########################
+
+gMID_B2_Base = {
+    'fsky':        sarea_to_fsky(5e3),
+    'fname':       'nz_SKA1MID_B2_Base.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+gMID_B2_Base.update(SURVEY)
+
+gMID_B2_Upd = {
+    'fsky':        sarea_to_fsky(5e3),
+    'fname':       'nz_SKA1MID_B2_Upd.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+gMID_B2_Upd.update(SURVEY)
+
+gMID_B2_Alt = {
+    'fsky':        sarea_to_fsky(5e3),
+    'fname':       'nz_SKA1MID_B2_Alt.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+gMID_B2_Alt.update(SURVEY)
+
+gMIDMK_B2_Rebase = {
+    'fsky':        sarea_to_fsky(5e3),
+    'fname':       'nz_MIDMK_B2_Rebase.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+gMIDMK_B2_Rebase.update(SURVEY)
+
+gMIDMK_B2_Alt = {
+    'fsky':        sarea_to_fsky(5e3),
+    'fname':       'nz_MIDMK_B2_Octave.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+gMIDMK_B2_Alt.update(SURVEY)
+
+gSKA2MG = {
+    'fsky':        sarea_to_fsky(30e3),
+    'fname':       'nz_SKA2MG.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+gSKA2MG.update(SURVEY)

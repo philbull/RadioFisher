@@ -26,7 +26,7 @@ cosmo = {
     'sigma_nl':         7.,
     'b_1':              0.,         # Scale-dependent bias (k^2 term coeff.)
     'k0_bias':          0.1,        # Scale-dependent bias pivot scale [Mpc^-1]
-    'A_xi':             0.01,         # Modified gravity growth amplitude
+    'A_xi':             0.00,         # Modified gravity growth amplitude
     'logkmg':           np.log10(0.05) # New modified gravity growth scale
 }
 
@@ -788,8 +788,106 @@ SKA1MID350upd = {
     }
 SKA1MID350upd.update(SURVEY)
 
+
 ########################################
-# SKA configurations from MG paper
+# Updated SKA configs for MG paper
+########################################
+
+MID_B1_Rebase = {
+    'mode':             'hybrid',          # Interferometer or single dish
+    'Ndish':            130,               # No. of dishes (MID dishes)
+    'Ndish2':           64,                # No. of dishes (MeerKAT dishes)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Ddish2':           13.5,              # Single dish diameter (2) [m]
+    'effic':            0.75,              # Aperture efficiency
+    'effic2':           0.80,              # Aperture efficiency
+    'Tinst':            23.*(1e3),         # System temp. [mK]
+    'Tinst2':           23.*(1e3),         # System temp. (2) [mK]
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1050.,             # Max. freq. of *entire* survey
+    'array_numax1':     1050.,             # Max. freq. of survey 1
+    'array_numax2':     1015.,             # Max. freq. of survey 2
+    'array_dnutot1':    700.,              # Total bandwidth of array 1 [MHz]
+    'array_dnutot2':    435.,              # Total bandwidth of array 2 [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
+    }
+MID_B1_Rebase.update(SURVEY)
+
+MID_B1_Octave = {
+    'mode':             'hybrid',          # Interferometer or single dish
+    'Ndish':            130,               # No. of dishes (MID dishes)
+    'Ndish2':           64,                # No. of dishes (MeerKAT dishes)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Ddish2':           13.5,              # Single dish diameter (2) [m]
+    'effic':            0.75,              # Aperture efficiency
+    'effic2':           0.80,              # Aperture efficiency
+    'Tinst':            12.*(1e3),         # System temp. [mK]
+    'Tinst2':           23.*(1e3),         # System temp. (2) [mK]
+    'survey_dnutot':    565.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1015.,             # Max. freq. of *entire* survey
+    'array_numax1':     825.,              # Max. freq. of survey 1
+    'array_numax2':     1015.,             # Max. freq. of survey 2
+    'array_dnutot1':    375.,              # Total bandwidth of array 1 [MHz]
+    'array_dnutot2':    435.,              # Total bandwidth of array 2 [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
+    }
+MID_B1_Octave.update(SURVEY)
+
+MID_B2_Rebase = {
+    'mode':             'hybrid',          # Interferometer or single dish
+    'Ndish':            130,               # No. of dishes (MID dishes)
+    'Ndish2':           64,                # No. of dishes (MeerKAT dishes)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Ddish2':           13.5,              # Single dish diameter (2) [m]
+    'effic':            0.85,              # Aperture efficiency
+    'effic2':           0.85,              # Aperture efficiency
+    'Tinst':            15.5*(1e3),        # System temp. [mK]
+    'Tinst2':           30.*(1e3),         # System temp. (2) [mK]
+    'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1420.,             # Max. freq. of *entire* survey
+    'array_numax1':     1420.,             # Max. freq. of survey 1
+    'array_numax2':     1420.,             # Max. freq. of survey 2
+    'array_dnutot1':    470.,              # Total bandwidth of array 1 [MHz]
+    'array_dnutot2':    520.,              # Total bandwidth of array 2 [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
+    }
+MID_B2_Rebase.update(SURVEY)
+
+MID_B2_Octave = {
+    'mode':             'hybrid',          # Interferometer or single dish
+    'Ndish':            130,               # No. of dishes (MID dishes)
+    'Ndish2':           64,                # No. of dishes (MeerKAT dishes)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Ddish2':           13.5,              # Single dish diameter (2) [m]
+    'effic':            0.85,              # Aperture efficiency
+    'effic2':           0.85,              # Aperture efficiency
+    'Tinst':            15.5*(1e3),        # System temp. [mK]
+    'Tinst2':           30.*(1e3),         # System temp. (2) [mK]
+    'survey_dnutot':    625.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1420.,             # Max. freq. of *entire* survey
+    'array_numax1':     1420.,             # Max. freq. of survey 1
+    'array_numax2':     1420.,             # Max. freq. of survey 2
+    'array_dnutot1':    625.,              # Total bandwidth of array 1 [MHz]
+    'array_dnutot2':    520.,              # Total bandwidth of array 2 [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
+    }
+MID_B2_Octave.update(SURVEY)
+
+
+########################################
+# SKA configurations from MG paper (MID specs are obsolete)
 ########################################
 
 MID_B1_Base = {
@@ -819,6 +917,29 @@ MID_B1_Alt = {
     'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
     }
 MID_B1_Alt.update(SURVEY)
+
+MID_B1_Octave = {
+    'mode':             'hybrid',          # Interferometer or single dish
+    'Ndish':            130,               # No. of dishes (MID dishes)
+    'Ndish2':           64,                # No. of dishes (MeerKAT dishes)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Ddish2':           13.5,              # Single dish diameter (2) [m]
+    'effic':            0.75,              # Aperture efficiency
+    'effic2':           0.80,              # Aperture efficiency
+    'Tinst':            12.*(1e3),         # System temp. [mK]
+    'Tinst2':           19.*(1e3),         # System temp. (2) [mK]
+    'survey_dnutot':    450.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     950.,              # Max. freq. of *entire* survey
+    'array_numax1':     925.,              # Max. freq. of survey 1
+    'array_numax2':     950.,              # Max. freq. of survey 2
+    'array_dnutot1':    425.,              # Total bandwidth of array 1 [MHz]
+    'array_dnutot2':    370.,              # Total bandwidth of array 2 [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            25e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
+    }
+MID_B1_Octave.update(SURVEY)
 
 MID_B2_Base = {
     'mode':             'dish',            # Interferometer or single dish
