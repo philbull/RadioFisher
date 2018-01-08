@@ -76,6 +76,19 @@ H, r, D, f = cosmo_fns
 fbao = cosmo['fbao']
 
 
+k0, Ms0 = const_nu(u, Ndish=1500, Dmin=2., Dmax=85., Ddish=2., z=1.)
+
+
+print "KZN"
+k0, Ls0 = const_nu(u, Ndish=1225, Dmin=5., Dmax=200., Ddish=5., z=1.) # exptL
+
+
+
+print "MFAA"
+k0, Ls0 = const_nu(u, Ndish=250*31, Dmin=0.1, Dmax=500., Ddish=2.4, z=1.) # exptL
+exit()
+
+"""
 # Experiment configs
 k0, Ms0 = const_nu(u, Ndish=160, Dmin=4., Dmax=60., Ddish=4., z=0.2) # exptM
 k1, Ms1 = const_nu(u, Ndish=160, Dmin=4., Dmax=60., Ddish=4., z=1.) # exptM
@@ -89,9 +102,28 @@ k0, Os0 = const_nu(u, Ndish=250, Dmin=2.5, Dmax=70., Ddish=2.5, z=0.2) # optimal
 k1, Os1 = const_nu(u, Ndish=250, Dmin=2.5, Dmax=70., Ddish=2.5, z=1.) # optimal
 k3, Os2 = const_nu(u, Ndish=250, Dmin=2.5, Dmax=70., Ddish=2.5, z=2.) # optimal
 # From BAOBAB paper, Ddish~1.8m, Dmin~1.6m, Dmax~60m
+"""
 
 # Real experiments
 nn1, f1 = load_nu(u, "array_config/nx_SKAMREF2COMP_dec30.dat", Ddish=15.)
+nn2, f2 = load_nu(u, "array_config/nx_CHIME_800.dat", Ddish=5.)
+
+
+P.plot(u, f1/nn1, 'm-', lw=1.5, label="SKAMREF2-COMP")
+P.plot(u, f2/nn2, 'c-', lw=1.5, label="CHIME")
+
+P.xscale('log')
+P.yscale('log')
+P.ylim((1e-6, 1e4))
+
+P.legend(loc='upper right', prop={'size':'x-small'})
+
+P.show()
+
+
+
+
+exit()
 nn2, f2 = load_nu(u, "array_config/nx_SKAMREF2_dec30.dat", Ddish=15.)
 nn3, f3 = load_nu(u, "array_config/nx_SKAM190_dec90.dat", Ddish=15.)
 

@@ -2,12 +2,13 @@
 """
 Rescale baseline density files, Nring(u), into n(x) = n(u=d/lambda) / lambda^2, 
 which is approx. const. with frequency (and x = u / nu).
+Phil Bull (2014)
 """
 import numpy as np
 import pylab as P
 import scipy.integrate
 import os, sys
-
+ 
 try:
     Ndish = int(sys.argv[1])
     infile = sys.argv[2]
@@ -18,8 +19,8 @@ except:
 
 def process_baseline_file(fname):
     """
-    Process one of Prina's SKA n(u) files and output n(d), which can then be 
-    converted into a freq.-dep. n(u).
+    Process SKA N(u) files and output n(d), which can then be converted into a 
+    freq.-dep. n(u).
     """
     # Extract info. about baseline file
     fname_end = fname.split("/")[-1]
@@ -60,7 +61,8 @@ def process_baseline_file(fname):
     
     # Integrate n(u) to find normalisation (should be N_dish^2)
     norm = scipy.integrate.simps(2.*np.pi*n*u, u)
-    print "n(u) renorm. factor:", 0.5 * Ndish * (Ndish - 1) / norm
+    print "n(u) renorm. factor:", 0.5 * Ndish * (Ndish - 1) / norm, "(applied)"
+    # (Renorm factor should be close to 1 if Ndish is correct)
     n *= 0.5 * Ndish * (Ndish - 1) / norm
     
     # Convert to freq.-independent expression, n(x) = n(u) * nu^2,

@@ -78,8 +78,8 @@ def growth_k(z, cosmo, kmin=1e-4, kmax=1e2, kref=1e-1, nsamp=100):
                                     fill_value=0.)
     return ff, DD
 
-
-def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-3]):
+def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-3], 
+                  fsigma8=False):
     """
     Calculate derivatives of growth rate as a function of scale, with respect 
     to specified modified gravity parameters.
@@ -103,6 +103,10 @@ def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-3]):
         Respective finite difference values for the MG params, dx, for 
         evaluating df/dx.
     
+    fsigma8 : bool, optional
+        Whether to take derivative w.r.t. f(z)*sigma_8(z) instead of just f(z).
+        Default: False.
+    
     Returns
     -------
     
@@ -117,6 +121,7 @@ def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-3]):
     # Evaluate fiducial point
     f0, D0 = growth_k(zc, cosmo)
     f0_k = f0(k)
+    fs80_k = f0_k * D0(k) * cosmo['sigma_8']
     
     # Loop through parameters and get finite differences
     derivs = []
@@ -124,6 +129,18 @@ def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-3]):
         c = copy.deepcopy(cosmo) # Get unmodified cosmo dict.
         c[mg_params[i]] += dx[i]
         ffp, DDp = growth_k(zc, c)
-        derivs.append( (ffp(k) - f0_k) / dx[i] )
+        if fsigma8:
+            derivs.append( (ffp(k)*DDp(k)*cosmo['sigma_8'] - fs80_k) / dx[i] )
+        else:
+            derivs.append( (ffp(k) - f0_k) / dx[i] )
     return derivs
 
+
+def growth_param_derivs(zc, k, cosmo, 
+                        mg_params=['gamma0', 'gamma1', 'eta0', 'eta1'], 
+                        dx=[1e-3, 1e-3, 1e-3, 1e-3]):
+    """
+    Derivatives of f(z)*sigma_8(z) with respect to the modified growth 
+    parameters gamma, eta.
+    """
+    

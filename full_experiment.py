@@ -25,11 +25,35 @@ cosmo = experiments.cosmo
 
 # Label experiments with different settings
 #EXPT_LABEL = "_mg_Dz_kmg0.1" #"_mnu" #"_mg_Dz" "_baoonly" "_uls"
-EXPT_LABEL = "_mg_Dz_kmg0.01"
+#EXPT_LABEL = "_mgtest_fnl10" #"_mg_Dz_kmg0.01"
+
+#TTOT = 1e3
+#TTOT = 3e3
+#TTOT = 5e3
+#TTOT = 10e3
+#EXPT_LABEL = "_survparams_ttot"
+
+#EXPT_LABEL = "_paper"
+#EXPT_LABEL = "_rerun"
+#EXPT_LABEL = "_mgD"
+#EXPT_LABEL = "_mg"
+#EXPT_LABEL = "_mgD_scaledep"
+#EXPT_LABEL = "_mg_Axi0.01_kmg0.005"
+#EXPT_LABEL = "_nokfg_paper"
+#EXPT_LABEL = "_efg12_paper"
+
+KMAXVAL = 0.14
+EXPT_LABEL = "_hrx_opt"
+
+#cosmo['A_xi'] = 0.01
+#cosmo['logkmg'] = np.log10(0.005)
+
+# A_xi: 0.01 0.1
+# logkmg: 0.05, 0.01, 0.005, 0.001
 
 expt_list = [
     ( 'exptS',            e.exptS ),        # 0
-    ( 'iexptM',           e.exptM ),        # 1
+    ( 'aexptM',           e.exptM ),        # 1
     ( 'exptL',            e.exptL ),        # 2
     ( 'iexptL',           e.exptL ),        # 3
     ( 'cexptL',           e.exptL ),        # 4
@@ -89,7 +113,28 @@ expt_list = [
     ( 'fSKA1SUR350',      e.SKA1SUR350 ),   # 58
     ( 'aSKA1LOW',         e.SKA1LOW ),      # 59
     ( 'SKAMID_PLUS',      e.SKAMID_PLUS ),  # 60
-    ( 'SKAMID_PLUS2',     e.SKAMID_PLUS2 )  # 61
+    ( 'SKAMID_PLUS2',     e.SKAMID_PLUS2 ), # 61
+    ( 'yCHIME_nocut',     e.CHIME_nocut ),  # 62
+    ( 'yCHIME_avglow',    e.CHIME_avglow ), # 63
+    ( 'MID_B1_Base',      e.MID_B1_Base ),  # 64
+    ( 'MID_B1_Alt',       e.MID_B1_Alt ),   # 65
+    ( 'MID_B2_Base',      e.MID_B2_Base ),  # 66
+    ( 'MID_B2_Upd',       e.MID_B2_Upd ),   # 67
+    ( 'MID_B2_Alt',       e.MID_B2_Alt ),   # 68
+    ( 'aLOW_Base',        e.LOW_Base ),     # 69
+    ( 'aLOW_Upd',         e.LOW_Upd ),      # 70
+    ( 'aLOW_Alt',         e.LOW_Alt ),      # 71
+    ( 'MID_B2_Alt2',      e.MID_B2_Alt2 ),  # 72
+    ( 'iMID_B1_Base',     e.MID_B1_Base ),  # 73
+    ( 'iMID_B1_Alt',      e.MID_B1_Alt ),   # 74
+    ( 'iMID_B2_Base',     e.MID_B2_Base ),  # 75
+    ( 'hMID_B1_Rebase',   e.MID_B1_Rebase), # 76
+    ( 'hMID_B1_Octave',   e.MID_B1_Octave), # 77
+    ( 'hMID_B2_Rebase',   e.MID_B2_Rebase), # 78
+    ( 'hMID_B2_Octave',   e.MID_B2_Octave), # 79
+    ( 'iCVTEST1',         e.CVlimited_z0to3), # 80
+    ( 'iCVTEST2',         e.CVlimited_z2to5), # 81
+    ( 'iHIRAX',           e.HIRAX),         # 82
 ]
 names, expts = zip(*expt_list)
 names = list(names); expts = list(expts)
@@ -122,9 +167,10 @@ if names[k][0] == "y": expts[k]['mode'] = "icyl"
 if names[k][0] == "f": expts[k]['mode'] = "paf"
 if names[k][0] == "t": expts[k]['mode'] = "ipaf"
 if names[k][0] == "a": expts[k]['mode'] = "iaa"
+if names[k][0] == "h": expts[k]['mode'] = "hybrid"
 
 expt = expts[k]
-if Sarea is None:    
+if Sarea is None:
     survey_name = names[k]
     root = "output/" + survey_name
 else:
@@ -134,19 +180,29 @@ else:
 
 # Define redshift bins
 expt_zbins = rf.overlapping_expts(expt)
-#zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.1)
+###zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.2)
+zs, zc =  rf.zbins_const_dnu(expt_zbins, cosmo, dnu=20.)
 #zs, zc = rf.zbins_const_dr(expt_zbins, cosmo, bins=14)
-zs, zc =  rf.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
+#zs, zc = rf.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
+#zs, zc = rf.zbins_const_dnu(expt_zbins, cosmo, dnu=30.)
+#zs = rf.zbins_fixed(expt_zbins, dz=0.1)
 
 # Define kbins (used for output)
 kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
-##kbins = np.logspace(-4., 0., 81)
+#cosmo['f0_kbins'] = np.array([1e-4, 1e-2, 1e-1, 1e1])
+
+# FIXME
+expt['epsilon_fg'] = 1e-6 #1e-14
+expt['ttot'] *= 8765. / 1e4 # 1 year
+#expt['ttot'] *= 1e10 / 1e4
+#expt['ttot'] = 3.1536e+13 # FIXME: Amadeus' value
+expt['k_nl0'] = 0.14 #KMAXVAL
 
 # Neutrino mass
-#cosmo['mnu'] = 0.1 # FIXME
+cosmo['mnu'] = 0.
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
-cosmo_fns =  rf.background_evolution_splines(cosmo)
+cosmo_fns = rf.background_evolution_splines(cosmo)
 if cosmo['mnu'] != 0.:
     # Massive neutrinos
     mnu_str = "mnu%03d" % (cosmo['mnu']*100.)
@@ -157,11 +213,11 @@ if cosmo['mnu'] != 0.:
     mnu_fn = rf.deriv_neutrinos(cosmo, fname_nu, mnu=cosmo['mnu'], comm=comm)
 else:
     # Normal operation (no massive neutrinos or non-Gaussianity)
-    cosmo =  rf.load_power_spectrum(cosmo, "cache_pk.dat", comm=comm)
+    cosmo = rf.load_power_spectrum(cosmo, "cache_pk.dat", comm=comm)
     mnu_fn = None
 
 # Non-Gaussianity
-#transfer_fn =  rf.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
+#transfer_fn = rf.deriv_transfer(cosmo, "cache_transfer.dat", comm=comm)
 transfer_fn = None
 
 # Effective no. neutrinos, N_eff
@@ -169,8 +225,11 @@ transfer_fn = None
 Neff_fn = None
 
 # Optional additional parameters
-#switches = []
-switches = ['mg', 'sdbias']
+switches = []
+#switches = ['mg', ] #'sdbias']
+
+# Scale-dependent growth
+#cosmo['fs8_kbins'] = [0., 1e-2, 1e-1, 1e0, 1e2]
 
 H, r, D, f = cosmo_fns
 
@@ -196,18 +255,26 @@ if myid == 0:
     np.savetxt(root+"-cosmofns-smooth.dat", np.column_stack((zz, _H, _dA, _D, _f)) )
 
 # Precompute derivs for all processes
-eos_derivs =  rf.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
+eos_derivs = rf.eos_fisher_matrix_derivs(cosmo, cosmo_fns, fsigma8=True)
+
+# FIXME
+print "*"*50
+for key in cosmo.keys():
+    print "%20s: %s" % (key, cosmo[key])
+print "*"*50
+for key in expt.keys():
+    print "%20s: %s" % (key, expt[key])
+print "*"*50
+#exit()
 
 
 ################################################################################
 # Loop through redshift bins, assigning them to each process
 ################################################################################
 
-
 for i in range(zs.size-1):
     if i % size != myid:
       continue
-    
     print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
     
     # Calculate effective experimental params. in the case of overlapping expts.
@@ -230,7 +297,8 @@ for i in range(zs.size-1):
     # Expand Fisher matrix with EOS parameters
     ##F_eos =  rf.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
     F_eos, paramnames = rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
-                                                names=paramnames, exclude=[])
+                                                names=paramnames, exclude=[], 
+                                                fsigma8=True)
     
     # Expand Fisher matrix for H(z), dA(z)
     # Replace aperp with dA(zi), using product rule. aperp(z) = dA(fid,z) / dA(z)

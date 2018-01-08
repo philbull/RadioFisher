@@ -27,6 +27,10 @@ names = ["SKA1SUR", "cSKA1MID",] # "SKA1MID"]
 labels = ["SKA1-SUR (Dish)", "SKA1-MID (Combined)"] #, "SKA1-MID (Dish)"]
 
 
+names = ["EuclidRef_mnu",]
+labels = ["EuclidRef_mnu",]
+
+
 colours = [ ['#CC0000', '#F09B9B'],
             ['#1619A1', '#B1C9FD'],
             ['#5B9C0A', '#BAE484'] ]

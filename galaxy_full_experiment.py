@@ -25,7 +25,24 @@ cosmo = experiments.cosmo
 
 # Label experiments with different settings
 #EXPT_LABEL = "_mnu" #"_baoonly" #"_mg" #"_baoonly"
-EXPT_LABEL = "" # "_mg_Dz_kmg0.01"
+#EXPT_LABEL = "_mg_Dz_kmg0.01"
+#EXPT_LABEL = "_paper"
+#EXPT_LABEL = "_mgD_Amg0.01_kmg0.05"
+#EXPT_LABEL = "_mgD_Amg0.01_kmg0.05"
+#EXPT_LABEL = "_mgD_scaledep"
+#EXPT_LABEL = "_rerun"
+#EXPT_LABEL = "_mnu"
+
+#EXPT_LABEL = "_mg_Axi0.01_kmg0.01"
+##EXPT_LABEL = "_mgphotoz"
+#EXPT_LABEL = "_mgscaledep"
+EXPT_LABEL = "_hiraxtest"
+
+cosmo['A_xi'] = 0.01
+cosmo['logkmg'] = np.log10(0.01)
+
+# A_xi: 0.01 0.1
+# logkmg: 0.05, 0.01, 0.005, 0.001
 
 expt_list = [
     ( 'EuclidOpt',          e.EuclidOpt ),          # 0
@@ -44,6 +61,20 @@ expt_list = [
     ( 'WEAVEldeep',         e.WEAVE_deep_lowz ),    # 13
     ( 'WEAVElmid',          e.WEAVE_mid_lowz ),     # 14
     ( 'WEAVElwide',         e.WEAVE_wide_lowz ),    # 15
+    ( 'gMID_B2_Base',       e.gMID_B2_Base ),       # 16 ***
+    ( 'gMID_B2_Upd',        e.gMID_B2_Upd ),        # 17
+    ( 'gMID_B2_Alt',        e.gMID_B2_Alt ),        # 18
+    ( 'gSKA2MG',            e.gSKA2MG ),            # 19
+    ( 'HETDEXdz03',         e.HETDEXdz03 ),         # 20
+    ( 'gCV',                e.gCV ),                # 21
+    ( 'gMIDMK_B2_Rebase',   e.gMIDMK_B2_Rebase ),   # 22
+    ( 'gMIDMK_B2_Alt',      e.gMIDMK_B2_Alt ),      # 23
+    ( 'gFAST20k',           e.gFAST20k ),           # 24
+    ( 'gSPHEREx1',          e.SPHEREx1 ),           # 25
+    ( 'gSPHEREx2',          e.SPHEREx2 ),           # 26
+    ( 'gSPHEREx3',          e.SPHEREx3 ),           # 27
+    ( 'gSPHEREx4',          e.SPHEREx4 ),           # 28
+    ( 'gSPHEREx5',          e.SPHEREx5 ),           # 29
 ]
 names, expts = zip(*expt_list)
 names = list(names); expts = list(expts)
@@ -60,23 +91,52 @@ if myid == 0:
 names[k] += EXPT_LABEL
 expt = expts[k]
 survey_name = names[k]
+
+
+"""
+################################################################################
+# FIXME
+sarea_vals = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 
+              6000, 7000, 8000, 9000, 10000, 12000, 15000, 17000, 20000, 22000, 
+              25000, 27000, 30000]
+sarea = sarea_vals[int(sys.argv[1])]
+expt = e.SKA1ref
+expt['fsky'] = e.sarea_to_fsky(sarea)
+#expt['fname'] = "nz_SKA1-ref_%d.dat" % sarea
+#survey_name = "SKA1ref_%d" % sarea
+
+expt['fname'] = "nz_SKA1-ref_800_1300_%d.dat" % sarea
+survey_name = "SKA1ref_800_1300_%d" % sarea
+
+if myid == 0:
+    print "="*50
+    print survey_name
+    print "="*50
+################################################################################
+"""
+
 root = "output/" + survey_name
 
 e.load_expt(expt)
 zmin = expt['zmin']
 zmax = expt['zmax']
 
+# Scale-dependent growth
+cosmo['fs8_kbins'] = [0., 1e-2, 1e-1, 1e0, 1e2]
+
 switches = []
-#switches = ['mg', 'sdbias']
+#switches = ['mg', ] #'sdbias']
 
 
 ################################################################################
 
 # Define kbins (used for output)
-kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
+#kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
+kbins = np.logspace(np.log10(0.001), np.log10(50.), 31)
 
 # Neutrino mass
 cosmo['mnu'] = 0. #0.1
+#cosmo['mnu'] = 0.06
 
 # Precompute cosmological functions, P(k), massive neutrinos, and T(k) for f_NL
 cosmo_fns =  rf.background_evolution_splines(cosmo)
@@ -127,8 +187,7 @@ if myid == 0:
     np.savetxt(root+"-cosmofns-smooth.dat", np.column_stack((zz, _H, _dA, _D, _f)) )
 
 # Precompute derivs for all processes
-eos_derivs = rf.eos_fisher_matrix_derivs(cosmo, cosmo_fns)
-
+eos_derivs = rf.eos_fisher_matrix_derivs(cosmo, cosmo_fns, fsigma8=True)
 
 ################################################################################
 # Loop through redshift bins, assigning them to each process
@@ -143,7 +202,7 @@ for i in range(zmin.size):
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
-    F_pk, kc, binning_info, paramnames =  rf.galaxy.fisher_galaxy_survey(
+    F_pk, kc, binning_info, paramnames = rf.galaxy.fisher_galaxy_survey(
                                            zmin[i], zmax[i], expt['nz'][i], 
                                            expt['b'][i], cosmo, expt, cosmo_fns, 
                                            massive_nu_fn=mnu_fn, switches=switches,
@@ -151,7 +210,8 @@ for i in range(zmin.size):
     # Expand Fisher matrix with EOS parameters
     ##F_eos = rf.fisher_with_excluded_params(F, [10, 11, 12]) # Exclude P(k)
     F_eos, paramnames = rf.expand_fisher_matrix(zc[i], eos_derivs, F_pk, 
-                                                   exclude=[], names=paramnames)
+                                                   exclude=[], names=paramnames, 
+                                                   fsigma8=True)
     # Expand Fisher matrix for H(z), dA(z)
     # Replace aperp with dA(zi), using product rule. aperp(z) = dA(fid,z) / dA(z)
     # (And convert dA to Gpc, to help with the numerics)

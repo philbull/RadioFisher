@@ -26,6 +26,10 @@ cosmo = {
     'sigma_nl':         7.,
     'b_1':              0.,         # Scale-dependent bias (k^2 term coeff.)
     'k0_bias':          0.1,        # Scale-dependent bias pivot scale [Mpc^-1]
+    'gamma0':           0.55,
+    'gamma1':           0.,
+    'eta0':             0.,
+    'eta1':             0.,
     'A_xi':             0.00,         # Modified gravity growth amplitude
     'logkmg':           np.log10(0.05) # New modified gravity growth scale
 }
@@ -46,6 +50,7 @@ SURVEY = {
     'ttot':             10e3*HRS_MHZ,      # Total integration time [MHz^-1]
     'nu_line':          1420.406,          # Rest-frame freq. of emission line [MHz]
     'epsilon_fg':       1e-6,              # FG subtraction residual amplitude
+    'k_nl0':            0.14,              # Non-linear scale at z=0 (sets kmax)
     'use':              USE                # Which constraints to use/ignore
 }
 
@@ -1158,3 +1163,51 @@ exptOpt = {
     }
 exptOpt.update(SURVEY)
 """
+
+HIRAX = {
+    'mode':          'interferom', # Interferometer or single dish
+    'Ndish':         1024,         # No. of dishes
+    'Nbeam':         1,            # No. of beams (for multi-pixel detectors)
+    'Ddish':         6.,           # Single dish diameter [m]
+    'Tinst':         50.*(1e3),    # System temp. [mK]
+    'survey_dnutot': 400.,
+    'survey_numax':  800.,
+    'dnu':           0.4,          # Bandwidth of single channel [MHz]
+    'Sarea':         2.*np.pi,     # Total survey area [radians^2]
+    'n(x)':          "array_config/hirax_Ndish1024_baseline1.dat",
+}
+HIRAX.update(SURVEY)
+
+
+
+CVlimited_z0to3 = {
+    'mode':          'interferom', # Interferometer or single dish
+    'Ndish':         1024,         # No. of dishes
+    'Nbeam':         1,            # No. of beams (for multi-pixel detectors)
+    'Ddish':         6.,           # Single dish diameter [m]
+    'Tinst':         50.*(1e3),    # System temp. [mK]
+    #'nu_crit':      1000.,        # critical frequency, UNCLEAR
+    'survey_dnutot': 850., #1065., 
+    'survey_numax':  1200., #1419.,  
+    'dnu':           0.4,          # Bandwidth of single channel [MHz]
+    'Sarea':         2.*np.pi,     # Total survey area [radians^2]
+    'n(x)':          "array_config/hirax_Ndish1024_baseline1.dat",
+}
+CVlimited_z0to3.update(SURVEY)
+
+
+CVlimited_z2to5 = {
+    'mode':          'interferom', # Interferometer or single dish
+    'Ndish':         1024,         # No. of dishes
+    'Nbeam':         1,            # No. of beams (for multi-pixel detectors)
+    'Ddish':         6.,           # Single dish diameter [m]
+    'Tinst':         50.*(1e3),    # System temp. [mK]
+    #'nu_crit':      1000.,        # critical frequency, UNCLEAR
+    'survey_dnutot': 236.7,
+    'survey_numax':  473.5,
+    'dnu':           0.4,          # Bandwidth of single channel [MHz]
+    'Sarea':         2.*np.pi,     # Total survey area [radians^2]
+    'n(x)':          "array_config/hirax_Ndish1024_baseline1.dat",
+}
+CVlimited_z2to5.update(SURVEY)
+

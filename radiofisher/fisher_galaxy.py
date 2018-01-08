@@ -37,7 +37,8 @@ def Csignal_galaxy(q, y, cosmo, expt):
     # Photometric redshift error (see e.g. Zhan & Knox 2006)
     if 'sigma_z0' in expt.keys():
         sigma_z = expt['sigma_z0'] * c['rnu'] / (1. + c['z']) # r_nu = C (1+z)^2 / H
-        Fphot = np.exp(-(sigma_z * kperp)**2.)
+        #Fphot = np.exp(-(sigma_z * kperp)**2.)
+        Fphot = np.exp(-(sigma_z * kpar)**2.)
     else:
         Fphot = 1.
     

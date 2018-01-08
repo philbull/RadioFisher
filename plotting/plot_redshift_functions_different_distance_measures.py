@@ -1,24 +1,25 @@
 #!/usr/bin/python
 """
-Plot functions of redshift.
+Plot constraints on functions of redshift for different distance measures.
 """
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
+from radiofisher.units import *
 import os
-import euclid
+from radiofisher import euclid
 
 cosmo = rf.experiments.cosmo
 
-names = ['cexptL_bao', 'cexptL_bao_rsd', 'cexptL_bao_pkshift', 'cexptL_bao_vol', 'cexptL_bao_all']
-labels = ['BAO only', 'BAO + RSD', 'BAO + $P(k)$ shift', 'BAO + Volume', 'All']
+names = ['exptL_paper',]
+j = 0
+
+suffixes = ['dm_bao', 'dm_bao_rsd', 'dm_bao_pk', 'dm_vol', 'dm_all']
+labels = ['BAO only', 'BAO + RSD', 'BAO + P(k) shift', 'BAO + Volume', 'All']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#FFB928', 'k']
-linestyle = [[1,0], [8,4], [6,4,3,4], [3,4], [1,0]]
+linestyle = [[], [8,4], [6,4,3,4], [3,4], []]
 
 cosmo_fns = rf.background_evolution_splines(cosmo)
 
@@ -26,14 +27,16 @@ cosmo_fns = rf.background_evolution_splines(cosmo)
 fig = P.figure()
 axes = [fig.add_subplot(131), fig.add_subplot(132), fig.add_subplot(133)]
 
-for k in range(len(names)):
-    root = "output/" + names[k]
+for k in range(len(suffixes)):
+    root = "output/%s" % names[j]
 
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
     zc, Hc, dAc, Dc, fc = dat
     z, H, dA, D, f = np.genfromtxt(root+"-cosmofns-smooth.dat").T
     kc = np.genfromtxt(root+"-fisher-kc.dat").T
+    
+    root = "output/%s_%s" % (names[j], suffixes[k])
 
     # Load Fisher matrices as fn. of z
     Nbins = zc.size
@@ -45,9 +48,8 @@ for k in range(len(names)):
     zfns = ['A', 'bs8', 'fs8', 'H', 'DA', 'aperp', 'apar']
     excl = ['Tb', 'n_s', 'sigma8', 'omegak', 'omegaDE', 'w0', 'wa', 'h',
             'gamma', 'N_eff', 'pk*', 'f', 'b_HI']
-    F, lbls = rf.combined_fisher_matrix( F_list,
-                                                expand=zfns, names=pnames,
-                                                exclude=excl )
+    F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
+                                         exclude=excl )
     cov = np.linalg.inv(F)
     errs = np.sqrt(np.diag(cov))
     
@@ -73,7 +75,7 @@ for k in range(len(names)):
 
 # Subplot labels
 ax_lbls = ["$\sigma_{f \sigma_8}/f\sigma_8$", "$\sigma_{D_A}/D_A$", "$\sigma_H/H$"]
-ymax = [0.159, 0.159, 0.159]
+ymax = [0.098, 0.27, 0.098]
 
 # Move subplots
 # pos = [[x0, y0], [x1, y1]]
@@ -89,7 +91,7 @@ for i in range(len(axes)):
     axes[i].tick_params(axis='both', which='major', labelsize=14, size=4., width=1.5)
     
     # Set axis limits
-    axes[i].set_xlim((0.25, 2.2))
+    axes[i].set_xlim((0.25, 2.41))
     axes[i].set_ylim((0., ymax[i]))
     #axes[i].set_ylabel(ax_lbls[i], fontdict={'fontsize':'xx-large'}, labelpad=15.)
     
@@ -112,9 +114,9 @@ for i in range(len(axes)):
 # Manually add shared x label
 #P.figtext(0.5, 0.02, "$z$", fontdict={'size':'xx-large'})
 
-P.legend(loc='upper right', ncol=2, prop={'size':'medium'})
+P.legend(loc='upper center', ncol=2, prop={'size':'medium'}, frameon=False)
 
 # Set size
 P.gcf().set_size_inches(8., 10.)
-P.savefig('pub-zfns-distance-measures.pdf', transparent=True)
+P.savefig('fig08-zfns-distance-measures.pdf', transparent=True)
 P.show()

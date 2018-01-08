@@ -8,12 +8,12 @@ import numpy as np
 import pylab as P
 import scipy.interpolate
 import scipy.optimize
-import baofisher
-import experiments
-from units import *
+#import radiofisher as rf
+#import radiofisher.experiments as experiments
+#from radiofisher.units import *
 import sys
 
-DEBUG_PLOT = False # Whether to plot fitting functions or not
+DEBUG_PLOT = True # Whether to plot fitting functions or not
 
 NU_LINE = 1.420 # HI emission line freq. in GHz
 FULLSKY = (4.*np.pi * (180./np.pi)**2.) # deg^2 in the full sky
@@ -25,8 +25,9 @@ SBIG = 500. # Flux rms to extrapolate dn/dz out to (constrains behaviour at larg
 # Specify which experiment to calculate for
 try:
     ID = int(sys.argv[1])
+    sarea_in = float(sys.argv[2]) if len(sys.argv) > 2 else None
 except:
-    print "Expects 1 argument: int(experiment_id)"
+    print "Expects 1 or 2 arguments: int(experiment_id) [float(S_area, deg^2)]"
     sys.exit()
 
 #ax1 = P.subplot(211)
@@ -35,25 +36,46 @@ except:
 
 # Flux rms limits at 1GHz for various configurations
 name = ['SKA1MID-B1', 'SKA1MID-B2', 'MEERKAT-B1', 'MEERKAT-B2', 'MID+MK-B1',
-        'MID+MK-B2', 'SKA1SUR-B1', 'SKA1SUR-B2', 'ASKAP', 'SUR+ASKAP', 'SKA2']
+        'MID+MK-B2', 'SKA1SUR-B1', 'SKA1SUR-B2', 'ASKAP', 'SUR+ASKAP', 'SKA2',
+        'SKA1-opt', 'SKA1-ref', 'SKA1-pess', 'SKA2-opt', 'SKA2-ref', 'SKA2-pess']
 #fluxrms = [251., 149., 555., 598., 197., 122., 174., 192., 645., 139., 5.] # Old
-fluxrms = [315., 187., 696., 750., 247., 152., 174., 192., 645., 179., 5.14]
-numin = [350., 950., 580., 900., 580., 950., 350., 650., 700., 700., 500.]
-numax = [1050., 1760., 1015., 1670., 1015., 1670., 900., 1670., 1800., 1670., 1200.]
-nucrit = [None, None, None, None, None, None, 710., 1300., 1250., 1300., None]
-Sarea = [5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 30e3]
-Sconst = [False, False, False, False, False, False, False, False, False, False, True]
-Scorr = [CBM*CTH, CBM*CTH, CBM*CTH, CBM*CTH, CBM*CTH, CBM*CTH, CTH, CTH, CTH, CTH, 1.]
+fluxrms = [315., 187., 696., 750., 247., 152., 174., 192., 645., 179., 5.14,
+           70., 150., 200., 3.0, 5.4, 23.0]
+numin = [350., 950., 580., 900., 580., 950., 350., 650., 700., 700., 500.,
+         950., 950., 950., 470., 470., 470.]
+numax = [1050., 1760., 1015., 1670., 1015., 1670., 900., 1670., 1800., 1670., 1300.,
+         1670., 1670., 1670., 1290., 1290., 1290.]
+nucrit = [None, None, None, None, None, None, 710., 1300., 1250., 1300., None,
+         None, None, None, None, None, None]
+Sarea = [5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 5e3, 30e3,
+         5e3, 5e3, 5e3, 30e3, 30e3, 30e3] # Assumed Sarea for fits
+Sconst = [False, False, False, False, False, False, False, False, False, False, True,
+          False, False, False, True, True, True]
+Scorr = [CBM*CTH, CBM*CTH, CBM*CTH, CBM*CTH, CBM*CTH, CBM*CTH, CTH, CTH, CTH, CTH, 1.,
+         CBM*CTH, CBM*CTH, CBM*CTH, 1., 1., 1.]
+
+# Use default survey area if none was specified
+if sarea_in is None: sarea_in = Sarea[ID]
 
 # Define fitting coefficients from Mario's note (HI_specs.pdf)
-Srms = np.array([0., 1., 3., 5., 6., 7.3, 10., 23., 40., 70., 100., 150., 200.,])
-c1 = [6.23, 7.33, 6.91, 6.77, 6.84, 6.76, 6.64, 6.02, 5.74, 5.62, 5.63, 5.48, 5.00]
-c2 = [1.82, 3.02, 2.38, 2.17, 2.23, 2.14, 2.01, 1.43, 1.22, 1.11, 1.41, 1.33, 1.04]
-c3 = [0.98, 5.34, 5.84, 6.63, 7.13, 7.36, 7.95, 9.03, 10.58, 13.03, 15.49, 16.62, 17.52]
-c4 = [0.8695, 0.5863, 0.4780, 0.5884, 0.5908, 0.5088, 0.4489, 0.5751, 0.5125, 
-      0.6193, 0.6212, 1., 1., 1.]
-c5 = [0.2338, 0.6410, 0.9181, 0.8076, 0.8455, 1.0222, 1.2069, 0.9993, 1.1842, 
-      1.0179, 1.0759, 0., 0., 0.]
+#Srms = np.array([0., 1., 3., 5., 6., 7.3, 10., 23., 40., 70., 100., 150., 200.,])
+#c1 = [6.23, 7.33, 6.91, 6.77, 6.84, 6.76, 6.64, 6.02, 5.74, 5.62, 5.63, 5.48, 5.00]
+#c2 = [1.82, 3.02, 2.38, 2.17, 2.23, 2.14, 2.01, 1.43, 1.22, 1.11, 1.41, 1.33, 1.04]
+#c3 = [0.98, 5.34, 5.84, 6.63, 7.13, 7.36, 7.95, 9.03, 10.58, 13.03, 15.49, 16.62, 17.52]
+#c4 = [0.8695, 0.5863, 0.4780, 0.5884, 0.5908, 0.5088, 0.4489, 0.5751, 0.5125, 
+#      0.6193, 0.6212, 1., 1., 1.]
+#c5 = [0.2338, 0.6410, 0.9181, 0.8076, 0.8455, 1.0222, 1.2069, 0.9993, 1.1842, 
+#      1.0179, 1.0759, 0., 0., 0.]
+
+# Fitting coeffs. from Table 3 in v1 of Yahya et al. paper
+Srms = np.array([0., 1., 3., 5., 6., 7.3, 10., 23., 40., 70., 100., 150., 200.])
+c1 = [6.21, 6.55, 6.53, 6.55, 6.58, 6.55, 6.44, 6.02, 5.74, 5.62, 5.63, 5.48, 5.0]
+c2 = [1.72, 2.02, 1.93, 1.93, 1.95, 1.92, 1.83, 1.43, 1.22, 1.11, 1.41, 1.33, 1.04]
+c3 = [0.79, 3.81, 5.22, 6.22, 6.69, 7.08, 7.59, 9.03, 10.58, 13.03, 15.49, 16.62, 17.52]
+c4 = [0.5874, 0.4968, 0.5302, 0.5504, 0.5466, 0.5623, 0.5928, 0.6069, 0.628, 
+      0.6094, 0.6052, 0.6365, 1., 1.] # Needs end padding 1
+c5 = [0.3577, 0.7206, 0.7809, 0.8015, 0.8294, 0.8233, 0.8072, 0.8521, 0.8442, 
+      0.9293, 1.0859, 0.965, 0., 0.] # Needs end padding 0
 c1 = np.array(c1); c2 = np.array(c2); c3 = np.array(c3)
 c4 = np.array(c4); c5 = np.array(c5)
 Smax = np.max(Srms)
@@ -115,6 +137,8 @@ def flux_redshift(z):
     else:
         Sz = fluxrms[ID] * Scorr[ID]
         Sz = nu * Sz if not Sconst[ID] else Sz * np.ones(nu.size)
+    # Survey area correction
+    Sz *= np.sqrt(sarea_in / Sarea[ID])
     return Sz
 
 # Extrapolate fitting functions to high flux rms
@@ -133,13 +157,13 @@ dndz = scipy.interpolate.RectBivariateSpline(Srms, z, _dndz, kx=1, ky=1)
 bias = scipy.interpolate.RectBivariateSpline(Srms, z, _bias, kx=1, ky=1)
 
 # Construct dndz(z) interpolation fn. for the sensitivity of actual experiment
-fsky = Sarea[ID] / FULLSKY
+fsky = sarea_in / FULLSKY #Sarea[ID] / FULLSKY
 Sz = flux_redshift(z)
 dndz_expt = scipy.interpolate.interp1d(z, dndz.ev(Sz, z))
 bias_expt = scipy.interpolate.interp1d(z, bias.ev(Sz, z))
 
 # Fit function to dn/dz [deg^-2]
-_z = np.linspace(0., 1., 100)
+_z = np.linspace(1e-7, 1., 1e4)
 dndz_vals = dndz_expt(_z)
 bias_vals = bias_expt(_z)
 p0 = [100.*np.max(dndz_vals), 2., 10.]
@@ -157,9 +181,10 @@ def lsq(params):
     return model - bias_vals
 pb = scipy.optimize.leastsq(lsq, p0)[0]
 
+
 # Print best-fit coefficients
 print "-"*30
-print name[ID]
+print "%s (%d deg^2)" % (name[ID], sarea_in)
 print "-"*30
 print "Fitting coeffs."
 print "c1: %6.4f" % np.log10(p[0])
@@ -170,8 +195,9 @@ print "c5: %6.4f" % pb[1]
 
 print " & ".join(["%6.4f" % n for n in [np.log10(p[0]), p[1], p[2], pb[0], pb[1]]])
 
+"""
 # Calculate cosmo. functions
-cosmo_fns = baofisher.background_evolution_splines(experiments.cosmo)
+cosmo_fns = rf.background_evolution_splines(experiments.cosmo)
 H, r, D, f = cosmo_fns
 
 # Calculate binned number densities
@@ -205,6 +231,11 @@ print "Srms const: %s" % Sconst[ID]
 print "-"*30
 print "\n"
 
+# Output fitting function coeffs as a fn. of survey area
+print "%10s %d %6.4f %6.4f %6.4f %6.4f %6.4f %3.3e" % (name[ID], sarea_in, np.log10(p[0]), p[1], p[2], pb[0], pb[1], np.sum(nz * vol))
+
+#exit()
+
 # Comparison plot of dndz, bias, and fitting function
 if DEBUG_PLOT:
     P.subplot(211)
@@ -215,3 +246,4 @@ if DEBUG_PLOT:
     P.plot(_z, bias_expt(_z))
     P.plot(_z, pb[0] * np.exp(pb[1]*_z))
     P.show()
+"""

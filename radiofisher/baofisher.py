@@ -604,16 +604,31 @@ def load_power_spectrum( cosmo, cachefile, kmax=CAMB_KMAX, comm=None,
     cosmo['k_in_min'] = np.min(k_in)
     return cosmo
 
-def fgrowth(cosmo, z):
+def fgrowth(cosmo, z, usegamma=False):
     """
     Generalised form for the growth rate.
+    
+    Parameters
+    ----------
+    cosmo : dict
+        Standard cosmological parameter dictionary.
+    
+    z : array_like of floats
+        Redshifts.
+        
+    usegamma : bool, optional
+        Override the MG growth parameters and just use the standard 'gamma' 
+        parameter.
     """
     c = cosmo
     Oma = c['omega_M_0'] * (1.+z)**3. / Ez(cosmo, z)**2.
     a = 1. / (1. + z)
     
     # Modified gravity parameters
-    gamma = c['gamma'] if 'gamma0' not in c.keys() else c['gamma0'] + c['gamma1']*(1. - a)
+    if 'gamma0' not in c.keys() or usegamma == True:
+        gamma = c['gamma']
+    else:
+        gamma = c['gamma0'] + c['gamma1']*(1. - a)
     eta = 0. if 'eta0' not in c.keys() else (c['eta0'] + c['eta1']*(1. - a))
     f = Oma**gamma * (1. + eta)
     return f
@@ -676,6 +691,43 @@ def background_evolution_splines(cosmo, zmax=10., nsamples=500):
     D = scipy.interpolate.interp1d(_z, _D, kind='linear', bounds_error=False)
     f = scipy.interpolate.interp1d(_z, _f, kind='linear', bounds_error=False)
     return H, r, D, f
+
+def fsigma8_for_params(z, cosmo, zmax=10., usegamma=False):
+    """
+    Calculate f(z)*sigma_8(z) for a set of cosmological parameters.
+    """
+    _z = np.linspace(0., zmax, 400)
+    a = 1. / (1. + _z)
+    
+    # Integrate linear growth rate to find linear growth factor, D(z)
+    # N.B. D(z=0) = 1.
+    _f = fgrowth(cosmo, _z, usegamma=usegamma)
+    _D = np.concatenate( ([0.,], scipy.integrate.cumtrapz(_f, np.log(a))) )
+    _D = np.exp(_D)
+    
+    # Construct interpolating functions and return
+    fs8 = scipy.interpolate.interp1d(_z, _f*_D*cosmo['sigma_8'], 
+                                     kind='linear', bounds_error=False)
+    return fs8(z)
+
+def fsigma8_derivs(z, cosmo, params=[], dx=[]):
+    """
+    Numerically calculate derivatives of f(z)*sigma_8(z) w.r.t. various 
+    parameters.
+    """
+    # Loop through parameters and calculate derivatives (central differences)
+    derivs = []
+    for i in range(len(params)):
+        c = copy.deepcopy(cosmo) # Get unmodified cosmo dict.
+        usegamma = True if params[i] == 'gamma' else False
+        
+        c[params[i]] += dx[i]
+        fs8p = fsigma8_for_params(z, c, usegamma=usegamma)
+        c[params[i]] -= 2.*dx[i]
+        fs8m = fsigma8_for_params(z, c, usegamma=usegamma)
+        
+        derivs.append( (fs8p - fs8m) / (2.*dx[i]) )
+    return derivs
 
 def Tb(z, cosmo, formula='powerlaw'):
     """
@@ -1338,7 +1390,7 @@ def interferometer_response(q, y, cosmo, expt):
     # Calculate interferometer baseline density, n(u)
     if "n(x)" in expt.keys():
         # Rescale n(x) with freq.-dependence
-        print "\tUsing user-specified baseline density, n(u)"
+        #FIXME print "\tUsing user-specified baseline density, n(u)"
         x = u / nu  # x = u / (freq [MHz])
         n_u = expt['n(x)'](x) / nu**2. # n(x) = n(u) * nu^2
         n_u[np.where(n_u == 0.)] = 1. / INF_NOISE
@@ -1465,6 +1517,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         
         noise *= interferometer_response(q, y, cosmo, expt)
         noise *= l**4. / (expt['Nbeam'] * (Aeff * theta_b)**2.)
+        
     else:
         # Autocorrelation mode
         print "\tAutocorrelation mode",
@@ -1550,6 +1603,17 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
     kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
     noise[np.where(np.abs(kpar) < kfg)] = INF_NOISE
+    
+    # Cut off NL scales by adding INF_NOISE
+    # Eq. 20 of Smith et al. 2003 (arXiv:astro-ph/0207664v2)
+    if 'k_nl0' not in expt.keys():
+        print "\tNonlinear scale not specified; setting k_NL,0 = 0.14 Mpc^-1"
+        knl0 = 0.14
+    else:
+        knl0 = expt['k_nl0']
+    kmax = knl0 * (1.+c['z'])**(2./(2. + c['ns']))
+    noise[np.where(np.sqrt(kpar**2. + kperp**2.) > kmax)] = INF_NOISE
+    
     return noise
 
 
@@ -1791,7 +1855,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     deriv_A   = c['fbao'](k) / (1. + c['A']*c['fbao'](k)) * cs / ctot
     deriv_bHI = 2. * dbng_bHI / (b + f*u2) * cs / ctot
     deriv_f   = ( use['f_rsd'] * drsd_df \
-                + use['f_growthfactor'] * 2.*np.log(a) \
+                #+ use['f_growthfactor'] * 2.*np.log(a) \ # This is wrong!
                 + dbng_df_term ) * cs / ctot
     deriv_bsig8 = 2.*dbng_bHI*Dinv/(b*c['sigma_8'] + f*c['sigma_8']*u2) * cs / ctot
     deriv_fsig8 = drsd_dfsig8 * cs / ctot
@@ -1812,19 +1876,37 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     xi = 3.*(100.*c['h']/C)**2. * c['omega_M_0'] * (1. + c['z']) / k**2.
     eta = 0. if 'eta0' not in c.keys() else c['eta0'] + c['eta1'] * (1. - a)
     
-    deriv_gamma0 = deriv_f * f * np.log(Oma)
-    deriv_gamma1 = deriv_f * f * np.log(Oma) * (1. - a)
-    deriv_eta0 = deriv_f * f / (1. + eta)
-    deriv_eta1 = deriv_f * f * (1. - a) / (1. + eta)
-    
     # Numerical derivatives for MG params
-    if 'mg' in switches:
+    if 'oldmg' in switches:
+        # Derivatives w.r.t. f(z) only
+        # gamma(z), eta(z) modified growth parameters
+        deriv_gamma0 = deriv_f * f * np.log(Oma)
+        deriv_gamma1 = deriv_f * f * np.log(Oma) * (1. - a)
+        deriv_eta0 = deriv_f * f / (1. + eta)
+        deriv_eta1 = deriv_f * f * (1. - a) / (1. + eta)
+        
+        # Horndeski-inspired growth modification
         deriv_Axi, deriv_logkmg = mg_growth.growth_derivs( c['z'], K, c, 
                                    mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-1] )
         deriv_Axi *= deriv_f
         deriv_logkmg *= deriv_f
+    elif 'mg' in switches:
+        # Derivatives w.r.t. f(z) * sigma_8(z)
+        # gamma(z), eta(z) modified growth parameters
+        params = ['gamma0', 'gamma1', 'eta0', 'eta1']
+        dx = [1e-3, 1e-3, 1e-3, 1e-3]
+        mgderivs = fsigma8_derivs(c['z'], cosmo, params=params, dx=dx)
+        mgderivs = [d * deriv_fsig8 for d in mgderivs]
+        deriv_gamma0, deriv_gamma1, deriv_eta0, deriv_eta1 = mgderivs
         
-    # Derivatives for binned f0(k)
+        # Horndeski-inspired growth modification
+        deriv_Axi, deriv_logkmg = mg_growth.growth_derivs( 
+                                   c['z'], K, c, fsigma8=True,
+                                   mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-1], )
+        deriv_Axi *= deriv_fsig8
+        deriv_logkmg *= deriv_fsig8
+        
+    # Derivatives for binned f0(k) (OBSOLETE)
     derivs_f0k = []
     if 'f0_kbins' in c.keys():
         for i in range(len(c['f0_kbins']) - 1):
@@ -1895,7 +1977,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     deriv_list = [ deriv_A, deriv_bHI, deriv_Tb, deriv_sig2, deriv_sigma8, 
                    deriv_ns, deriv_f, deriv_aperp, deriv_apar, 
                    deriv_bsig8, deriv_fsig8 ]
-    paramnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8', 'n_s', 'f', 
+    paramnames = ['A', 'b_HI', 'Tb', 'sigma_NL', 'sigma8tot', 'n_s', 'f', 
                   'aperp', 'apar', 'fs8', 'bs8']
     
     # Evaluate derivatives for massive neutrinos and add to list
@@ -1923,15 +2005,17 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         paramnames.append('b_1')
     
     # Modified gravity parameters
-    if 'mg' in switches:
+    if 'mg' in switches or 'oldmg' in switches:
         deriv_list += [deriv_gamma0, deriv_gamma1, deriv_eta0, deriv_eta1, 
                        deriv_Axi, deriv_logkmg]
         paramnames += ['gamma0', 'gamma1', 'eta0', 'eta1', 'A_xi', 'logkmg']
         
+        # Scale-dependent growth from f(z) only (OBSOLETE)
         if 'f0_kbins' in c.keys():
             deriv_list += derivs_f0k
             paramnames += ["f0k%d" % i for i in range(len(c['f0_kbins']) - 1)]
-        
+    
+        # Scale-dependent growth from f(z)*sigma_8(z)
         if 'fs8_kbins' in c.keys():
             deriv_list += derivs_bs8k
             deriv_list += derivs_fs8k
@@ -1948,9 +2032,9 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     return deriv_list, paramnames
 
 
-def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
+def eos_fisher_matrix_derivs(cosmo, cosmo_fns, fsigma8=False):
     """
-    Pre-calculate derivatives required to transform (aperp, apar) into dark 
+    Pre-calculate derivatives required to transform (f, aperp, apar) into dark 
     energy parameters (Omega_k, Omega_DE, w0, wa, h, gamma).
     
     Returns interpolation functions for d(f,a_perp,par)/d(DE params) as fn. of a.
@@ -1987,15 +2071,22 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
     # Derivatives of apar w.r.t. parameters
     derivs_apar = [f(aa)/EE for f in fns]
     
-    # Derivatives of f(z) w.r.t. parameters
-    f_fac = -gamma * fz / EE
-    df_domegak  = f_fac * (EE/om + dE_omegak(aa))
-    df_domegaDE = f_fac * (EE/om + dE_omegaDE(aa))
-    df_w0 = f_fac * dE_w0(aa)
-    df_wa = f_fac * dE_wa(aa)
-    df_dh = np.zeros(aa.shape)
-    df_dgamma = fz * np.log(omegaM_z(zz, cosmo))
-    derivs_f = [df_domegak, df_domegaDE, df_w0, df_wa, df_dh, df_dgamma]
+    if not fsigma8:
+        # Derivatives of f(z) w.r.t. parameters
+        f_fac = -gamma * fz / EE
+        df_domegak  = f_fac * (EE/om + dE_omegak(aa))
+        df_domegaDE = f_fac * (EE/om + dE_omegaDE(aa))
+        df_w0 = f_fac * dE_w0(aa)
+        df_wa = f_fac * dE_wa(aa)
+        df_dh = np.zeros(aa.shape)
+        df_dgamma = fz * np.log(omegaM_z(zz, cosmo))
+        df_dsig8 = np.zeros(aa.shape)
+        derivs_f = [df_domegak, df_domegaDE, df_w0, df_wa, df_dh, df_dgamma, df_dsig8]
+    else:
+        # params are actually: omegak, omegaDE, w0, wa, h, sigma_8
+        params = ['omega_M_0', 'omega_lambda_0', 'w0', 'wa', 'h', 'gamma', 'sigma_8']
+        dx = [1e-3, 1e-3, 1e-2, 1e-2, 1e-3, 1e-3, 1e-3]
+        derivs_f = fsigma8_derivs(zz, cosmo, params=params, dx=dx)
     
     # Calculate comoving distance (including curvature)
     r_c = scipy.integrate.cumtrapz(1./(aa**2. * EE), aa)
@@ -2021,9 +2112,9 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
     derivs_aperp = [ np.concatenate(([inivals[i]], derivs_aperp[i])) 
                      for i in range(len(derivs_aperp)) ]
     
-    # Add (h, gamma) derivs to aperp,apar
-    derivs_aperp += [np.ones(aa.shape)/h, np.zeros(aa.shape)]
-    derivs_apar  += [np.ones(aa.shape)/h, np.zeros(aa.shape)]
+    # Add (h, gamma, sigma_8) derivs to aperp,apar
+    derivs_aperp += [np.ones(aa.shape)/h, np.zeros(aa.shape), np.zeros(aa.shape)]
+    derivs_apar  += [np.ones(aa.shape)/h, np.zeros(aa.shape), np.zeros(aa.shape)]
     
     # Construct interpolation functions
     interp_f     = [scipy.interpolate.interp1d(aa[::-1], d[::-1], 
@@ -2033,7 +2124,6 @@ def eos_fisher_matrix_derivs(cosmo, cosmo_fns):
     interp_aperp = [scipy.interpolate.interp1d(aa[::-1], d[::-1], 
                     kind='linear', bounds_error=False) for d in derivs_aperp]
     return [interp_f, interp_aperp, interp_apar]
-
 
 
 def indexes_for_sampled_fns(p, Nbins, zfns):
@@ -2304,16 +2394,14 @@ def transform_to_lss_distances(z, F, paramnames, cosmo_fns=None, DA=None, H=None
     newnames[ih] = 'F'
     return Fnew, newnames
     
-    
 
-def expand_fisher_matrix(z, derivs, F, names, exclude=[]):
+def expand_fisher_matrix(z, derivs, F, names, exclude=[], fsigma8=False):
     """
-    Transform Fisher matrix to with (f, aperp, apar) parameters into one with 
+    Transform Fisher matrix with (f, aperp, apar) parameters into one with 
     dark energy EOS parameters (Omega_k, Omega_DE, w0, wa, h, gamma) instead.
     
     Parameters
     ----------
-    
     z : float
         Central redshift of the survey.
     
@@ -2333,9 +2421,12 @@ def expand_fisher_matrix(z, derivs, F, names, exclude=[]):
         to EOS parameters. e.g. exclude = [1,] will prevent aperp from 
         contributing to the EOS parameter constraints.
     
+    fsigma8 : bool, optional
+        Whether the projection should be done from f(z) or f(z)*sigma_8(z).
+        Default: False.
+    
     Returns
     -------
-    
     Fnew : array_like
         Fisher matrix for the new parameters.
     
@@ -2347,10 +2438,13 @@ def expand_fisher_matrix(z, derivs, F, names, exclude=[]):
     # Define mapping between old and new Fisher matrices (including expanded P(k) terms)
     old = copy.deepcopy(names)
     Nold = len(old)
-    oldidxs = [old.index(p) for p in ['f', 'aperp', 'apar']]
+    if not fsigma8:
+        oldidxs = [old.index(p) for p in ['f', 'aperp', 'apar']]
+    else:
+        oldidxs = [old.index(p) for p in ['fs8', 'aperp', 'apar']]
     
     # Insert new parameters immediately after 'apar'
-    new_params = ['omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma']
+    new_params = ['omegak', 'omegaDE', 'w0', 'wa', 'h', 'gamma', 'sigma_8']
     new = old[:old.index('apar')+1]
     new += new_params
     new += old[old.index('apar')+1:]
@@ -2448,7 +2542,7 @@ def load_param_names(fname):
 
 def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None, 
             massive_nu_fn=None, Neff_fn=None, transfer_fn=None, cv_limited=False, 
-            switches=[], kmin=1e-7, kmax=130. ):
+            switches=[], kmin=1e-7, kmax=1.0):
     """
     Return Fisher matrix (an binned power spectrum, with errors) for given
     fiducial cosmology and experimental settings.
@@ -2531,6 +2625,7 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     cosmo['z'] = z; cosmo['D'] = DD(z)
     cosmo['f'] = ff(z) if 'mg' not in switches else None
     cosmo['r'] = rr(z); cosmo['rnu'] = C*(1.+z)**2. / HH(z) # Perp/par. dist. scales
+    cosmo['switches'] = switches
     
     # Physical volume (in rad^2 Mpc^3) (note factor of nu_line in here)
     Vphys = expt['Sarea'] * (expt['dnutot']/expt['nu_line']) \

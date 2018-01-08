@@ -163,6 +163,15 @@ gCV = {
 }
 gCV.update(SURVEY)
 
+gCV_z4 = {
+    'fsky':        0.75,
+    'fname':       'nz_CVlimited_z4.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'b(z)':        lambda z: np.sqrt(1. + z),
+}
+gCV_z4.update(SURVEY)
 
 SKA1ref = {
     'fsky':        sarea_to_fsky(5e3),
@@ -376,3 +385,79 @@ gSKA2MG = {
     '_b':          4
 }
 gSKA2MG.update(SURVEY)
+
+gFAST20k = {
+    'fsky':        sarea_to_fsky(20e3),
+    'fname':       'nz_FAST_20k.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4
+}
+gFAST20k.update(SURVEY)
+
+
+#########################
+# SPHEREx
+#########################
+
+SPHEREx1 = {
+    'fsky':        sarea_to_fsky(30e3),
+    'fname':       'nz_SPHEREx1.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'rescale_nz':  0.67**3., # Ensures correct N_gal for Planck cosmology
+    '_b':          3,
+    'sigma_z0':    0.003
+}
+SPHEREx1.update(SURVEY)
+
+SPHEREx2 = {
+    'fsky':        sarea_to_fsky(30e3),
+    'fname':       'nz_SPHEREx2.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'rescale_nz':  0.67**3., # Ensures correct N_gal for Planck cosmology
+    '_b':          3,
+    'sigma_z0':    0.008
+}
+SPHEREx2.update(SURVEY)
+
+SPHEREx3 = {
+    'fsky':        sarea_to_fsky(30e3),
+    'fname':       'nz_SPHEREx3.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'rescale_nz':  0.67**3., # Ensures correct N_gal for Planck cosmology
+    '_b':          3,
+    'sigma_z0':    0.025
+}
+SPHEREx3.update(SURVEY)
+
+SPHEREx4 = {
+    'fsky':        sarea_to_fsky(30e3),
+    'fname':       'nz_SPHEREx4.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'rescale_nz':  0.67**3., # Ensures correct N_gal for Planck cosmology
+    '_b':          3,
+    'sigma_z0':    0.07
+}
+SPHEREx4.update(SURVEY)
+
+SPHEREx5 = {
+    'fsky':        sarea_to_fsky(30e3),
+    'fname':       'nz_SPHEREx5.dat',
+    '_zmin':       0,
+    '_zmax':       1,
+    '_nz':         2,
+    'rescale_nz':  0.67**3., # Ensures correct N_gal for Planck cosmology
+    '_b':          3,
+    'sigma_z0':    0.16
+}
+SPHEREx5.update(SURVEY)
+

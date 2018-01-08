@@ -10,11 +10,27 @@ root = "CHIME256"
 Ddish = 20.
 Dmin = 20.
 Ndish = 1280 # 256 * 5
-nu = 400. # MHz
+nu = 800. # MHz
 l = 3e8 / (nu * 1e6) # Lambda [m]
 
-outfile = "array_config/nx_CHIME_%d.dat" % nu
+####################################
 
+# Cut baselines d < d_fov
+outfile = "array_config/nx_CHIME_%d.dat" % nu
+AVG_SMALL_BASELINES = False
+Dcut = Ddish # Cut baselines below this separation
+
+# Cut baselines d < 1m and average below Ddish
+outfile = "array_config/nx_CHIME_%d_avg.dat" % nu
+AVG_SMALL_BASELINES = True
+Dcut = 1.
+
+# Cut baselines d < 1m without averaging
+outfile = "array_config/nx_CHIME_%d_nocut.dat" % nu
+AVG_SMALL_BASELINES = False
+Dcut = 1.
+
+####################################
 
 def fov(nu, D):
     """
@@ -32,7 +48,8 @@ def ubin_width(nu, D):
 dat = np.genfromtxt("array_config/CHIME256_baselines.txt").T
 
 # Remove D < Ddish baselines
-dat = dat[np.where(dat > Ddish)] # Cut sub-FOV baselines
+#dat = dat[np.where(dat > Ddish)] # Cut sub-FOV baselines
+dat = dat[np.where(dat > Dcut)] # Cut sub-FOV baselines
 dat /= l # Rescale into u = d / lambda
 
 # Calculate bin edges
@@ -43,7 +60,7 @@ edges = np.linspace(0., imax * du, imax+1)
 # Calculate histogram (no. baselines in each ring of width du)
 bins, edges = np.histogram(dat, edges)
 u = np.array([0.5*(edges[i+1] + edges[i]) for i in range(edges.size-1)]) # Centroids
-idxs = np.where(u < Dmin/l)
+#idxs = np.where(u < Dmin/l)
 
 #for i in range(bins.size):
 #    print "%2d [%3.1f -- %3.1f]: %d" % (i, edges[i], edges[i+1], bins[i])
@@ -56,6 +73,13 @@ norm = scipy.integrate.simps(2.*np.pi*nn*u, u)
 print "n(u) renorm. factor:", 0.5 * Ndish * (Ndish - 1) / norm, "(not applied)"
 #n *= 0.5 * Ndish * (Ndish - 1) / norm
 
+
+# Average over all baselines below the cylinder width
+idxs = np.where(u < Ddish/l)
+n_mean = scipy.integrate.simps(2.*np.pi*nn[idxs]*u[idxs], u[idxs]) \
+          / scipy.integrate.simps(2.*np.pi*u[idxs], u[idxs])
+if AVG_SMALL_BASELINES: nn[idxs] = n_mean
+
 # Convert to freq.-independent expression, n(x) = n(u) * nu^2,
 # where nu is in MHz.
 n_x = nn * nu**2.
@@ -63,6 +87,11 @@ x = u / nu
 np.savetxt(outfile, np.column_stack((x, n_x)))
 print "Saved to %s." % outfile
 
+P.plot(u, nn)
+P.axvline(Dmin/l, color='r')
+P.axvline(Dcut/l, color='c')
+P.axhline(n_mean, color='g')
+P.show()
 
 
 exit()
