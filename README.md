@@ -1,34 +1,33 @@
-================================================================================
-  RadioFisher/BAO-21cm
-         ---
-      Phil Bull
-  philbull@gmail.com
-     August 2015
-================================================================================
+RadioFisher/BAO-21cm
+--------------------
+Phil Bull (philbull@gmail.com)
 
-Cosmology Fisher forecasting code for HI (21cm) intensity mapping experiments.
+_November 2020_
+
+Cosmology Fisher forecasting code for HI (21cm) intensity mapping experiments
+and spectroscopic galaxy surveys.
 
 Released under the Academic Free License (AFL-3.0).
 
 ABOUT RADIOFISHER
 -----------------
 
-Radio Fisher is a Fisher forecasting code for cosmology with intensity maps of 
+RadioFisher is a Fisher forecasting code for cosmology with intensity maps of 
 the redshifted 21cm emission line of neutral hydrogen. The formalism 
 implemented by this code is described in Bull, Ferreira, Patel and Santos 
 (2014). It's written in Python, and makes heavy use of NumPy, SciPy, and 
-matplotlib. You also need CAMB. I'm running it very happily on Ubuntu 14.04 and 
-a RHEL cluster. It should also run fine on Macs.
+matplotlib. You also need CAMB. I'm running it very happily on Ubuntu 20.04 and 
+other Linux machines. It should also run fine on Macs.
 
 The code is provided openly for inspection and re-use. If you use it, please 
 cite us! If you have problems getting it to work, or have bugfixes, comments, 
-or suggestions, please get in touch with me, Phil Bull. This is an 
-actively-used scientific code, so expect to have to get your hands dirty!
+or suggestions, please get in touch with me. This is an actively-used scientific 
+code, so expect to have to get your hands dirty!
 
 REQUIREMENTS
 ------------
 
- - Python (tested with 2.7)
+ - Python (tested with 3.7)
  - Recent NumPy and SciPy
  - matplotlib
  - mpi4py
