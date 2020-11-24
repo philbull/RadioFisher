@@ -76,7 +76,7 @@ def camb_params( params_fname,
         camb_params_text += line_str + "\n"
     
     # Output params file
-    print "Writing parameters to", params_fname
+    print("Writing parameters to", params_fname)
     f = open("paramfiles/"+params_fname, 'w')
     f.write(camb_params_text)
     f.close()
@@ -91,12 +91,13 @@ def run_camb(params_fname, camb_exec_dir):
     cwd = os.getcwd()
     os.chdir(camb_exec_dir)
     params_path = cwd + "/paramfiles/" + params_fname
-    print "Running CAMB on", params_path
+    print("Running CAMB on", params_path)
     output = subprocess.check_output(["./camb", params_path])
     
     # Capture on-screen output of derived parameters
     vals = {}
-    for line in output.split("\n"):
+    print(output)
+    for line in str(output).split("\n"):
         # Special cases: sigma8 and tau_recomb
         if "sigma8" in line:
             s8line = line[line.find('sigma8'):] # Only get sigma8 part of string

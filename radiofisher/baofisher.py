@@ -15,10 +15,11 @@ from scipy.misc import derivative
 import pylab as P
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-import uuid, os, sys, copy, md5
-import camb_wrapper as camb
-import mg_growth
+from .units import *
+import uuid, os, sys, copy
+from hashlib import md5
+from . import camb_wrapper as camb
+from . import mg_growth
 from tempfile import gettempdir
 
 # No. of samples in log space in each dimension. 300 seems stable for (AA).
@@ -38,7 +39,7 @@ RSD_FUNCTION = 'kaiser'
 # Location of CAMB fiducial P(k) file
 # NOTE: Currently expects CAMB P(k) needs to be at chosen z value (z=0 here).
 CAMB_KMAX = 20. / 0.7 # Max. k for CAMB, in h Mpc^-1
-CAMB_EXEC = "/home/phil/oslo/bao21cm/camb" # Directory containing camb executable
+CAMB_EXEC = "/home/phil/lynx/oslo/bao21cm/camb" # Directory containing camb executable
 
 
 ################################################################################
@@ -338,7 +339,7 @@ def zbins_const_dr(expt, cosmo, bins=None, nsamples=500, initial_dz=None):
         rmin = r_z(zmin)
         rmax = r_z(zmax)
         dr = r_z(zmin + initial_dz) - rmin
-        print "Const. dr =", dr, "Mpc"
+        print("Const. dr =", dr, "Mpc")
         
         # Loop through range, filling with const. dr bins as far as possible
         rtot = rmin
@@ -474,7 +475,7 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
     """
     # Check to see if experiment is made up of overlapping instruments
     # Returns the original expt dict if no overlap is defined
-    if 'overlap' in expt_in.keys():
+    if 'overlap' in list(expt_in.keys()):
         expt1, expt2 = expt_in['overlap']
     else:
         if Sarea is not None: expt_in['Sarea'] = Sarea # Override Sarea
@@ -482,7 +483,7 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
     
     # Copy everything over from expt_in
     expt = {}
-    for key in expt_in.keys():
+    for key in list(expt_in.keys()):
         if key is not 'overlap': expt[key] = expt_in[key]
     
     # If no low/high is specified, just return extended freq. range (useful for 
@@ -530,12 +531,12 @@ def overlapping_expts(expt_in, zlow=None, zhigh=None, Sarea=None):
     expt['use'] = expt1['use']
     
     # Flag any keys that we didn't transfer over
-    for key in expt1.keys():
+    for key in list(expt1.keys()):
         if key not in expt:
-            print "\toverlapping_expts: Key '%s' from expt1 ignored." % key
-    for key in expt2.keys():
+            print("\toverlapping_expts: Key '%s' from expt1 ignored." % key)
+    for key in list(expt2.keys()):
         if key not in expt:
-            print "\toverlapping_expts: Key '%s' from expt2 ignored." % key
+            print("\toverlapping_expts: Key '%s' from expt2 ignored." % key)
     return expt
 
 
@@ -589,7 +590,7 @@ def load_power_spectrum( cosmo, cachefile, kmax=CAMB_KMAX, comm=None,
     # Only let one MPI worker do the calculation, then let all other workers 
     # load the result from cache
     if myid == 0:
-        print "\tprecompute_for_fisher(): Loading matter P(k)..."
+        print("\tprecompute_for_fisher(): Loading matter P(k)...")
         dat = cached_camb_output(p, cachefile, mode='matterpower', force=force,
                                  force_load=force_load)
     if comm is not None: comm.barrier()
@@ -625,11 +626,11 @@ def fgrowth(cosmo, z, usegamma=False):
     a = 1. / (1. + z)
     
     # Modified gravity parameters
-    if 'gamma0' not in c.keys() or usegamma == True:
+    if 'gamma0' not in list(c.keys()) or usegamma == True:
         gamma = c['gamma']
     else:
         gamma = c['gamma0'] + c['gamma1']*(1. - a)
-    eta = 0. if 'eta0' not in c.keys() else (c['eta0'] + c['eta1']*(1. - a))
+    eta = 0. if 'eta0' not in list(c.keys()) else (c['eta0'] + c['eta1']*(1. - a))
     f = Oma**gamma * (1. + eta)
     return f
 
@@ -756,7 +757,7 @@ def Tb(z, cosmo, formula='powerlaw'):
         ok = 1. - om - ol
         E = np.sqrt(om*(1.+z)**3. + ok*(1.+z)**2. + ol)
         Tb = 188. * cosmo['h'] * omegaHI * (1.+z)**2. / E
-    Tb *= 1. if 'Tb_factor' not in cosmo.keys() else cosmo['Tb_factor']
+    Tb *= 1. if 'Tb_factor' not in list(cosmo.keys()) else cosmo['Tb_factor']
     return Tb
 
 def bias_HI(z, cosmo, formula='powerlaw'):
@@ -826,12 +827,13 @@ def cached_camb_output(p, cachefile, cosmo=None, mode='matterpower',
     Load P(k) or T(k) from cache, or else use CAMB to recompute it.
     """
     # Create hash of input cosmo parameters
-    m = md5.new()
-    keys = p.keys()
+    m = md5()
+    keys = list(p.keys())
     keys.sort()
     for key in keys:
         if key is not "output_root":
-            m.update("%s:%s" % (key, p[key]))
+            keyval = "%s:%s" % (key, p[key])
+            m.update(keyval.encode())
     in_hash = m.hexdigest()
     
     # Check if cached version exists; if so, make sure its hash matches
@@ -844,15 +846,15 @@ def cached_camb_output(p, cachefile, cosmo=None, mode='matterpower',
         
         # Compare with input hash; quit if hash doesn't match (unless force=True)
         if in_hash != hash and not force and not force_load:
-            print "\tcached_camb_output: Hashes do not match; delete the cache file and run again to update."
-            print "\t\tFile: %s" % cachefile
-            print "\t\tHash in file:  %s" % hash
-            print "\t\tHash of input: %s" % in_hash
+            print("\tcached_camb_output: Hashes do not match; delete the cache file and run again to update.")
+            print("\t\tFile: %s" % cachefile)
+            print("\t\tHash in file:  %s" % hash)
+            print("\t\tHash of input: %s" % in_hash)
             raise ValueError()
         
         # Check if recalculation has been forced; throw fake IOError if it has
         if force:
-            print "\tcached_camb_output: Forcing recalculation of P(k)."
+            print("\tcached_camb_output: Forcing recalculation of P(k).")
             raise IOError
         
         # If everything was OK, try to load from cache file, then return
@@ -867,7 +869,7 @@ def cached_camb_output(p, cachefile, cosmo=None, mode='matterpower',
     root = gettempdir() + "/"
     if not os.path.exists("paramfiles/"):
         os.makedirs("paramfiles/")
-        print "\tcached_camb_output: Created paramfiles/ directory."
+        print("\tcached_camb_output: Created paramfiles/ directory.")
     
     # Generate unique filename, create parameter file, and run CAMB
     fname = str(uuid.uuid4())
@@ -900,7 +902,7 @@ def cached_camb_output(p, cachefile, cosmo=None, mode='matterpower',
         dat[1] *= (sigma_8_in/sigma8)**2. / h**3.
         
     # Save data to file, adding hash to header
-    print "\tcached_camb_output: Saving '%s' to %s" % (mode, cachefile)
+    print("\tcached_camb_output: Saving '%s' to %s" % (mode, cachefile))
     hdr = "%s#" % in_hash
     np.savetxt(cachefile, dat.T, header=hdr)
     
@@ -939,7 +941,7 @@ def deriv_transfer(cosmo, cachefile, kmax=CAMB_KMAX, kref=1e-3, comm=None, force
     # Only let one MPI worker do the calculation, then let all other workers 
     # load the result from cache
     if myid == 0:
-        print "\tderiv_transfer(): Loading transfer function..."
+        print("\tderiv_transfer(): Loading transfer function...")
         dat = cached_camb_output(p, cachefile, mode='transfer', force=force)
     if comm is not None: comm.barrier()
     if myid != 0:
@@ -1023,7 +1025,7 @@ def deriv_neutrinos(cosmo, cacheroot, kmax=CAMB_KMAX, force=False,
     if comm is not None:
         myid = comm.Get_rank()
         size = comm.Get_size()
-    if myid == 0: print "\tderiv_neutrinos(): Loading P(k) data for derivs..."
+    if myid == 0: print("\tderiv_neutrinos(): Loading P(k) data for derivs...")
     
     # Set finite difference values and other CAMB parameters
     p = convert_to_camb(cosmo)
@@ -1059,7 +1061,7 @@ def deriv_neutrinos(cosmo, cacheroot, kmax=CAMB_KMAX, force=False,
                 dat[i] = cached_camb_output(p, fname, mode='matterpower', force=force)
             except:
                 if comm is not None:
-                    print "cached_camb_output() failed."
+                    print("cached_camb_output() failed.")
                     comm.Abort(errorcode=10)
                 sys.exit()
     
@@ -1074,7 +1076,7 @@ def deriv_neutrinos(cosmo, cacheroot, kmax=CAMB_KMAX, force=False,
     for i in range(len(xvals)):
         diff = np.sum(np.abs(dat[0][0][:idxmin] - dat[i][0][:idxmin]))
         if diff != 0.:
-            print dat[0][0][:10]
+            print(dat[0][0][:10])
             raise ValueError("k arrays do not match up. Summed difference: %f" % diff)
     
     # Take finite difference of P(k)
@@ -1388,7 +1390,7 @@ def interferometer_response(q, y, cosmo, expt):
     fov = np.pi * (l / Ddish) if 'cyl' in expt['mode'] else (l / Ddish)**2. 
     
     # Calculate interferometer baseline density, n(u)
-    if "n(x)" in expt.keys():
+    if "n(x)" in list(expt.keys()):
         # Rescale n(x) with freq.-dependence
         #FIXME print "\tUsing user-specified baseline density, n(u)"
         x = u / nu  # x = u / (freq [MHz])
@@ -1396,12 +1398,12 @@ def interferometer_response(q, y, cosmo, expt):
         n_u[np.where(n_u == 0.)] = 1. / INF_NOISE
     else:
         # Approximate expression for n(u), assuming uniform density in UV plane
-        print "\tUsing uniform baseline density, n(u) ~ const."
+        print("\tUsing uniform baseline density, n(u) ~ const.")
         u_min = expt['Dmin'] / l; u_max = expt['Dmax'] / l
         
         # Sanity check: Physical area of array must be > combined area of dishes
         ff = expt['Ndish'] * (expt['Ddish'] / expt['Dmax'])**2. # Filling factor
-        print "\tArray filling factor: %3.3f" % ff
+        print("\tArray filling factor: %3.3f" % ff)
         if ff > 1.:
             raise ValueError( ("Filling factor is > 1; dishes are too big to "
                                "fit in specified area (out to Dmax).") )
@@ -1468,30 +1470,30 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     l = 3e8 / (nu * 1e6) # Wavelength (m)
     
     # Number of receiver polarisation channels (default is two) and dish effic.
-    npol = expt['npol'] if 'npol' in expt.keys() else 2.
-    effic = expt['effic'] if 'effic' in expt.keys() else 0.7
-    effic2 = expt['effic2'] if 'effic2' in expt.keys() else 0.7
+    npol = expt['npol'] if 'npol' in list(expt.keys()) else 2.
+    effic = expt['effic'] if 'effic' in list(expt.keys()) else 0.7
+    effic2 = expt['effic2'] if 'effic2' in list(expt.keys()) else 0.7
     
     # Calculate base noise properties
     Vsurvey = expt['Sarea'] * expt['dnutot'] / expt['nu_line']
     Tsky = 60e3 * (300.*(1.+c['z']) / expt['nu_line'])**2.55 # Temp. of sky (mK)
     Tsys = expt['Tinst'] + Tsky
-    if 'Tsky_factor' in expt.keys(): Tsys += expt['Tsky_factor'] * Tsky
+    if 'Tsky_factor' in list(expt.keys()): Tsys += expt['Tsky_factor'] * Tsky
     noise = Tsys**2. * Vsurvey / (npol * expt['ttot'] * expt['dnutot'])
     if cv: noise = 1. # Cosmic variance-limited calc.
     
     # Multiply noise by mode-specific factors
     if expt['mode'][0] == 'i':
         # Interferometer mode
-        print "\tInterferometer mode",
+        print("\tInterferometer mode", end=' ')
         
         # Default effective area / beam FWHM
         Aeff = effic * 0.25 * np.pi * expt['Ddish']**2. \
-               if 'Aeff' not in expt.keys() else expt['Aeff']
+               if 'Aeff' not in list(expt.keys()) else expt['Aeff']
         theta_b = l / expt['Ddish']
         
         # Evaluate at critical freq.
-        if 'nu_crit' in expt.keys():
+        if 'nu_crit' in list(expt.keys()):
             nu_crit = expt['nu_crit']
             l_crit = 3e8 / (nu_crit * 1e6)
             theta_b_crit = l_crit / expt['Ddish']
@@ -1499,44 +1501,44 @@ def Cnoise(q, y, cosmo, expt, cv=False):
         # Choose specific mode
         if 'cyl' in expt['mode']:
             # Cylinder interferometer
-            print "(cylinder)"
+            print("(cylinder)")
             Aeff = effic * expt['Ncyl'] * expt['cyl_area'] / expt['Ndish'] # area per receiver
             theta_b = np.sqrt( 0.5 * np.pi * l / expt['Ddish'] ) # FOV ~ 90 deg * l/D
         elif 'paf' in expt['mode']:
             # PAF interferometer
-            print "(PAF)"
+            print("(PAF)")
             theta_b = theta_b_crit * (nu_crit / nu) if nu > nu_crit else 1.
         elif 'aa' in expt['mode']:
             # Aperture array interferometer
-            print "(aperture array)"
+            print("(aperture array)")
             Aeff *= (expt['nu_crit'] / nu)**2. if nu > nu_crit else 1.
             theta_b = theta_b_crit * (nu_crit / nu)
         else:
             # Standard dish interferometer
-            print "(dish)"
+            print("(dish)")
         
         noise *= interferometer_response(q, y, cosmo, expt)
         noise *= l**4. / (expt['Nbeam'] * (Aeff * theta_b)**2.)
         
     else:
         # Autocorrelation mode
-        print "\tAutocorrelation mode",
+        print("\tAutocorrelation mode", end=' ')
         
         Aeff = effic * 0.25 * np.pi * expt['Ddish']**2. \
-               if 'Aeff' not in expt.keys() else expt['Aeff']
+               if 'Aeff' not in list(expt.keys()) else expt['Aeff']
         theta_b = l / expt['Ddish']
         
         if 'paf' in expt['mode']:
             # PAF autocorrelation mode
-            print "(PAF)"
+            print("(PAF)")
             noise *= l**4. / (Aeff**2. * theta_b**4.)
             noise *= 1. if nu > expt['nu_crit'] else (expt['nu_crit'] / nu)**2.
         elif 'hybrid' in expt['mode']:
-            print "(hybrid array)"
+            print("(hybrid array)")
             # Standard autocorrelation mode, but with overlapping sub-arrays
             # Calculate properties of sub-array 2
             Aeff2 = effic2 * 0.25 * np.pi * expt['Ddish2']**2. \
-                    if 'Aeff2' not in expt.keys() else expt['Aeff2']
+                    if 'Aeff2' not in list(expt.keys()) else expt['Aeff2']
             Tsys2 = expt['Tinst2'] + Tsky
             theta_b2 = l / expt['Ddish2']
             Nd1 = expt['Ndish']; Nd2 = expt['Ndish2']
@@ -1576,7 +1578,7 @@ def Cnoise(q, y, cosmo, expt, cv=False):
             noise *= (expt['Ndish'] / float(Ndish_comb)) / Tsys**2.
         else:
             # Standard dish autocorrelation mode
-            print "(dish)"
+            print("(dish)")
             noise *= l**4. / (Aeff**2. * theta_b**4.)
         
         noise *= 1. / (expt['Ndish'] * expt['Nbeam'])
@@ -1601,13 +1603,31 @@ def Cnoise(q, y, cosmo, expt, cv=False):
     
     # Cut-off in parallel direction due to (freq.-dep.) foreground subtraction
     kfg = 2.*np.pi * expt['nu_line'] / (expt['survey_dnutot'] * c['rnu'])
-    kfg *= expt['kfg_fac'] if 'kfg_fac' in expt.keys() else 1.
+    kfg *= expt['kfg_fac'] if 'kfg_fac' in list(expt.keys()) else 1.
     noise[np.where(np.abs(kpar) < kfg)] = INF_NOISE
+    
+    # Cut out foreground wedge for interferometers (wedge definition taken 
+    # from Eqs. 5/6 of arXiv:1502.07596). Wedge region is where c*tau <= |b|.
+    if 'wedge' in list(expt.keys()):
+        if expt['wedge'] == 'horizon':
+            # Primary beam wedge
+            noise[np.where(y <= (1.+c['z'])*q)] = INF_NOISE
+        elif expt['wedge'] == '3pb':
+            # 3x primary beam wedge
+            fwhm_fac = np.sin(3. * 0.5 * 1.22 * l / expt['Ddish'])
+            noise[np.where(y <= (1.+c['z'])*q*fwhm_fac)] = INF_NOISE
+        else:
+            # No wedge
+            if expt['wedge'] == True:
+                pass
+            else:
+                print("\tNo wedge applied, wedge type '%s' not recognised." \
+                        % expt['wedge'])
     
     # Cut off NL scales by adding INF_NOISE
     # Eq. 20 of Smith et al. 2003 (arXiv:astro-ph/0207664v2)
-    if 'k_nl0' not in expt.keys():
-        print "\tNonlinear scale not specified; setting k_NL,0 = 0.14 Mpc^-1"
+    if 'k_nl0' not in list(expt.keys()):
+        print("\tNonlinear scale not specified; setting k_NL,0 = 0.14 Mpc^-1")
         knl0 = 0.14
     else:
         knl0 = expt['k_nl0']
@@ -1760,7 +1780,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
             ctot = cs + cn + cf
         else:
             # Cosmic variance-limited calculation
-            print "Calculation is CV-limited."
+            print("Calculation is CV-limited.")
             ctot = cs + 1e-10 * (cn + cf) # Just shrink the foregrounds etc.
     
     """
@@ -1874,7 +1894,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     a = 1. / (1. + c['z'])
     Oma = c['omega_M_0'] * (1.+c['z'])**3. / Ez(cosmo, c['z'])**2.
     xi = 3.*(100.*c['h']/C)**2. * c['omega_M_0'] * (1. + c['z']) / k**2.
-    eta = 0. if 'eta0' not in c.keys() else c['eta0'] + c['eta1'] * (1. - a)
+    eta = 0. if 'eta0' not in list(c.keys()) else c['eta0'] + c['eta1'] * (1. - a)
     
     # Numerical derivatives for MG params
     if 'oldmg' in switches:
@@ -1908,7 +1928,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         
     # Derivatives for binned f0(k) (OBSOLETE)
     derivs_f0k = []
-    if 'f0_kbins' in c.keys():
+    if 'f0_kbins' in list(c.keys()):
         for i in range(len(c['f0_kbins']) - 1):
             # FIXME: Fixed f0(k) = 1.
             ka = c['f0_kbins'][i]; kb = c['f0_kbins'][i+1]
@@ -1917,7 +1937,7 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
     
     # Derivatives for binned fs8 and bs8
     derivs_fs8k = []; derivs_bs8k = []
-    if 'fs8_kbins' in c.keys():
+    if 'fs8_kbins' in list(c.keys()):
         for i in range(len(c['fs8_kbins']) - 1):
             # Construct mask for this k range
             ka = c['fs8_kbins'][i]; kb = c['fs8_kbins'][i+1]
@@ -2011,12 +2031,12 @@ def fisher_integrands( kgrid, ugrid, cosmo, expt, massive_nu_fn=None,
         paramnames += ['gamma0', 'gamma1', 'eta0', 'eta1', 'A_xi', 'logkmg']
         
         # Scale-dependent growth from f(z) only (OBSOLETE)
-        if 'f0_kbins' in c.keys():
+        if 'f0_kbins' in list(c.keys()):
             deriv_list += derivs_f0k
             paramnames += ["f0k%d" % i for i in range(len(c['f0_kbins']) - 1)]
     
         # Scale-dependent growth from f(z)*sigma_8(z)
-        if 'fs8_kbins' in c.keys():
+        if 'fs8_kbins' in list(c.keys()):
             deriv_list += derivs_bs8k
             deriv_list += derivs_fs8k
             paramnames += ["k%dbs8" % i for i in range(len(c['fs8_kbins']) - 1)]
@@ -2276,7 +2296,7 @@ def add_fisher_matrices(F1, F2, lbls1, lbls2, info=False, expand=False):
         not_found = [l for l in lbls2 if l not in lbls1]
         lbls = lbls1 + not_found
         Nnew = len(lbls)
-        if info: print "add_fisher_matrices: Expanded output matrix to include non-overlapping params:", not_found
+        if info: print("add_fisher_matrices: Expanded output matrix to include non-overlapping params:", not_found)
         
         # Construct expanded F1, with additional params at the end
         Fnew = np.zeros((Nnew, Nnew))
@@ -2294,9 +2314,9 @@ def add_fisher_matrices(F1, F2, lbls1, lbls2, info=False, expand=False):
             _i = lbls1.index(lbls2[ii])
             _j = lbls1.index(lbls2[jj])
             Fnew[_i,_j] += F2[ii,jj]
-            if info: print lbls1[_i], lbls2[ii], "//", lbls1[_j], lbls2[jj]
+            if info: print(lbls1[_i], lbls2[ii], "//", lbls1[_j], lbls2[jj])
       if (lbls2[ii] not in lbls1) and info:
-        print "add_fisher_matrices:", lbls2[ii], "not found in Fisher matrix."
+        print("add_fisher_matrices:", lbls2[ii], "not found in Fisher matrix.")
     
     # Return either new Fisher matrix, or new (expanded) matrix + new labels
     if expand:
@@ -2523,7 +2543,7 @@ def indices_for_param_names(paramnames, params, warn=True):
           idxs.append( paramnames.index(p) )
         else:
           # Parameter not found; throw a warning
-          if warn: print "\tindices_for_param_names(): %s not found in param list." % p
+          if warn: print("\tindices_for_param_names(): %s not found in param list." % p)
     return np.array(idxs)
 
 def load_param_names(fname):
@@ -2614,7 +2634,7 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     z = 0.5 * (zmax + zmin)
     
     # Load n(u) interpolation function, if needed
-    if ( expt['mode'][0] == 'i') and 'n(x)' in expt.keys(): # FIXME: Fails for combined
+    if ( expt['mode'][0] == 'i') and 'n(x)' in list(expt.keys()): # FIXME: Fails for combined
         expt['n(x)_file'] = expt['n(x)']
         expt['n(x)'] = load_interferom_file(expt['n(x)'])
     
@@ -2646,23 +2666,23 @@ def fisher( zmin, zmax, cosmo, expt, cosmo_fns, return_pk=False, kbins=None,
     sigma_kpar = (2.*np.pi) * expt['nu_line'] / (expt['dnu'] * c['rnu'])
     sigma_kperp =  np.sqrt(2.) * expt['Ddish'] * expt['nu_line'] \
                  / (c['r'] * D0 * (1.+c['z']))
-    print "-"*50
-    print "kmin\t  %s" % kmin
-    print "kmax\t  %s" % kmax
-    print "kfg \t  %3.3e" % kfg
-    print "skpar\t %6.3f" % sigma_kpar
-    print "skprp\t %6.3f" % sigma_kperp
-    print "lmin \t %4.1f" % (2.*np.pi / np.sqrt(expt['Sarea'])) # FIXME: Should be FOV for interferom.
-    print "lmax \t %4.1f" % (sigma_kperp * c['r'])
-    print "signl\t %4.4f" % (1./cosmo['sigma_nl'])
-    print "Vphys\t %4.1f Gpc^3" % (Vphys/1e9)
-    print "RSD fn\t %s" % RSD_FUNCTION
-    print "-"*50
+    print("-"*50)
+    print("kmin\t  %s" % kmin)
+    print("kmax\t  %s" % kmax)
+    print("kfg \t  %3.3e" % kfg)
+    print("skpar\t %6.3f" % sigma_kpar)
+    print("skprp\t %6.3f" % sigma_kperp)
+    print("lmin \t %4.1f" % (2.*np.pi / np.sqrt(expt['Sarea']))) # FIXME: Should be FOV for interferom.
+    print("lmax \t %4.1f" % (sigma_kperp * c['r']))
+    print("signl\t %4.4f" % (1./cosmo['sigma_nl']))
+    print("Vphys\t %4.1f Gpc^3" % (Vphys/1e9))
+    print("RSD fn\t %s" % RSD_FUNCTION)
+    print("-"*50)
     
     # Sanity check on P(k)
     if kmax > cosmo['k_in_max']:
-        print "\tWARNING: Input P(k) goes up to %3.2f Mpc^-1, but kmax is %3.2f Mpc^-1." \
-          % (cosmo['k_in_max'], kmax)
+        print("\tWARNING: Input P(k) goes up to %3.2f Mpc^-1, but kmax is %3.2f Mpc^-1." \
+          % (cosmo['k_in_max'], kmax))
     
     # Get derivative terms for Fisher matrix integrands, then perform the 
     # integrals and populate the matrix

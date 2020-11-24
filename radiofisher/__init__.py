@@ -1,10 +1,10 @@
 
-from baofisher import *
-from units import *
-import euclid
-import camb_wrapper
-import experiments
-import experiments_galaxy
-import fisher_galaxy as galaxy
-import mg_growth
-import read_config
+from .baofisher import *
+from .units import *
+from . import euclid
+from . import camb_wrapper
+from . import experiments
+from . import experiments_galaxy
+from . import fisher_galaxy as galaxy
+from . import mg_growth
+from . import read_config

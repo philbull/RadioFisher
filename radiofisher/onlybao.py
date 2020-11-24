@@ -5,11 +5,11 @@ Fisher forecasts for BAO-only, using a similar approach to the Seo & Eisenstein
 """
 import numpy as np
 import scipy.integrate
-import baofisher
+from . import baofisher
 import copy, sys
-from units import *
+from .units import *
 #from experiments import cosmo
-import experiments_galaxy
+from . import experiments_galaxy
 import pylab as P
 from mpi4py import MPI
 
@@ -194,7 +194,7 @@ def fisher_distance(zmin, zmax, fsky, nz, bz, kmin=1e-3, kmax=1.,
     # Calculate Vsurvey
     _z = np.linspace(zmin, zmax, 500)
     Vsur = 4.*np.pi*fsky * C * scipy.integrate.simps(r(_z)**2. / H(_z), _z)
-    print "\tSurvey volume: %3.2f Gpc^3" % (Vsur/1e9)
+    print("\tSurvey volume: %3.2f Gpc^3" % (Vsur/1e9))
     
     # Non-linear smoothing parameters (based on conversion to Planck cosmology 
     # of values on p4 of Seo & Eisenstein 2007)
@@ -202,11 +202,11 @@ def fisher_distance(zmin, zmax, fsky, nz, bz, kmin=1e-3, kmax=1.,
     sig_perp2 = (13. * D(zc))**2. # Mpc^2
     
     # Load power spectrum and decompose into BAO + smooth parts
-    print "\tLoading P(k) and extracting BAO part..."
+    print("\tLoading P(k) and extracting BAO part...")
     k_in, pk_in = np.genfromtxt(fname_pk).T
     ipk, ifk = baofisher.spline_pk_nobao(k_in, pk_in)
     idfbao_dk = baofisher.fbao_derivative(ifk, kgrid)
-    print "\t  Done."
+    print("\t  Done.")
     
     # Fiducial power spectrum
     pk_smooth = D(zc)**2. * ipk(K.flatten()).reshape(K.shape)
@@ -233,10 +233,10 @@ def fisher_distance(zmin, zmax, fsky, nz, bz, kmin=1e-3, kmax=1.,
     derivs = [deriv * sqrtVeff for deriv in derivs]
     
     # Integrate Fisher matrix
-    print "\tIntegrating Fisher matrix..."
+    print("\tIntegrating Fisher matrix...")
     F = baofisher.integrate_fisher_elements(derivs, kgrid, ugrid)
     F *= Vsur / (2.*np.pi)**2. # FIXME: Factor or 2 in denom. or not?
-    print "\t  Done."
+    print("\t  Done.")
     
     return F, lbls
 
@@ -254,7 +254,7 @@ elif int(sys.argv[1]) == 3:
     expt = experiments_galaxy.gCV_z4
     exptname = "gCVz4"
 else:
-    print "Need to specify experiment ID as cmdline argument."
+    print("Need to specify experiment ID as cmdline argument.")
     sys.exit(1)
 
 # Load survey parameters
@@ -269,19 +269,19 @@ bz = expt['b']
 F_list = None
 for i in range(len(zmin)):
     if i % size != myid: continue
-    print "-"*40
-    print "%s: Bin %d / %d on cpu %d" % (exptname, i, len(zmin), myid)
-    print "-"*40
+    print("-"*40)
+    print("%s: Bin %d / %d on cpu %d" % (exptname, i, len(zmin), myid))
+    print("-"*40)
 
     # Calculate distance Fisher matrix for a given redshift bin
     F, lbls = fisher_distance(zmin[i], zmax[i], fsky, nz[i], bz[i], 
                               kmax=0.2, fname_pk="cache_pk.dat")
 
     # Project distances to cosmo parameters
-    print "\tProjecting to cosmo params..."
+    print("\tProjecting to cosmo params...")
     zc = 0.5 * (zmin[i] + zmax[i])
     F, lbls = project_distances(zc, F, lbls, cosmo)
-    print "\t  Done."
+    print("\t  Done.")
     
     # Add Fisher matrix for this bin to list
     if F_list is None: F_list = np.zeros((len(zmin), F.shape[0], F.shape[1]))
@@ -289,7 +289,7 @@ for i in range(len(zmin)):
 comm.barrier()
 
 # Reduce list of Fisher matrices to all workers
-if myid == 0: print "Done Fisher calculation. Reducing..."
+if myid == 0: print("Done Fisher calculation. Reducing...")
 F_all = comm.allreduce(F_list, op=MPI.SUM)
 
 # Combine and save Fisher matrices
@@ -297,14 +297,14 @@ if myid == 0:
     zfns = ['aperp', 'apar', 'f', 'b']
     F, lbls = baofisher.combined_fisher_matrix( F_all, expand=zfns, 
                                                 names=lbls, exclude=[] )
-    print lbls
+    print(lbls)
     
     pmnu = lbls.index('Mnu')
-    print "Neutrino mass:", 1./np.sqrt(F[pmnu,pmnu])
+    print("Neutrino mass:", 1./np.sqrt(F[pmnu,pmnu]))
     
     # Save to file
     np.savetxt("fisher_bao_%s.dat" % exptname, F, header=", ".join(lbls))
-    print "Saved to fisher_bao_%s.dat" % exptname
+    print("Saved to fisher_bao_%s.dat" % exptname)
     
     # Show correlation matrix
     baofisher.plot_corrmat(F, lbls)

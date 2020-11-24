@@ -115,7 +115,7 @@ def growth_derivs(zc, k, cosmo, mg_params=['A_xi', 'logkmg'], dx=[1e-3, 1e-3],
     """
     # Sanity check
     for param in mg_params:
-        if param not in cosmo.keys():
+        if param not in list(cosmo.keys()):
             raise KeyError("MG parameter not found in 'cosmo' dictionary: %s" % param)
     
     # Evaluate fiducial point

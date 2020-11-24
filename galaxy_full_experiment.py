@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Calculate Fisher matrix and P(k) constraints for all redshift bins for a galaxy 
 redshift survey.
@@ -36,9 +36,11 @@ cosmo = experiments.cosmo
 #EXPT_LABEL = "_mg_Axi0.01_kmg0.01"
 ##EXPT_LABEL = "_mgphotoz"
 #EXPT_LABEL = "_mgscaledep"
-EXPT_LABEL = "_hiraxtest"
+#EXPT_LABEL = "_hiraxtest"
+#EXPT_LABEL = "_desicv"
+EXPT_LABEL = ""
 
-cosmo['A_xi'] = 0.01
+cosmo['A_xi'] = 0. #0.01
 cosmo['logkmg'] = np.log10(0.01)
 
 # A_xi: 0.01 0.1
@@ -75,6 +77,10 @@ expt_list = [
     ( 'gSPHEREx3',          e.SPHEREx3 ),           # 27
     ( 'gSPHEREx4',          e.SPHEREx4 ),           # 28
     ( 'gSPHEREx5',          e.SPHEREx5 ),           # 29
+    ( 'gDESI_CV',           e.DESI_CV ),            # 30
+    ( 'gCVLOWZ',            e.CVLOWZ ),             # 31
+    ( 'SpecTel',            e.SpecTel ),            # 32
+    ( 'gCVALLZ',            e.CVALLZ ),             # 33
 ]
 names, expts = zip(*expt_list)
 names = list(names); expts = list(expts)
@@ -85,9 +91,9 @@ if len(sys.argv) > 1:
 else:
     raise IndexError("Need to specify ID for experiment.")
 if myid == 0:
-    print "="*50
-    print "Survey:", names[k]
-    print "="*50
+    print("="*50)
+    print("Survey:", names[k])
+    print("="*50)
 names[k] += EXPT_LABEL
 expt = expts[k]
 survey_name = names[k]
@@ -198,7 +204,8 @@ for i in range(zmin.size):
     if i % size != myid:
       continue
     
-    print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
+    print(">>> %2d working on redshift bin %d / %d -- z = %3.3f" \
+          % (myid, i, zmin.size, zc[i]))
     
     # Calculate basic Fisher matrix
     # (A, bHI, Tb, sigma_NL, sigma8, n_s, f, aperp, apar, [Mnu], [fNL], [pk]*Nkbins)
@@ -243,4 +250,4 @@ comm.barrier()
 # Count total no. of galaxies
 Ngal_tot = np.zeros(size)
 comm.Reduce(Ngal, Ngal_tot, op=MPI.SUM, root=0)
-if myid == 0: print "Total no. of galaxies: %3.3e" % np.sum(Ngal_tot)
+if myid == 0: print("Total no. of galaxies: %3.3e" % np.sum(Ngal_tot))

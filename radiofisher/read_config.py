@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import numpy as np
-import ConfigParser
+import configparser
 import json
 
 def trim_comments(val):
@@ -58,7 +58,7 @@ def load_config(fname, debug=False):
     dictionary. (Set debug=True to see debugging output from parser.)
     """
     # Initialise ConfigParser and start processing
-    cfg = ConfigParser.ConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.read(fname)
     
     # Loop through sections and settings
@@ -67,6 +67,6 @@ def load_config(fname, debug=False):
         for opt in cfg.options(sect):
             val = parse( cfg.get(sect, opt) )
             settings[opt] = val
-            if debug: print "%15s: |%s| %s" % (opt, val, type(val))
+            if debug: print("%15s: |%s| %s" % (opt, val, type(val)))
     return settings
 

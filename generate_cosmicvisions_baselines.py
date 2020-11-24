@@ -9,13 +9,14 @@ import scipy.integrate
 import scipy.spatial
 
 # Array specification and reference frequency
-root = "CV32x32"
+root = "CV256x256"
 Ddish = 6.
 Dmin = 6.
-Nx = 32
-Ny = 32
-nu = 800. # MHz
+Nx = 128 # FIXME: 256x256 causes memory error
+Ny = 128
+nu = 400. # MHz
 l = 3e8 / (nu * 1e6) # Lambda [m]
+outfile = "array_config/nx_%s.dat" % root
 
 def antenna_positions():
     """
@@ -86,13 +87,14 @@ if __name__ == '__main__':
     
     # Calculate binned baseline density
     u, n_u = binned_baseline_dist(d)
+    #n_u *= 4.
     
     # Convert n(u) to freq.-independent expression, n(x) = n(u) * nu^2 
     # (nu in MHz), then save to file
     n_x = n_u * nu**2.
     x = u / nu
-    #np.savetxt(outfile, np.column_stack((x, n_x)))
-    #print "Saved to %s." % outfile
+    np.savetxt(outfile, np.column_stack((x, n_x)))
+    print "Saved to %s." % outfile
 
     # Plot histogram
     P.subplot(111)

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Calculate and plot the comoving volumes of some surveys.
 """
@@ -89,8 +89,23 @@ for i, s in enumerate(surveys):
                        xytext=(xx, 8.+yy), fontsize=13, fontweight='medium',
                        textcoords='offset points', ha='left', va='center' )
 
+# Label the shaded regions
+P.annotate("DE-dom.", xy=(0.06, (len(surveys) + 1.5)*HEIGHT), color='k',
+                       xytext=(0., 0.), fontsize=13, fontweight='bold',
+                       textcoords='offset points', ha='left', va='center' )
+P.annotate("Onset of DE", xy=(0.85, (len(surveys) + 1.5)*HEIGHT), color='k',
+                       xytext=(0., 0.), fontsize=13, fontweight='bold',
+                       textcoords='offset points', ha='left', va='center' )
+P.annotate("Matter-dom.", xy=(2.1, (len(surveys) + 1.5)*HEIGHT), color='k',
+                       xytext=(0., 0.), fontsize=13, fontweight='bold',
+                       textcoords='offset points', ha='left', va='center' )
+P.annotate("Fully matter-dom.", xy=(3.7, (len(surveys) + 1.5)*HEIGHT), color='k',
+                       xytext=(0., 0.), fontsize=13, fontweight='bold',
+                       textcoords='offset points', ha='left', va='center' )
+
+
 P.xlim((0.0, 5.5))
-P.ylim((-1, (len(surveys)+1)*HEIGHT))
+P.ylim((-1, (len(surveys)+3)*HEIGHT))
 #P.axvline(0., ls='dotted', lw=1.5, color='k')
 #P.axhline(0., ls='dotted', lw=1.5, color='k')
 #P.yscale('log')
@@ -106,5 +121,6 @@ P.gca().xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(0.5))
 
 P.gcf().set_size_inches(8., 6.8)
 P.tight_layout()
-P.savefig("survey_redshifts_upd.pdf")
+#P.savefig("survey_redshifts_upd.pdf")
+P.savefig("survey_redshifts_upd_labels.pdf")
 P.show()

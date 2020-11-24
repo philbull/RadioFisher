@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Calculate Fisher matrix and P(k) constraints for all redshift bins for a given 
 experiment.
@@ -24,26 +24,9 @@ e = experiments
 cosmo = experiments.cosmo
 
 # Label experiments with different settings
-#EXPT_LABEL = "_mg_Dz_kmg0.1" #"_mnu" #"_mg_Dz" "_baoonly" "_uls"
-#EXPT_LABEL = "_mgtest_fnl10" #"_mg_Dz_kmg0.01"
-
-#TTOT = 1e3
-#TTOT = 3e3
-#TTOT = 5e3
-#TTOT = 10e3
-#EXPT_LABEL = "_survparams_ttot"
-
-#EXPT_LABEL = "_paper"
-#EXPT_LABEL = "_rerun"
-#EXPT_LABEL = "_mgD"
-#EXPT_LABEL = "_mg"
-#EXPT_LABEL = "_mgD_scaledep"
-#EXPT_LABEL = "_mg_Axi0.01_kmg0.005"
-#EXPT_LABEL = "_nokfg_paper"
-#EXPT_LABEL = "_efg12_paper"
-
-KMAXVAL = 0.14
-EXPT_LABEL = "_hrx_opt"
+#EXPT_LABEL = "_2yr_3pbwedge"
+EXPT_LABEL = "_1bin_4000hr" #"_2yr"
+#EXPT_LABEL = "_2yr_horizwedge"
 
 #cosmo['A_xi'] = 0.01
 #cosmo['logkmg'] = np.log10(0.005)
@@ -135,6 +118,17 @@ expt_list = [
     ( 'iCVTEST1',         e.CVlimited_z0to3), # 80
     ( 'iCVTEST2',         e.CVlimited_z2to5), # 81
     ( 'iHIRAX',           e.HIRAX),         # 82
+    ( 'iCosVis32x32',     e.CosVis32x32),   # 83
+    ( 'iCosVis32x32_dmin10m', e.CosVis32x32_dmin10m), # 84
+    ( 'iCosVis256x256',   e.CosVis256x256),   # 85
+    ( 'MID_B1_RedBook',   e.MID_B1_RedBook), # 86
+    ( 'MID_B2_RedBook',   e.MID_B2_RedBook), # 87
+    ( 'MID_B1_SKAonly_RedBook', e.MID_B1_SKAonly_RedBook), # 88
+    ( 'MID_B1_MK_RedBook', e.MID_B1_MK_RedBook), # 89
+    ( 'MID_B2_MK_RedBook', e.MID_B2_MK_RedBook), # 90
+    ( 'iHIRAX_highz',      e.HIRAX_highz),  # 91
+    ( 'MeerKATL',      e.MeerKAT_Lband),    # 92
+    ( 'MeerKATUHF',        e.MeerKAT_UHF),  # 93
 ]
 names, expts = zip(*expt_list)
 names = list(names); expts = list(expts)
@@ -154,9 +148,9 @@ else:
 
 names[k] += EXPT_LABEL
 if myid == 0:
-    print "="*50
-    print "Survey:", names[k]
-    print "="*50
+    print("="*50)
+    print("Survey:", names[k])
+    print("="*50)
 
 # Tweak settings depending on chosen experiment
 cv_limited = False
@@ -180,23 +174,29 @@ else:
 
 # Define redshift bins
 expt_zbins = rf.overlapping_expts(expt)
-###zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.2)
-zs, zc =  rf.zbins_const_dnu(expt_zbins, cosmo, dnu=20.)
+zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.1)
+#zs, zc = rf.zbins_equal_spaced(expt_zbins, dz=0.25) # 0.2
+#zs, zc =  rf.zbins_const_dnu(expt_zbins, cosmo, dnu=20.)
 #zs, zc = rf.zbins_const_dr(expt_zbins, cosmo, bins=14)
 #zs, zc = rf.zbins_const_dnu(expt_zbins, cosmo, dnu=60.)
 #zs, zc = rf.zbins_const_dnu(expt_zbins, cosmo, dnu=30.)
 #zs = rf.zbins_fixed(expt_zbins, dz=0.1)
 
+# FIXME
+#print("FIXME! zbins set to manual")
+#zs = np.array([0.25, 0.48])
+#zc = 0.5*(zs[1:] + zs[:-1])
+
+
 # Define kbins (used for output)
-kbins = np.logspace(np.log10(0.001), np.log10(50.), 91)
+kbins = np.logspace(np.log10(0.001), np.log10(1.), 61)
 #cosmo['f0_kbins'] = np.array([1e-4, 1e-2, 1e-1, 1e1])
 
-# FIXME
-expt['epsilon_fg'] = 1e-6 #1e-14
-expt['ttot'] *= 8765. / 1e4 # 1 year
-#expt['ttot'] *= 1e10 / 1e4
-#expt['ttot'] = 3.1536e+13 # FIXME: Amadeus' value
-expt['k_nl0'] = 0.14 #KMAXVAL
+expt['epsilon_fg'] = 1e-14
+#expt['ttot'] *= 17520. / 1e4 #8765. / 1e4 # 2 calendar years on-sky
+expt['ttot'] *= 4000. / 1e4 #8765. / 1e4
+expt['k_nl0'] = 0.2 # = 0.3 h/Mpc
+expt['wedge'] = False #'horizon' #'3pb' #False
 
 # Neutrino mass
 cosmo['mnu'] = 0.
@@ -257,7 +257,8 @@ if myid == 0:
 # Precompute derivs for all processes
 eos_derivs = rf.eos_fisher_matrix_derivs(cosmo, cosmo_fns, fsigma8=True)
 
-# FIXME
+"""
+# Output all cosmo/instrumental parameters
 print "*"*50
 for key in cosmo.keys():
     print "%20s: %s" % (key, cosmo[key])
@@ -265,8 +266,7 @@ print "*"*50
 for key in expt.keys():
     print "%20s: %s" % (key, expt[key])
 print "*"*50
-#exit()
-
+"""
 
 ################################################################################
 # Loop through redshift bins, assigning them to each process
@@ -275,7 +275,8 @@ print "*"*50
 for i in range(zs.size-1):
     if i % size != myid:
       continue
-    print ">>> %2d working on redshift bin %2d -- z = %3.3f" % (myid, i, zc[i])
+    print(">>> %2d working on redshift bin %d / %d -- z = %3.3f" \
+          % (myid, i, zs.size, zc[i]))
     
     # Calculate effective experimental params. in the case of overlapping expts.
     Sarea_rad = Sarea*(D2RAD)**2. if Sarea is not None else None
@@ -324,4 +325,4 @@ for i in range(zs.size-1):
     np.savetxt(root+"-rebin-Vfac-%d.dat" % i, np.array([binning_info['Vfac'],]) )
 
 comm.barrier()
-if myid == 0: print "Finished."
+if myid == 0: print("Finished.")

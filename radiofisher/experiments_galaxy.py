@@ -15,24 +15,29 @@ def load_expt(expt):
     Process experiment dict to load fields from file.
     """
     # No action taken if 'fname' not specified (warn if loadable fields exist)
-    if 'fname' not in expt.keys():
+    if 'fname' not in list(expt.keys()):
         flagged_fields = False
-        for key in expt.keys():
+        for key in list(expt.keys()):
             if key[0] == '_': flagged_fields = True
         if flagged_fields:
-            print "\tload_expt(): No filename specified; couldn't load some fields."
+            print("\tload_expt(): No filename specified; couldn't load some fields.")
     else:
         # Load fields that need to be loaded
         dat = np.genfromtxt(expt['fname']).T
-        for key in expt.keys():
+        for key in list(expt.keys()):
             if key[0] == '_':
                 expt[key[1:]] = dat[expt[key]]
     
+    # Process bias
+    if 'nz' not in list(expt.keys()):
+        zc = 0.5 * (expt['zmin'] + expt['zmax'])
+        expt['nz'] = expt['n(z)'](zc)
+    
     # Rescale n(z) if requested
-    if 'rescale_nz' in expt.keys(): expt['nz'] *= expt['rescale_nz']
+    if 'rescale_nz' in list(expt.keys()): expt['nz'] *= expt['rescale_nz']
     
     # Process bias
-    if 'b' not in expt.keys():
+    if 'b' not in list(expt.keys()):
         zc = 0.5 * (expt['zmin'] + expt['zmax'])
         expt['b'] = expt['b(z)'](zc)
     return expt
@@ -461,3 +466,67 @@ SPHEREx5 = {
 }
 SPHEREx5.update(SURVEY)
 
+
+#########################
+# DESI
+#########################
+
+DESI_CV = {
+    'fsky':        sarea_to_fsky(14e3),
+    #'fname':       'nz_MID_MK_B2.dat',
+    #'_zmin':       1,
+    #'_zmax':       2,
+    #'_nz':         3,
+    #'_b':          4
+    'zmin':         np.arange(0.7, 1.6, 0.1),
+    'zmax':         np.arange(0.8, 1.7, 0.1),
+    'n(z)':         lambda z: 0.*z + 10., # FIXME: very high for CV limit
+    'b(z)':         lambda z: np.sqrt(1. + z),
+}
+DESI_CV.update(SURVEY)
+
+
+#########################
+# SpecTel
+#########################
+
+SpecTel = {
+    'fsky':        sarea_to_fsky(14e3),
+    'fname':       'nz_SpecTel.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    '_nz':         3,
+    '_b':          4,
+    'rescale_nz':  0.6727**3., # Ensures correct N_gal for Planck cosmology
+}
+SpecTel.update(SURVEY)
+
+
+
+#########################
+# Low-z CV
+#########################
+
+CVLOWZ = {
+    'fsky':         0.5,
+    'zmin':         np.arange(0.1, 1.4, 0.1),
+    'zmax':         np.arange(0.2, 1.5, 0.1),
+    'n(z)':         lambda z: 0.*z + 10.,
+    'b(z)':         lambda z: np.sqrt(1. + z),
+}
+CVLOWZ.update(SURVEY)
+
+
+#########################
+# All-z CV-limited
+#########################
+
+CVALLZ = {
+    'fsky':        sarea_to_fsky(14e3),
+    'fname':       'nz_cvlim_all.dat',
+    '_zmin':       1,
+    '_zmax':       2,
+    'n(z)':        lambda z: 0.*z + 10.,
+    'b(z)':        lambda z: np.sqrt(1. + z),
+}
+CVALLZ.update(SURVEY)

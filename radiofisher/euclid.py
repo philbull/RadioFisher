@@ -19,7 +19,7 @@ def add_planck_prior(F, lbls, info=False):
     """
     Add Planck prior to a given Fisher matrix.
     """
-    print "WARNING: add_planck_prior() is obsolete."
+    print("WARNING: add_planck_prior() is obsolete.")
     #lbls_planck = ['omegak', 'omegaDE', 'w0', 'wa']
     lbls_planck = ['w0', 'wa', 'omegaDE', 'omegak', 'w_m', 'w_b', 'n_s']
     
@@ -31,9 +31,9 @@ def add_planck_prior(F, lbls, info=False):
             _i = lbls.index(lbls_planck[ii])
             _j = lbls.index(lbls_planck[jj])
             Fpl[_i,_j] += planck_prior_full[ii,jj]
-            if info: print lbls[_i], lbls_planck[ii], "//", lbls[_j], lbls_planck[jj]
+            if info: print(lbls[_i], lbls_planck[ii], "//", lbls[_j], lbls_planck[jj])
       if lbls_planck[ii] not in lbls:
-        if info: print "Planck prior:", lbls_planck[ii], "not found in Fisher matrix."
+        if info: print("Planck prior:", lbls_planck[ii], "not found in Fisher matrix.")
     return Fpl
 
 def add_detf_planck_prior(F, lbls, info=False):
@@ -46,7 +46,7 @@ def add_detf_planck_prior(F, lbls, info=False):
                    'h', 'w0', 'wa', 'logA_S']
     
     # FIXME: Should add nuisance parameters to Fisher matrix.
-    print "FIXME: add_detf_planck_prior() should add nuisance parameters too."
+    print("FIXME: add_detf_planck_prior() should add nuisance parameters too.")
     
     # Add prior
     Fpl = F.copy()
@@ -57,9 +57,9 @@ def add_detf_planck_prior(F, lbls, info=False):
             _i = lbls.index(lbls_planck[ii])
             _j = lbls.index(lbls_planck[jj])
             Fpl[_i,_j] += F_planck[ii,jj]
-            if info: print lbls[_i], lbls_planck[ii], "//", lbls[_j], lbls_planck[jj]
+            if info: print(lbls[_i], lbls_planck[ii], "//", lbls[_j], lbls_planck[jj])
       if lbls_planck[ii] not in lbls:
-        if info: print "Planck prior:", lbls_planck[ii], "not found in Fisher matrix."
+        if info: print("Planck prior:", lbls_planck[ii], "not found in Fisher matrix.")
     return Fpl
 
 def euclid_to_rf(F, cosmo):

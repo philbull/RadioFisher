@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.interpolate
-from units import *
+from .units import *
 
 # Define fiducial cosmology and parameters
 # Planck-only best-fit parameters, from Table 2 of Planck 2013 XVI.
@@ -1178,6 +1178,19 @@ HIRAX = {
 }
 HIRAX.update(SURVEY)
 
+HIRAX_highz = {
+    'mode':          'interferom', # Interferometer or single dish
+    'Ndish':         1024,         # No. of dishes
+    'Nbeam':         1,            # No. of beams (for multi-pixel detectors)
+    'Ddish':         6.,           # Single dish diameter [m]
+    'Tinst':         50.*(1e3),    # System temp. [mK]
+    'survey_dnutot': 275.,
+    'survey_numax':  475.,
+    'dnu':           0.4,          # Bandwidth of single channel [MHz]
+    'Sarea':         2.*np.pi,     # Total survey area [radians^2]
+    'n(x)':          "array_config/hirax_Ndish1024_baseline1.dat",
+}
+HIRAX_highz.update(SURVEY)
 
 
 CVlimited_z0to3 = {
@@ -1211,3 +1224,164 @@ CVlimited_z2to5 = {
 }
 CVlimited_z2to5.update(SURVEY)
 
+
+CosVis32x32 = {
+    'mode':          'interferom', # Interferometer or single dish
+    'Ndish':         32*32,         # No. of dishes
+    'Nbeam':         1,            # No. of beams (for multi-pixel detectors)
+    'Ddish':         6.,           # Single dish diameter [m]
+    'Tinst':         50.*(1e3),    # System temp. [mK]
+    'survey_dnutot': 275.,
+    'survey_numax':  475.,
+    'dnu':           0.3,          # Bandwidth of single channel [MHz]
+    'Sarea':         2.*np.pi,     # Total survey area [radians^2]
+    'n(x)':          "array_config/nx_CV32x32.dat",
+}
+CosVis32x32.update(SURVEY)
+
+CosVis32x32_dmin10m = {
+    'mode':          'interferom', # Interferometer or single dish
+    'Ndish':         32*32,         # No. of dishes
+    'Nbeam':         1,            # No. of beams (for multi-pixel detectors)
+    'Ddish':         6.,           # Single dish diameter [m]
+    'Tinst':         50.*(1e3),    # System temp. [mK]
+    'survey_dnutot': 275.,
+    'survey_numax':  475.,
+    'dnu':           0.3,          # Bandwidth of single channel [MHz]
+    'Sarea':         2.*np.pi,     # Total survey area [radians^2]
+    'n(x)':          "array_config/nx_CV32x32_dmin10m.dat",
+}
+CosVis32x32_dmin10m.update(SURVEY)
+
+CosVis256x256 = {
+    'mode':          'interferom', # Interferometer or single dish
+    'Ndish':         256*256,      # No. of dishes
+    'Nbeam':         1,            # No. of beams (for multi-pixel detectors)
+    'Ddish':         6.,           # Single dish diameter [m]
+    'Tinst':         50.*(1e3),    # System temp. [mK]
+    'survey_dnutot': 275.,
+    'survey_numax':  475.,
+    'dnu':           0.3,          # Bandwidth of single channel [MHz]
+    'Sarea':         2.*np.pi,     # Total survey area [radians^2]
+    'n(x)':          "array_config/nx_CV256x256.dat",
+}
+CosVis256x256.update(SURVEY)
+
+
+MID_B1_RedBook = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            197,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            14.5,              # Single dish diameter [m]
+    'Tinst':            24.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    435.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1015.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            20e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30.dat" # Interferometer antenna density
+    }
+MID_B1_RedBook.update(SURVEY)
+
+
+MID_B2_RedBook = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            197,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            14.5,              # Single dish diameter [m]
+    'Tinst':            17.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    450.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1400.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30.dat" # Interferometer antenna density
+    }
+MID_B2_RedBook.update(SURVEY)
+
+MID_B1_SKAonly_RedBook = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            133,               # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,              # Single dish diameter [m]
+    'Tinst':            24.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1050.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            20e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'n(x)': "array_config/nx_SKAMREF2_dec30.dat" # Interferometer antenna density
+    }
+MID_B1_SKAonly_RedBook.update(SURVEY)
+
+MID_B1_MK_RedBook = {
+    'mode':             'hybrid',          # Interferometer or single dish
+    'Ndish':            133,               # No. of dishes (MID dishes)
+    'Ndish2':           64,                # No. of dishes (MeerKAT dishes)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Ddish2':           13.5,              # Single dish diameter (2) [m]
+    'effic':            1.00,              # Aperture efficiency
+    'effic2':           1.00,              # Aperture efficiency
+    'Tinst':            24.*(1e3),        # System temp. [mK]
+    'Tinst2':           30.*(1e3),         # System temp. (2) [mK]
+    'survey_dnutot':    700.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1050.,             # Max. freq. of *entire* survey
+    'array_numax1':     1050.,             # Max. freq. of survey 1
+    'array_numax2':     1015.,             # Max. freq. of survey 2
+    'array_dnutot1':    700.,              # Total bandwidth of array 1 [MHz]
+    'array_dnutot2':    435.,              # Total bandwidth of array 2 [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            20e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    #'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
+    }
+MID_B1_MK_RedBook.update(SURVEY)
+
+MID_B2_MK_RedBook = {
+    'mode':             'hybrid',          # Interferometer or single dish
+    'Ndish':            133,               # No. of dishes (MID dishes)
+    'Ndish2':           64,                # No. of dishes (MeerKAT dishes)
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            15.,               # Single dish diameter [m]
+    'Ddish2':           13.5,              # Single dish diameter (2) [m]
+    'effic':            1.00,              # Aperture efficiency
+    'effic2':           1.00,              # Aperture efficiency
+    'Tinst':            13.5*(1e3),         # System temp. [mK]
+    'Tinst2':           22.*(1e3),         # System temp. (2) [mK]
+    'survey_dnutot':    450.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1400.,             # Max. freq. of *entire* survey
+    'array_numax1':     1400.,             # Max. freq. of survey 1
+    'array_numax2':     1400.,             # Max. freq. of survey 2
+    'array_dnutot1':    450.,              # Total bandwidth of array 1 [MHz]
+    'array_dnutot2':    450.,              # Total bandwidth of array 2 [MHz]
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    #'n(x)': "array_config/nx_SKAMREF2_dec30_200.dat" # Interferometer antenna density
+    }
+MID_B2_MK_RedBook.update(SURVEY)
+
+
+MeerKAT_UHF = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            64,                # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            13.5,              # Single dish diameter [m]
+    'Tinst':            26.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    435.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1015.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.,  # Total survey area [radians^2]
+    'n(x)': "array_config/nx_MKREF2_dec30.dat" # Interferometer antenna density
+    }
+MeerKAT_UHF.update(SURVEY)
+
+MeerKAT_Lband = {
+    'mode':             'dish',            # Interferometer or single dish
+    'Ndish':            64,                # No. of dishes
+    'Nbeam':            1,                 # No. of beams (for multi-pixel detectors)
+    'Ddish':            13.5,              # Single dish diameter [m]
+    'Tinst':            21.*(1e3),         # System temp. [mK]
+    'survey_dnutot':    520.,              # Total bandwidth of *entire* survey [MHz]
+    'survey_numax':     1420.,             # Max. freq. of survey
+    'dnu':              0.1,               # Bandwidth of single channel [MHz]
+    'Sarea':            5e3*(D2RAD)**2.,   # Total survey area [radians^2]
+    'n(x)': "array_config/nx_MKREF2_dec30.dat" # Interferometer antenna density
+    }
+MeerKAT_Lband.update(SURVEY)

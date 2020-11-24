@@ -2,24 +2,20 @@
 """
 Process EOS Fisher matrices and plot P(k).
 """
-
 import numpy as np
 import pylab as P
 from rfwrapper import rf
 import matplotlib.patches
 import matplotlib.cm
-from units import *
-from mpi4py import MPI
-
-import os
-import euclid
 
 cosmo = rf.experiments.cosmo
 
-names = ["gSKA2", ]
+#names = ["gSKA2", ]
+names = ["iCosVis32x32_cvlim_wedge", ] #"iCosVis32x32_cvlim_wedge"]
 #colours = ['#CC0000', '#ED5F21', '#FAE300', '#5B9C0A', '#1619A1', '#56129F', '#990A9C']
 colours = ['#CC0000', '#1619A1', '#5B9C0A', '#990A9C'] # DETF/F/M/S
-labels = ['Full SKA (galaxy survey)', ]
+#labels = ['Full SKA (galaxy survey)', ]
+labels = ['CV-lim. 32x32 wedge', 'CV-lim. 32x32 wedge',]
 
 # Get f_bao(k) function
 cosmo_fns = rf.background_evolution_splines(cosmo)
@@ -59,11 +55,14 @@ for k in range(len(names)):
     # Plot errorbars
     yup, ydn = rf.fix_log_plot(pk, cov)
     
+    print names[k]
+    print colours[k]
+    
     # Fix for PDF
     yup[np.where(yup > 1e1)] = 1e1
     ydn[np.where(ydn > 1e1)] = 1e1
     axes[k].errorbar( kc, fbao(kc), yerr=[ydn, yup], color=colours[k], ls='none', 
-                      lw=1.8, capthick=1.8, label=names[k], ms='.' )
+                      lw=1.8, capthick=1.8, label=names[k], marker='.' )
 
     # Plot f_bao(k)
     kk = np.logspace(-3., 1., 2000)
@@ -107,5 +106,5 @@ P.tight_layout()
 # Set size
 #P.gcf().set_size_inches(8.5,12.)
 P.gcf().set_size_inches(8.4, 6.8)
-P.savefig('ska-fbao-ska2.pdf', transparent=True)
+#P.savefig('ska-fbao-ska2.pdf', transparent=True)
 P.show()

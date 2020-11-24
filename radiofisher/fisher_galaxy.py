@@ -6,8 +6,8 @@ from the Euclid cosmology white paper (arXiv:1206.1225; see Sect. 1.7.3).
 import numpy as np
 import pylab as P
 import scipy.integrate
-import baofisher as rf
-from units import *
+from . import baofisher as rf
+from .units import *
 import copy
 
 RSD_FUNCTION = 'not kaiser'
@@ -35,7 +35,7 @@ def Csignal_galaxy(q, y, cosmo, expt):
         Frsd = (c['bgal'] + c['f']*u2)**2. * np.exp(-0.5 * k**2. * sigma_nl2_eff)
     
     # Photometric redshift error (see e.g. Zhan & Knox 2006)
-    if 'sigma_z0' in expt.keys():
+    if 'sigma_z0' in list(expt.keys()):
         sigma_z = expt['sigma_z0'] * c['rnu'] / (1. + c['z']) # r_nu = C (1+z)^2 / H
         #Fphot = np.exp(-(sigma_z * kperp)**2.)
         Fphot = np.exp(-(sigma_z * kpar)**2.)
@@ -89,16 +89,16 @@ def fisher_galaxy_survey( zmin, zmax, ngal, bias, cosmo, expt, cosmo_fns,
     _z = np.linspace(zmin, zmax, 1000)
     Vsurvey = C * scipy.integrate.simps(rr(_z)**2. / HH(_z), _z)
     Vsurvey *= 4. * np.pi * expt['fsky']
-    print "\tSurvey volume: %3.2f Gpc^3" % (Vsurvey/1e9)
+    print("\tSurvey volume: %3.2f Gpc^3" % (Vsurvey/1e9))
     
     # Define kmin, kmax
     kmin = 2.*np.pi / Vsurvey**(1./3.)
     # Eq. 20 of Smith et al. 2003 (arXiv:astro-ph/0207664v2)
     kmax = expt['k_nl0'] * (1.+z)**(2./(2. + cosmo['ns']))
     
-    print "\t   z = %3.2f" % z
-    print "\tkmin = %4.4f Mpc^-1" % kmin
-    print "\tkmax = %4.4f Mpc^-1" % kmax
+    print("\t   z = %3.2f" % z)
+    print("\tkmin = %4.4f Mpc^-1" % kmin)
+    print("\tkmax = %4.4f Mpc^-1" % kmax)
     
     # Set-up integration sample points in (k, u)-space (FIXME: Limits)
     ugrid = np.linspace(-1., 1., rf.NSAMP_U) # N.B. Order of integ. limits is correct

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Plot functions of redshift for RSDs.
 """
@@ -42,8 +42,8 @@ ms = [5., 5., 5., 6., 6., 6., 6., 6., 5., 5., 6., 6., 5., 5., 5., 5.]
 
 # FIXME
 
-names = ['iCVTEST1_hiraxtest', 'iCVTEST1_hiraxtest_kmaxcut', 'iCVTEST2_hiraxtest', 'gCV_hiraxtest']
-labels = ['HIRAX CV-lim 0 < z < 3', 'HIRAX CV-lim 0 < z < 3 kmax', 'HIRAX CV-lim 2 < z < 5', 'Galaxies CV-lim 0 < z < 3']
+#names = ['iCVTEST1_hiraxtest', 'iCVTEST1_hiraxtest_kmaxcut', 'iCVTEST2_hiraxtest', 'gCV_hiraxtest']
+#labels = ['HIRAX CV-lim 0 < z < 3', 'HIRAX CV-lim 0 < z < 3 kmax', 'HIRAX CV-lim 2 < z < 5', 'Galaxies CV-lim 0 < z < 3']
 
 # Fiducial value and plotting
 P.subplot(111)
@@ -58,7 +58,7 @@ P.axvline(3.5, ls='dashed', color='k', lw=1.5, alpha=0.3)
 
 for k in range(len(names)):
     root = "output/" + names[k]
-    print root
+    print(root)
     # Load cosmo fns.
     dat = np.atleast_2d( np.genfromtxt(root+"-cosmofns-zc.dat") ).T
     zc, Hc, dAc, Dc, fc = dat
@@ -88,11 +88,11 @@ for k in range(len(names)):
     F, lbls = rf.combined_fisher_matrix( F_list,
                                          expand=zfns, names=pnames,
                                          exclude=excl )
-    print lbls
+    print(lbls)
     
     # FIXME
     F[0,0] += 1e-2
-    print F[0,:]
+    print(F[0,:])
     
     cov = np.linalg.inv(F)
     errs = np.sqrt(np.diag(cov))

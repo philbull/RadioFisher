@@ -11,7 +11,7 @@ def rfimport():
     
     # Change directory if 
     if "/plotting" in os.getcwd():
-        print "rfwrapper: Changed working directory to %s" % parentdir
+        print("rfwrapper: Changed working directory to %s" % parentdir)
         os.chdir(parentdir)
 
 if __name__ == 'rfwrapper':

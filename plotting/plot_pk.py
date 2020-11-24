@@ -13,7 +13,8 @@ import scipy.interpolate
 
 C = 3e5
 cosmo = rf.experiments.cosmo
-names = ["SKA1MID350_nokfg_paper",]
+#names = ["SKA1MID350_nokfg_paper",]
+names = ["iCosVis32x32_cvlim",]
 colours = ['#1619A1', '#CC0000', '#5B9C0A', '#990A9C']
 
 # Get f_bao(k) function
@@ -47,6 +48,7 @@ for k in range(len(names)):
     F, lbls = rf.combined_fisher_matrix( F_list, expand=zfns, names=pnames,
                                          exclude=excl )
     
+    print lbls
     # Just do the simplest thing for P(k) and get 1/sqrt(F)
     cov = [np.sqrt(1. / np.diag(F)[lbls.index(lbl)]) for lbl in lbls if "pk" in lbl]
     cov = np.array(cov)
@@ -59,7 +61,7 @@ for k in range(len(names)):
     #yup[np.where(yup > 1e1)] = 1e1
     #ydn[np.where(ydn > 1e1)] = 1e1
     ax.errorbar( kc, pk, yerr=[ydn, yup], color=colours[k], ls='none', 
-                      lw=1.8, capthick=1.8, label=names[k], ms='.' )
+                      lw=1.8, capthick=1.8, label=names[k], marker='.' )
 
 # Plot fiducial power spectrum, P(k)
 kk = np.logspace(-4., 0., 1000)
@@ -99,5 +101,5 @@ ax.set_ylabel(r"$\mathrm{P}(k) \,[\mathrm{Mpc}^{3}]$", fontdict={'fontsize':'xx-
 # Set size
 P.tight_layout()
 #P.gcf().set_size_inches(8.,6.)
-P.savefig('fig29-pk-lowk.pdf', transparent=True)
+#P.savefig('fig29-pk-lowk.pdf', transparent=True)
 P.show()

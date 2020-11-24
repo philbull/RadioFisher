@@ -262,147 +262,149 @@ def background_evolution_splines(cosmo, zmax=10., nsamples=500):
     return H, r, D, f
 
 
-# Extrapolate fitting functions to high flux rms
-c1 = extend_with_linear_interp(SBIG, Srms, c1)
-c2 = np.concatenate((c2, [1.,])) # Asymptote to linear fn. of redshift
-c3 = extend_with_linear_interp(SBIG, Srms, c3)
-Srms = np.concatenate((Srms, [SBIG,]))
-
-# Construct grid of dn/dz (deg^-2) as a function of flux rms and redshift and 
-# then construct 2D interpolator
-z = np.linspace(0., 4., 400)
-nu = NU_LINE / (1. + z)
-_dndz = np.array([10.**c1[j] * z**c2[j] * np.exp(-c3[j]*z) for j in range(Srms.size)])
-_bias = np.array([c4[j] * np.exp(c5[j]*z) for j in range(Srms.size)])
-dndz = scipy.interpolate.RectBivariateSpline(Srms, z, _dndz, kx=1, ky=1)
-bias = scipy.interpolate.RectBivariateSpline(Srms, z, _bias, kx=1, ky=1)
-
-# Construct dndz(z) interpolation fn. for the sensitivity of actual experiment
-fsky = Sarea / FULLSKY
-nu = 1420. / (1. + z)
-
-# Calculate flux
-Sz = (Nsig/10.) * fluxrms_combined(nu, expt1, expt2, Sarea, ttot, dnu)
-#Sref = fluxrms(1000., Tinst, Ddish, Ndish, Sarea, ttot, dnu, effic)
-#print "Srms = %3.1f uJy [%d sigma]" % (Sref, Nsig)
-
-dndz_expt = scipy.interpolate.interp1d(z, dndz.ev(Sz, z))
-bias_expt = scipy.interpolate.interp1d(z, bias.ev(Sz, z))
-
-# Fit function to dn/dz [deg^-2]
-_z = np.linspace(1e-7, 1., 1e4)
-dndz_vals = dndz_expt(_z)
-bias_vals = bias_expt(_z)
-p0 = [100.*np.max(dndz_vals), 2., 10.]
-def lsq(params):
-    A, c2, c3 = params
-    model = A * _z**c2 * np.exp(-c3*_z)
-    return model - dndz_vals
-p = scipy.optimize.leastsq(lsq, p0)[0]
-
-# Fit function to bias
-p0 = [np.max(bias_vals), 0.5]
-def lsq(params):
-    c4, c5 = params
-    model = c4 * np.exp(c5*_z)
-    w = np.sqrt(dndz_vals) # Weight fit by sqrt(dn/dz)
-    return (model - bias_vals) * w
-pb = scipy.optimize.leastsq(lsq, p0)[0]
-
-
-# Print best-fit coefficients
-print "-"*50
-print "%s (%d deg^2) [%s-sigma]" % (name, Sarea, Nsig)
-print "-"*50
-print "Fitting coeffs."
-print "c1: %6.4f" % np.log10(p[0])
-print "c2: %6.4f" % p[1]
-print "c3: %6.4f" % p[2]
-print "c4: %6.4f" % pb[0]
-print "c5: %6.4f" % pb[1]
-
-print " & ".join(["%6.4f" % n for n in [np.log10(p[0]), p[1], p[2], pb[0], pb[1]]])
-
-
-# Calculate cosmo. functions
-cosmo_fns = background_evolution_splines(cosmo)
-H, r, D, f = cosmo_fns
-
-# Calculate binned number densities
-zbins = redshift_bins(dz=DZBINS)
-zc = np.array([0.5*(zbins[i] + zbins[i+1]) for i in range(zbins.size-1)])
-nz, vol, b = np.array( [n_bin(zbins[i], zbins[i+1], dndz_expt, bias_expt) 
-                        for i in range(zbins.size-1)] ).T
-vol *= fsky
-
-# Find z_max
-zz = np.linspace(0., 3., 1500)
-zzc = 0.5 * (zz[:-1] + zz[1:])
-_nz, _vol, _b = np.array( [n_bin(zz[i], zz[i+1], dndz_expt, bias_expt) 
-                        for i in range(zz.size-1)] ).T
-#print "z_min = %3.3f" % zz[np.argmin(np.abs(_nz - 5e-4))]
-print name
-
-# Load P(k) and get 1/(b^2 P(k_NL))
-k, pk = np.genfromtxt("cache_pk.dat").T
-knl = 0.14 * (1. + zzc)**(2./(2. + cosmo['ns']))
-kref = knl #0.1
-pk02 = scipy.interpolate.interp1d(k, pk, kind='linear')(0.5*kref)
-pkinv = 1./ ( pk02 * (D(zzc) * _b)**2. )
-
-print "z_max = %3.3f" % zzc[np.argmin(np.abs(_nz - pkinv))]
-
-# Output survey info
-print "-"*30
-print "zc    zmin  zmax   n Mpc^-3    bias    vol.   Ngal         Srms"
-for i in range(zc.size):
-    #Szz = fluxrms[ID] * Scorr[ID]
-    #Szz = NU_LINE/(1.+zc[i]) * Szz if not Sconst[ID] else Szz
-    nu_c = np.atleast_1d( 1420. / (1. + zc[i]) )
-    #Szz = (Nsig/10.) * fluxrms(nu_c, Tinst, Ddish, Ndish, Sarea, ttot, dnu, effic)
-    Szz = (Nsig/10.) * fluxrms_combined(nu_c, expt1, expt2, Sarea, ttot, dnu) # 5 sigma
+if __name__ == '__main__':
     
-    print "%2.2f  %2.2f  %2.2f   %3.3e  %6.3f  %5.2f   %5.3e   %6.2f" % \
-    (zc[i], zbins[i], zbins[i+1], nz[i], b[i], vol[i]/1e9, nz[i]*vol[i], Szz),
-    if (nz[i]*vol[i]) < NGAL_MIN: print "*",
-    if Szz > Smax: print "#",
+    # Extrapolate fitting functions to high flux rms
+    c1 = extend_with_linear_interp(SBIG, Srms, c1)
+    c2 = np.concatenate((c2, [1.,])) # Asymptote to linear fn. of redshift
+    c3 = extend_with_linear_interp(SBIG, Srms, c3)
+    Srms = np.concatenate((Srms, [SBIG,]))
+
+    # Construct grid of dn/dz (deg^-2) as a function of flux rms and redshift and 
+    # then construct 2D interpolator
+    z = np.linspace(0., 4., 400)
+    nu = NU_LINE / (1. + z)
+    _dndz = np.array([10.**c1[j] * z**c2[j] * np.exp(-c3[j]*z) for j in range(Srms.size)])
+    _bias = np.array([c4[j] * np.exp(c5[j]*z) for j in range(Srms.size)])
+    dndz = scipy.interpolate.RectBivariateSpline(Srms, z, _dndz, kx=1, ky=1)
+    bias = scipy.interpolate.RectBivariateSpline(Srms, z, _bias, kx=1, ky=1)
+
+    # Construct dndz(z) interpolation fn. for the sensitivity of actual experiment
+    fsky = Sarea / FULLSKY
+    nu = 1420. / (1. + z)
+
+    # Calculate flux
+    Sz = (Nsig/10.) * fluxrms_combined(nu, expt1, expt2, Sarea, ttot, dnu)
+    #Sref = fluxrms(1000., Tinst, Ddish, Ndish, Sarea, ttot, dnu, effic)
+    #print "Srms = %3.1f uJy [%d sigma]" % (Sref, Nsig)
+
+    dndz_expt = scipy.interpolate.interp1d(z, dndz.ev(Sz, z))
+    bias_expt = scipy.interpolate.interp1d(z, bias.ev(Sz, z))
+
+    # Fit function to dn/dz [deg^-2]
+    _z = np.linspace(1e-7, 1., 1e4)
+    dndz_vals = dndz_expt(_z)
+    bias_vals = bias_expt(_z)
+    p0 = [100.*np.max(dndz_vals), 2., 10.]
+    def lsq(params):
+        A, c2, c3 = params
+        model = A * _z**c2 * np.exp(-c3*_z)
+        return model - dndz_vals
+    p = scipy.optimize.leastsq(lsq, p0)[0]
+
+    # Fit function to bias
+    p0 = [np.max(bias_vals), 0.5]
+    def lsq(params):
+        c4, c5 = params
+        model = c4 * np.exp(c5*_z)
+        w = np.sqrt(dndz_vals) # Weight fit by sqrt(dn/dz)
+        return (model - bias_vals) * w
+    pb = scipy.optimize.leastsq(lsq, p0)[0]
+
+
+    # Print best-fit coefficients
+    print "-"*50
+    print "%s (%d deg^2) [%s-sigma]" % (name, Sarea, Nsig)
+    print "-"*50
+    print "Fitting coeffs."
+    print "c1: %6.4f" % np.log10(p[0])
+    print "c2: %6.4f" % p[1]
+    print "c3: %6.4f" % p[2]
+    print "c4: %6.4f" % pb[0]
+    print "c5: %6.4f" % pb[1]
+
+    print " & ".join(["%6.4f" % n for n in [np.log10(p[0]), p[1], p[2], pb[0], pb[1]]])
+
+
+    # Calculate cosmo. functions
+    cosmo_fns = background_evolution_splines(cosmo)
+    H, r, D, f = cosmo_fns
+
+    # Calculate binned number densities
+    zbins = redshift_bins(dz=DZBINS)
+    zc = np.array([0.5*(zbins[i] + zbins[i+1]) for i in range(zbins.size-1)])
+    nz, vol, b = np.array( [n_bin(zbins[i], zbins[i+1], dndz_expt, bias_expt) 
+                            for i in range(zbins.size-1)] ).T
+    vol *= fsky
+
+    # Find z_max
+    zz = np.linspace(0., 3., 1500)
+    zzc = 0.5 * (zz[:-1] + zz[1:])
+    _nz, _vol, _b = np.array( [n_bin(zz[i], zz[i+1], dndz_expt, bias_expt) 
+                            for i in range(zz.size-1)] ).T
+    #print "z_min = %3.3f" % zz[np.argmin(np.abs(_nz - 5e-4))]
+    print name
+
+    # Load P(k) and get 1/(b^2 P(k_NL))
+    k, pk = np.genfromtxt("cache_pk.dat").T
+    knl = 0.14 * (1. + zzc)**(2./(2. + cosmo['ns']))
+    kref = knl #0.1
+    pk02 = scipy.interpolate.interp1d(k, pk, kind='linear')(0.5*kref)
+    pkinv = 1./ ( pk02 * (D(zzc) * _b)**2. )
+
+    print "z_max = %3.3f" % zzc[np.argmin(np.abs(_nz - pkinv))]
+
+    # Output survey info
+    print "-"*30
+    print "zc    zmin  zmax   n Mpc^-3    bias    vol.   Ngal         Srms"
+    for i in range(zc.size):
+        #Szz = fluxrms[ID] * Scorr[ID]
+        #Szz = NU_LINE/(1.+zc[i]) * Szz if not Sconst[ID] else Szz
+        nu_c = np.atleast_1d( 1420. / (1. + zc[i]) )
+        #Szz = (Nsig/10.) * fluxrms(nu_c, Tinst, Ddish, Ndish, Sarea, ttot, dnu, effic)
+        Szz = (Nsig/10.) * fluxrms_combined(nu_c, expt1, expt2, Sarea, ttot, dnu) # 5 sigma
+        
+        print "%2.2f  %2.2f  %2.2f   %3.3e  %6.3f  %5.2f   %5.3e   %6.2f" % \
+        (zc[i], zbins[i], zbins[i+1], nz[i], b[i], vol[i]/1e9, nz[i]*vol[i], Szz),
+        if (nz[i]*vol[i]) < NGAL_MIN: print "*",
+        if Szz > Smax: print "#",
+        print ""
+        
+    print "-"*30
+    print "Ntot: %3.3e" % np.sum(nz * vol)
+    print "fsky: %3.3f" % fsky
+    _zmin = (NU_LINE*1e3 / numax - 1.)
+    print "zmin: %3.3f" % (_zmin if _zmin >= 0. else 0.)
+    print "zmax: %3.3f" % (NU_LINE*1e3 / numin - 1.)
+    #print "Srms const: %s" % Sconst[ID]
+    print "-"*30
     print ""
-    
-print "-"*30
-print "Ntot: %3.3e" % np.sum(nz * vol)
-print "fsky: %3.3f" % fsky
-_zmin = (NU_LINE*1e3 / numax - 1.)
-print "zmin: %3.3f" % (_zmin if _zmin >= 0. else 0.)
-print "zmax: %3.3f" % (NU_LINE*1e3 / numin - 1.)
-#print "Srms const: %s" % Sconst[ID]
-print "-"*30
-print ""
 
-# Output fitting function coeffs as a fn. of survey area
-print "%10s %d %6.4f %6.4f %6.4f %6.4f %6.4f %3.3e" % (name, Sarea, np.log10(p[0]), p[1], p[2], pb[0], pb[1], np.sum(nz * vol))
+    # Output fitting function coeffs as a fn. of survey area
+    print "%10s %d %6.4f %6.4f %6.4f %6.4f %6.4f %3.3e" % (name, Sarea, np.log10(p[0]), p[1], p[2], pb[0], pb[1], np.sum(nz * vol))
 
 
-# Plot dn/dz in arcmin^-2
-P.subplot(111)
-P.plot(_z, dndz_expt(_z) / 60.**2., 'b-', lw=1.8)
+    # Plot dn/dz in arcmin^-2
+    P.subplot(111)
+    P.plot(_z, dndz_expt(_z) / 60.**2., 'b-', lw=1.8)
 
-P.tick_params(axis='both', which='major', labelsize=18, size=8., width=1.5, pad=5.)
+    P.tick_params(axis='both', which='major', labelsize=18, size=8., width=1.5, pad=5.)
 
-P.ylabel(r"$N(z)$ $[{\rm amin}^{-2}]$", fontsize=18.)
-P.xlabel("$z$", fontsize=18.)
-P.xlim((0., 0.6))
-P.tight_layout()
-P.show()
-exit()
-
-# Comparison plot of dndz, bias, and fitting function
-if DEBUG_PLOT:
-    P.subplot(211)
-    P.plot(_z, dndz_expt(_z))
-    P.plot(_z, p[0] * _z**p[1] * np.exp(-p[2]*_z))
-
-    P.subplot(212)
-    P.plot(_z, bias_expt(_z))
-    P.plot(_z, pb[0] * np.exp(pb[1]*_z))
+    P.ylabel(r"$N(z)$ $[{\rm amin}^{-2}]$", fontsize=18.)
+    P.xlabel("$z$", fontsize=18.)
+    P.xlim((0., 0.6))
+    P.tight_layout()
     P.show()
+    exit()
+
+    # Comparison plot of dndz, bias, and fitting function
+    if DEBUG_PLOT:
+        P.subplot(211)
+        P.plot(_z, dndz_expt(_z))
+        P.plot(_z, p[0] * _z**p[1] * np.exp(-p[2]*_z))
+
+        P.subplot(212)
+        P.plot(_z, bias_expt(_z))
+        P.plot(_z, pb[0] * np.exp(pb[1]*_z))
+        P.show()
 
